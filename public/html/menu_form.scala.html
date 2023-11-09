@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>菜单管理维护表单页面</title>
+<link href="../stylesheets/css/bootstrap.min14ed.css?v=3.3.6" rel="stylesheet">
+<link href="../stylesheets/css/font-awesome.min93e3.css?v=4.4.0" rel="stylesheet">
+<link href="../stylesheets/css/animate.min.css" rel="stylesheet">
+<link href="../stylesheets/css/style.min862f.css?v=4.1.0" rel="stylesheet">
+<link href="../stylesheets/css/dxs.min.css" rel="stylesheet">
+</head>
+<body>
+	<div class="wrapper wrapper-content animated fadeInUp" style="height: 90%;">
+		<form class=" form-horizontal" id="aipMenuForm" style="height: 100%;">
+			<input id="aipMenuId" name="id" type="hidden" class="form-control">
+			<input id="aipMenuCreator" name="creator" type="hidden" class="form-control">
+			<table id="t1" class="table" style="margin: 0 auto;width: 97%;margin-left: -1.3%;height: 100%;"  valign="middle" >
+				<tbody>
+					<tr>
+						<td class="text-right" style="width: 15%">
+							<label class="control-label">父级菜单:</label>
+						</td>
+						<td>
+							<select id="aipMenuParentId" name="parentId" class="form-control"></select>
+						</td>
+						<td class="text-right" style="width: 15%;">
+							<label class="control-label">菜单图标:</label>
+						</td>
+						<td>
+							<input id="aipMenuIcon" name="icon" type="text" class="form-control">
+						</td>
+					</tr>
+					<tr>
+						<td class="text-right" style="width: 15%">
+						   	<label class="control-label"><font color=red>*</font>菜单编码:</label>
+						</td>
+						<td>
+							<input id="aipMenuCode" name="code" type="text" class="form-control">
+						</td>
+						<td class="text-right" style="width: 15%;">
+							<label class="control-label"><font color=red>*</font>菜单名称:</label>
+						</td>
+						<td>
+							<input id="aipMenuName" name="name" type="text" class="form-control">
+						</td>
+					</tr>
+					<tr>
+						<td class="text-right" style="width: 15%">
+						   	<label class="control-label">菜单路径:</label>
+						</td>
+						<td>
+							<input id="aipMenuTarget" name="target" type="text" class="form-control">
+						</td>
+						<td class="text-right" style="width: 15%;">
+							<label class="control-label">排序号码:</label>
+						</td>
+						<td>
+							<input id="aipMenuOrderNo" name="orderNo" type="text" class="form-control" value=0>
+						</td>
+					</tr>
+					<tr>
+						<td class="text-right" style="width: 15%">
+						   	<label class="control-label">菜单描述:</label>
+						</td>
+						<td colspan="3">
+							<textarea rows="3" cols="20" id="aipMenuDescription" name="description" class="form-control"></textarea>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</form>
+	</div>
+<script src="../javascripts/js/jquery.min.js?v=2.1.4"></script>
+<script src="../javascripts/js/bootstrap.min.js?v=3.3.6"></script>
+<script src="../javascripts/js/content.min.js?v=1.0.0"></script>
+<script src="../javascripts/js/plugins/pace/pace.min.js"></script>
+<script src="../javascripts/js/plugins/validate/jquery.validate.min.js"></script>
+<script src="../javascripts/js/plugins/validate/messages_zh.min.js"></script>
+<script src="../javascripts/js/plugins/layer/layer.js"></script>
+<script src="../javascripts/js/dxs.core.js"></script>
+<script src="../javascripts/js/dxs.form.js"></script>
+<script type="text/javascript">
+document.write(unescape("%3Cscript src='../javascripts/js/pages/aipMenu/form.js?v=" + version + "' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+	$(document).ready(
+		function(){
+			initAipMenuForm();
+		}
+	);
+</script>
+</body>
+<!-- Mirrored from www.zi-han.net/theme/hplus/form_validate.html by HTTrack Website Copier/3.x [XR&CO'2014], Wed, 20 Jan 2016 14:19:16 GMT -->
+</html>

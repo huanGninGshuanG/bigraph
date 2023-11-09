@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+<title>分配权限维护页面</title>
+
+<link href="../stylesheets/css/bootstrap.min14ed.css?v=3.3.6" rel="stylesheet">
+<link href="../stylesheets/css/font-awesome.min93e3.css?v=4.4.0" rel="stylesheet">
+<link href="../stylesheets/css/animate.min.css" rel="stylesheet">
+<link href="../stylesheets/css/style.min862f.css?v=4.1.0" rel="stylesheet">
+<link href="../stylesheets/css/plugins/ztree/metroStyle/metroStyle.css" rel="stylesheet">
+<link href="../stylesheets/css/dxs.min.css" rel="stylesheet">
+</head>
+<body>
+	<div class="wrapper wrapper-content animated fadeInUp">
+		<div class="row">
+			<div class="col-sm-12">
+				<ul class="nav nav-tabs">
+	                <li class="active"><a data-toggle="tab" href="#tab-1"><i class="fa fa-file-text-o"></i>分配权限</a></li>
+						<!--      <li class=""><a data-toggle="tab" href="#tab-2"><i class="fa fa-list-alt"></i>分配角色</a></li> 	-->
+             	</ul>
+             	<div class="tab-content">
+             		<input type="hidden" id="user_id"/>
+             		<div id="tab-1" class="tab-pane active">
+             			<br>
+             			<div id="ztreeContent">
+                    		<ul id="powerTree" class="ztree"></ul>
+                    	</div>
+             		</div>
+				<!-- <div id="tab-2" class="tab-pane">
+             			<br>
+             			<div id="ztreeContent">
+                    		<ul id="roleTree" class="ztree"></ul>
+                    	</div>
+             		</div>	-->
+             	</div>
+				<!-- <div class="ibox float-e-margins">
+                    <div class="ibox-content">
+                    	
+                    </div>
+                </div> -->
+			</div>
+		</div>
+	</div>
+	<script src="../javascripts/js/jquery.min.js?v=2.1.4"></script>
+	<script src="../javascripts/js/bootstrap.min.js?v=3.3.6"></script>
+	<script src="../javascripts/js/content.min.js?v=1.0.0"></script>
+	<script src="../javascripts/js/plugins/pace/pace.min.js"></script>
+	<script src="../javascripts/js/plugins/validate/jquery.validate.min.js"></script>
+	<script src="../javascripts/js/plugins/validate/messages_zh.min.js"></script>
+	<script src="../javascripts/js/plugins/layer/layer.js"></script>
+	<script src="../javascripts/js/plugins/ztree/jquery.ztree.core.min.js?v=0820"></script>
+    <script src="../javascripts/js/plugins/ztree/jquery.ztree.excheck.min.js?v=0820"></script>
+    <script src="../javascripts/js/plugins/ztree/jquery.ztree.exedit.min.js?v=0820"></script>
+	<script src="../javascripts/js/dxs.core.js"></script>
+	<script src="../javascripts/js/dxs.form.js"></script>
+
+	<script src="../javascripts/js/pages/aipUsers/form.js"></script>
+
+	<script type="text/javascript">
+		// document.write(unescape("%3Cscript src='../../js/pages/aipUsers/form.js?v=" + version + "' type='text/javascript'%3E%3C/script%3E"));
+	</script>
+	<script type="text/javascript">
+	var setting = {
+			check : {
+				enable : true,
+				chkStyle : 'checkbox'
+			},
+			async : {
+				enable : true,
+				type : 'get',
+				dataFilter : filter,
+				url : '../../menu/menuTree'
+			},
+			data : {
+				simpleData : {
+					enable : true,
+					idKey : 'id',
+					pidKey : 'pId',
+					rootPId : 0
+				},
+				keep : {
+					leaf : false,
+					parent : false
+				}
+			},
+			callback : {
+				onAsyncSuccess: powerTreeOnAsyncSuccess
+			}
+	};
+	var setting2 = {
+			check : {
+				enable : true,
+				chkStyle : 'checkbox'
+			},
+			async : {
+				enable : true,
+				type : 'post',
+				dataFilter : filter,
+				url : '../../role/roleTree.do'
+			},
+			data : {
+				simpleData : {
+					enable : true,
+					idKey : 'id',
+					pidKey : 'pId',
+					rootPId : 0
+				},
+				keep : {
+					leaf : false,
+					parent : false
+				}
+			},
+			callback : {
+				onAsyncSuccess: roleTreeOnAsyncSuccess
+			}
+	};
+	
+	var powerTree,roleTree;
+	$(document).ready(function(){
+		layer.load(1, {
+			shade : [ 0.2 ]
+			// 透明度调整
+		});
+		$.fn.zTree.init($("#powerTree"), setting);
+		powerTree = $.fn.zTree.getZTreeObj("powerTree");
+		// $.fn.zTree.init($("#roleTree"), setting2);
+		// roleTree = $.fn.zTree.getZTreeObj("roleTree");
+		var id = CommonUtils.getUrlParam("id");
+		$('#user_id').val(id);
+	});
+	function powerTreeOnAsyncSuccess(event, treeId, treeNode, msg) {
+		var treeObj = $.fn.zTree.getZTreeObj(treeId);
+		//展开tree
+		treeObj.expandAll(true);
+		$.ajax({
+			// url : '../../user/findMenusByUserId.do',
+			url : '../../acl/getByPrincipalId',
+			type : 'post',
+			dataType : 'json',
+			// data:{'userId':$('#user_id').val()},
+			data : JSON.stringify({'userId':$('#user_id').val()}),
+			contentType: "application/json;charset=utf-8",
+			success : function(response){
+				//根据用户已有菜单，勾选tree中节点
+				debugger
+				console.log("权限回显菜单")
+				console.log(response)
+				console.log("权限回显菜单")
+				console.log(treeObj.getNodes());
+
+				$.each(response.responseData.datas, function(){
+					debugger
+					var node = treeObj.getNodeByParam('id', this.id);
+					if (node != null && !node.isParent) {
+						//node.halfCheck = true;
+						treeObj.checkNode(node, true, true);
+					}
+				});
+				layer.closeAll('loading');
+			}
+		});
+		layer.closeAll('loading');
+	};
+	
+	function roleTreeOnAsyncSuccess(event, treeId, treeNode, msg) {
+		var treeObj = $.fn.zTree.getZTreeObj(treeId);
+		//展开tree
+		treeObj.expandAll(true);
+		$.ajax({
+			url : '../../user/findRolesByUserId.do',
+			type : 'post',
+			dataType : 'json',
+			data:{'userId':$('#user_id').val()},
+			success : function(response){
+				//根据用户已有菜单，勾选tree中节点
+				$.each(response.responseData, function(){
+					var node = treeObj.getNodeByParam('id', this);
+					if (node != null && !node.isParent) {
+						//node.halfCheck = true;
+						treeObj.checkNode(node, true, true);
+					}
+				});
+			}
+		});
+	};
+function filter(treeId, parentNode, childNodes) {
+	if (!childNodes) return null;
+	for (var i=0, l=childNodes.length; i<l; i++) {
+		childNodes[i].name = childNodes[i].name.replace(/\.n/g, '.');
+	}
+	return childNodes;
+}
+
+function save(confirmIndex){
+	debugger
+	var powerObj = $.fn.zTree.getZTreeObj("powerTree");
+	var roleObj = $.fn.zTree.getZTreeObj("roleTree");
+	var nodePower = powerObj.getCheckedNodes(true);
+	// var nodeRole = roleObj.getCheckedNodes(true);
+	var powerids = [];
+	var roleids = [];
+	$.each(nodePower, function(i){
+		powerids.push(this.id);
+	});
+	// $.each(nodeRole, function(i){
+	// 	roleids.push(this.id);
+	// });
+	$.ajax({
+		// url : '../../user/saveRenewPermissions',
+		url : '../../acl/saveRenewPermissions',
+		type : 'post',
+		dataType : 'json',
+		// data : $('#aipUserForm').serialize(),
+		data : JSON.stringify({
+			'userId' : $('#user_id').val(),
+			'menuIds' : powerids,
+			'roleIds' : roleids
+		}),
+		contentType: "application/json;charset=utf-8",
+		// data : {
+		// 	'userId' : $('#user_id').val(),
+		// 	'menuIds' : powerids,
+		// 	'roleIds' : roleids
+		// },
+		success : function (data){
+			if (data.success) {
+				CommonUtils.notify("success","操作成功<br>","1500");
+				top.layer.close(confirmIndex);
+				var index = top.layer.getFrameIndex(window.name); // 先得到当前iframe层的索引
+				top.layer.close(index); // 再执行关闭
+			} else {
+				CommonUtils.notify("error","操作失败<br>","4000");
+				top.layer.close(confirmIndex);
+				top.layer.closeAll('loading');
+			}
+		},
+		error : function () {
+			alert('交互失败');
+		}
+	});
+};
+	
+		
+		
+	</script>
+</body>
+
+
+<!-- Mirrored from www.zi-han.net/theme/hplus/form_validate.html by HTTrack Website Copier/3.x [XR&CO'2014], Wed, 20 Jan 2016 14:19:16 GMT -->
+</html>

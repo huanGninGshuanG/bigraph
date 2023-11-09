@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>偶图模拟系统</title>
+	<link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
+	<link rel="stylesheet" type="text/css" href='@routes.Assets.versioned("stylesheets/css/common.css")'>
+	<link rel="stylesheet" href='@routes.Assets.versioned("stylesheets/css/style.min.css")'>
+	<link rel="stylesheet" type="text/css" href='@routes.Assets.versioned("stylesheets/css/login.css")'>
+	<link rel="stylesheet" type="text/css" href='@routes.Assets.versioned("stylesheets/css/plugins/spryassets/SpryValidationCheckbox.css")'>
+	<link href='@routes.Assets.versioned("stylesheets/css/ssc_style.css")' rel="stylesheet">
+	<style>
+		.btn_class{
+			pointer-events: none;
+	    	opacity: 0.2;
+		}
+		
+		.valid_msg{
+		    position: absolute;
+		    bottom: -19px;
+		    left: 0;
+		    color: #cc5965;
+	    }
+	    .hide_class{
+	    	display:none;
+	    }
+	</style>
+	
+	<script>
+        if(window.top!==window.self){window.top.location=window.location};
+    </script>
+</head>
+<body>
+	<div class="navbar-left">
+		<a href="#"><!-- <img src="img/ssc_logo.png" /> --> <span
+		class="ssc_sysName">&nbsp;&nbsp;&nbsp;偶图模拟系统 - Bigraph Simulator System</span></a>
+	</div>
+	<div class="box">
+		<div class="header">
+			<div style="width:1000px;margin:0 auto;">
+ 				<!-- <img src="images/logo2.png"> -->
+ 			</div>
+ 		</div>
+
+ 		<div class="main">
+  				<!-- <img src="images/pic.png" style="float:left;"> -->
+			<div class="row">
+
+
+					<div styl="float:right;">
+						<div class="login_form" style="background: #f5f5f5;">
+								<!-- <span class="tab_1"></span> -->
+							<h3>用户登录</h3>
+							<p class="tip"></p>
+
+							<form id="loginForm" class="form_input">
+								<div>
+									<span class="user_input"></span>
+									<input type="text" placeholder="请输入用户名" id="loginname" name="loginname">
+									<img src="@routes.Assets.versioned("images/x_icon.png")" class="clear_icon">
+								</div>
+
+								<div>
+									<span class="pass_input"></span>
+									<input type="password" placeholder="请输入密码" id="password"  name="password">
+								</div>
+<!--
+								<div class="login_input_content clear" style="border:  none; overflow: initial" >
+									<div class="login_code_img" style="background: #f5f5f5;border: none;">
+										<img style=" float: right;height: 40px;" id="captchaImage" src="captcha.action">
+										<input type="text"  id="captcha" name="captcha"  style="float: left;width: 225px;"/>
+										<span id="id_valid_msg" class="valid_msg hide_class"  >验证码不正确</span>
+									</div>
+								</div>
+-->
+								<p class="qxsq">
+									<span style="float:right; color:#333;">忘记密码？</span>	<span id="sprycheckbox1">
+									<input type="checkbox" name="checkbox1" id="checkbox1">
+									<span class="checkboxRequiredMsg">Please make a selection.</span></span>记住用户名 </p>
+
+								<div class="login_btn" id="btn_post6">
+		 						登录
+								</div>
+							</form>
+						</div>
+
+
+						<div class="login_form1">
+							<span class="tab_2"></span>
+							<h3>
+	                           用户登录
+							</h3>
+
+							<p>使用二维码扫描</p>
+							<div style="text-align:center;">
+								<img src="@routes.Assets.versioned("images/Code.png")">
+							</div>
+						</div>
+					</div>
+					<div id="graph" style="text-align: left;"></div>
+
+			</div>
+
+  		</div>
+		<!--
+		<div class="footer"><div class="pull-right">&copy;  <a href="http://www.pku.edu.cn/" target="_blank">Bigraph Simulator System</a></div></div>
+		-->
+	</div>
+	<script src='@routes.Assets.versioned("javascripts/js/jquery.min.js?v=2.1.4")'></script>
+	<script src='@routes.Assets.versioned("javascripts/js/plugins/validate/jquery.validate.min.js")'></script>
+	<script type="text/javascript" src='@routes.Assets.versioned("javascripts/js/plugins/spryassets/SpryValidationCheckbox.js")'></script>
+	<script src='@routes.Assets.versioned("javascripts/js/md5.js")'></script>
+	<script src='@routes.Assets.versioned("javascripts/js/d3.v4.min.js")'></script>
+	<script src='@routes.Assets.versioned("javascripts/js/d3-graphviz.js")'></script>
+	<script src='@routes.Assets.versioned("javascripts/js/viz.js")'></script>
+	<script src='@routes.Assets.versioned("javascripts/js/cookie.js")'></script>
+
+    <script>
+/*
+var dotIndex = 0;
+var graphviz = d3.select("#graph").graphviz()
+        .transition(function () {
+            return d3.transition("main")
+                    .ease(d3.easeLinear)
+                    .delay(500)
+                    .duration(1500);
+        })
+        .logEvents(true)
+        .on("initEnd", render);
+
+function render() {
+    var dotLines = dots[dotIndex];
+    var dot = dotLines.join('');
+    graphviz
+            .renderDot(dot)
+            .on("end", function () {
+                dotIndex = (dotIndex + 1) % dots.length;
+                render();
+            });
+}
+
+var dots = [
+    [
+        'digraph  {',
+        '    node [style="filled"]',
+        '    a [fillcolor="#d62728"]',
+        '    b [fillcolor="#1f77b4"]',
+        '    a -> b',
+        '}'
+    ],
+    [
+        'digraph  {',
+        '    node [style="filled"]',
+        '    a [fillcolor="#d62728"]',
+        '    c [fillcolor="#2ca02c"]',
+        '    b [fillcolor="#1f77b4"]',
+        '    a -> b',
+        '    a -> c',
+        '}'
+    ],
+    [
+        'digraph  {',
+        '    node [style="filled"]',
+        '    a [fillcolor="#d62728"]',
+        '    b [fillcolor="#1f77b4"]',
+        '    c [fillcolor="#2ca02c"]',
+        '    a -> b',
+        '    a -> c',
+        '}'
+    ],
+    [
+        'digraph  {',
+        '    node [style="filled"]',
+        '    a [fillcolor="#d62728", shape="box"]',
+        '    b [fillcolor="#1f77b4", shape="parallelogram"]',
+        '    c [fillcolor="#2ca02c", shape="pentagon"]',
+        '    a -> b',
+        '    a -> c',
+        '    b -> c',
+        '}'
+    ],
+    [
+        'digraph  {',
+        '    node [style="filled"]',
+        '    a [fillcolor="yellow", shape="star"]',
+        '    b [fillcolor="yellow", shape="star"]',
+        '    c [fillcolor="yellow", shape="star"]',
+        '    a -> b',
+        '    a -> c',
+        '    b -> c',
+        '}'
+    ],
+    [
+        'digraph  {',
+        '    node [style="filled"]',
+        '    a [fillcolor="#d62728", shape="triangle"]',
+        '    b [fillcolor="#1f77b4", shape="diamond"]',
+        '    c [fillcolor="#2ca02c", shape="trapezium"]',
+        '    a -> b',
+        '    a -> c',
+        '    b -> c',
+        '}'
+    ],
+    [
+        'digraph  {',
+        '    node [style="filled"]',
+        '    a [fillcolor="#d62728", shape="box"]',
+        '    b [fillcolor="#1f77b4", shape="parallelogram"]',
+        '    c [fillcolor="#2ca02c", shape="pentagon"]',
+        '    a -> b',
+        '    a -> c',
+        '    b -> c',
+        '}'
+    ],
+    [
+        'digraph  {',
+        '    node [style="filled"]',
+        '    a [fillcolor="#d62728"]',
+        '    b [fillcolor="#1f77b4"]',
+        '    c [fillcolor="#2ca02c"]',
+        '    a -> b',
+        '    a -> c',
+        '    c -> b',
+        '}'
+    ],
+    [
+        'digraph  {',
+        '    node [style="filled"]',
+        '    b [fillcolor="#1f77b4"]',
+        '    c [fillcolor="#2ca02c"]',
+        '    c -> b',
+        '}'
+    ],
+    [
+        'digraph  {',
+        '    node [style="filled"]',
+        '    b [fillcolor="#1f77b4"]',
+        '}'
+    ],
+];*/
+
+</script>
+
+	<script type="text/javascript">
+
+			var dotIndex = 0;
+			var graphviz = d3.select("#graph").graphviz()
+					.transition(/*function () {
+						return d3.transition("main")
+								.ease(d3.easeLinear)
+								.delay(500)
+								.duration(1500);
+					}*/)
+					.logEvents(true)
+					.on("initEnd", render);
+
+			function render() {
+				var dotLines = dots[dotIndex];
+				var dot = dotLines.join('');
+				graphviz
+						.renderDot(dot)
+                        .width(1100)
+                        .scale(0.6)
+						// .on("end", function () {
+						// 	dotIndex = (dotIndex + 1) % dots.length;
+						// 	render();
+						// });
+			}
+
+			var dots = [
+				[
+					'digraph reaction_graph {',
+					'   rankdir=LR;',
+					'   Node [shape = circle];',
+					'   BigSim_Report [shape = parallelogram color = aliceblue style=filled label="BigSim',
+					'Report"];',
+					'BigSim_Report -> N_A[color = aliceblue label = ""];',
+					' N_A',
+					' [shape=circle, color=lightblue2, style=filled];',
+					'N_B[ label="N_B"];',
+					' N_B -> N_C[ color = coral1 label = "r_cbc04"];',
+					'N_D[ label="N_D"];',
+					'N_E[ label="N_E"];',
+					' N_E -> N_F[ color = coral1 label = "r_cbc07"];',
+					'N_G[ label="N_G"];',
+					' N_G -> N_B[ color = coral1 label = "r_cbc03"];',
+					' N_G -> N_E[ color = coral1 label = "r_cbc06"];',
+					' N_G -> N_H[ color = coral1 label = "r_cbc10"];',
+					'N_H[ label="N_H"];',
+					' N_H -> N_I[ color = coral1 label = "r_cbc11"];',
+					'N_I[ label="N_I"];',
+					' N_I -> N_C[ color = coral1 label = "r_cbc12"];',
+					' N_I -> N_F[ color = coral1 label = "r_cbc13"];',
+					' N_I -> N_D[ color = coral1 label = "r_cbc14"];',
+					'N_J[ label="N_J"];',
+					'N_C[ label="N_C"];',
+					' N_C -> N_J[ color = coral1 label = "r_cbc05"];',
+					'N_K[ label="N_K"];',
+					'N_F[ label="N_F"];',
+					' N_F -> N_K[ color = coral1 label = "r_cbc09"];',
+					' N_F -> N_C[ color = coral1 label = "r_cbc08"];',
+					'N_A[ label="N_A"];',
+					' N_A -> N_L[ color = coral1 label = "r_cbc01"];',
+					'N_L[ label="N_L"];',
+					' N_L -> N_G[ color = coral1 label = "r_cbc02"];',
+					'}'
+				]
+			];
+
+
+
+
+
+
+
+
+
+
+
+	$(".tab_1").click(function(){
+		$(".login_form1").show();
+		$(".login_form").hide();
+	});
+	$(".tab_2").click(function(){
+		$(".login_form").show();
+		$(".login_form1").hide();
+	})
+	var sprycheckbox1 = new Spry.Widget.ValidationCheckbox("sprycheckbox1");
+	
+	$("#loginForm").validate({
+
+    	rules : {
+    		loginname : {
+    			required : true
+    		},
+    		password:{
+    			required : true,
+    		},
+    		captcha:{
+    		//	required : true,
+    		//	minlength:6,
+    		//	maxlength:6
+    			//remote:"checkCaptcha.action"
+    		}
+    	},
+    	messages : {
+    		loginname : {
+    			required : '访问账号称必须填写'
+    		},
+    		password:{
+    			required : '访问密码必须填写',
+    		},
+    		captcha:{
+    		//	required : '验证码必须填写',
+    		//	maxlength: $.validator.format( "请输入 {0} 位验证码" ),
+    		//	minlength: $.validator.format( "请输入 {0} 位验证码" ),
+    			//remote: "Please fix this field."
+    		}
+    	},
+    	onfocusout : function(element) {
+    		$(element).valid();
+    	}
+    });
+	
+	//登陆
+	$(function(){
+		document.onkeydown = function(e){ 
+		    var ev = document.all ? window.event : e;
+		    if(ev.keyCode==13) {
+		    	loginajax();
+		     }
+		};
+	});
+	$("#btn_post6").click(function(){
+		loginajax();
+	});	
+	function loginajax(){
+		if($("#loginForm").validate().form()){
+			$.ajax({
+				  url:"user/login",
+				  type:"post",
+				  async:false,
+				  // data: {
+				  //       'loginname':$('#loginname').val(),
+				  //       'password':hex_md5($('#password').val()),
+				  //       'captcha' : $("#captcha").val()
+				  // },
+				  data : JSON.stringify({
+				        'loginname':$('#loginname').val(),
+				        'password':$('#password').val(),
+				        'captcha' : $("#captcha").val()
+					}),
+					contentType: "application/json;charset=utf-8",
+
+				  timeout:30000,
+				  dataType:"json",
+				  success:function(data){
+				  	debugger
+					  if (data.success) {
+					  	debugger
+					  	  setCookie("userId",data.responseData.id)
+						  window.location.href="/index";
+					  }else{
+						  alert(data.responseMessage);
+						  $('#captchaImage').click();
+						  $("#captcha").val("");
+						  // $("#btn_post6").addClass("btn_class");
+					  }
+				  },
+				  error:function(){
+				     alert('账号或密码错误！');
+				     $('#captchaImage').click();
+				     $("#captcha").val("");
+				     // $("#btn_post6").addClass("btn_class");
+				  }
+			});
+		}
+	}
+	
+	
+	
+	
+	//验证码校验--------------------------------------------
+	
+// 验证码输入校验对错，对-登录按钮可以点击、错-登录按钮不可以点击
+    // 更换验证码
+    $('#captchaImage').click(function(){
+    	var timestamp = new Date().getTime();
+        $('#captchaImage').attr('src', 'captcha.action?time='+timestamp);
+    });
+
+    // 验证码输入校验对错，对-登录按钮可以点击、错-登录按钮不可以点击
+    $("#captcha").bind("input propertychange", function() {
+       	var captcha = $(this).val();
+       	if(captcha.length == 6) {
+    		$.ajax({  
+      			url: "checkCaptcha.action",  
+      	        type: 'POST',  
+      	        data: {
+      	        	captcha : captcha
+      	        }, 
+      	        async: true,  
+      	        success: function (response) {
+      	        	
+      	        	var data = JSON.parse(response);
+      	        	if(data.success) {
+      	        		var responseData = JSON.parse(data.responseData);
+      	        		if(responseData.success){
+      	        			$("#btn_post6").removeClass("btn_class");
+      	        			$("#id_valid_msg").removeClass("valid_msg");
+      	        			$("#id_valid_msg").addClass("hide_class");
+      	        		}else{
+      	        			$("#btn_post6").addClass("btn_class");
+      	        			$("#id_valid_msg").addClass("valid_msg");
+      	        			$("#id_valid_msg").removeClass("hide_class");
+      	        		}
+      	        	
+      	        	} else {
+      	        		$("#btn_post6").addClass("btn_class");
+      	        		$("#id_valid_msg").addClass("valid_msg");
+      	        		$("#id_valid_msg").removeClass("hide_class");
+      	        		
+      	        	}
+      	        },
+      	        error:function(){
+      	        	$("#btn_post6").addClass("btn_class");
+      	        	$("#id_valid_msg").addClass("valid_msg");
+      	        	$("#id_valid_msg").removeClass("hide_class");
+      	        }	
+      	    });
+       }else {
+    	   $("#btn_post6").addClass("btn_class");
+    	   $("#id_valid_msg").addClass("valid_msg");
+    	   $("#id_valid_msg").removeClass("hide_class");
+       }
+    });
+	
+    
+    </script>
+</body>
+</html>

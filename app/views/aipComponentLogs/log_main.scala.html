@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>执行日志主界面</title>
+<link href='@routes.Assets.versioned("stylesheets/css/bootstrap.min14ed.css?v=3.3.6")' rel="stylesheet">
+<link href='@routes.Assets.versioned("stylesheets/css/font-awesome.min93e3.css?v=4.4.0")' rel="stylesheet">
+<link href='@routes.Assets.versioned("stylesheets/css/animate.min.css")' rel="stylesheet">
+<link href='@routes.Assets.versioned("stylesheets/css/style.css")' rel="stylesheet"/>
+<link href='@routes.Assets.versioned("stylesheets/css/style.min862f.css?v=4.1.0")' rel="stylesheet">
+<link href='@routes.Assets.versioned("stylesheets/css/plugins/dataTables/dataTables.bootstrap.css")' rel="stylesheet">
+<link href='@routes.Assets.versioned("stylesheets/css/plugins/ztree/metroStyle/metroStyle.css")' rel="stylesheet">
+<link href='@routes.Assets.versioned("stylesheets/css/dxs.min.css")' rel="stylesheet">
+<link href='@routes.Assets.versioned("stylesheets/css/ssc_style.css")' rel="stylesheet">
+ <style type="text/css"> 
+ .childTdPadding { 
+ 	padding: 2px 
+ }
+ table td {
+ 	height: 21px
+ }
+</style> 
+</head>
+<body class="gray-bg">
+<div class="wrapper wrapper-content animated fadeInRight">
+	<div class="col-sm-12 clearRightPadding" style="padding-left: 0px; padding-right: 0px;">
+		<div class="ibox float-e-margins">
+			<div class="ibox-content c-content">
+				<div class="row">
+					<div class="col-sm-12">
+						<div class="ibox">
+							<div class="ibox-content clearContentBorder">
+								<div class="row">
+									<div class="col-sm-12">
+										<form id="searchForm" class="form-inline">
+											<div class="form-group">
+												<input type="hidden"name="componentCode" class=" form-control input-sm" placeholder="" style="width:128px" />
+												<label>开始时间:</label>	
+												<input type="text" name="startTime" id="dxsbeginTime" readonly class=" form-control input-sm"  placeholder="请选择"  style="width:165px" /><!-- 128 -->
+												<label>结束时间:</label>	
+												<input type="text" name="endTime"  id="dxsendTime" readonly class=" form-control input-sm"  placeholder="请选择"  style="width:165px" /><!-- 128 -->
+												<label>所属策略:</label>
+												<input type="text" name="strategyName"  id="inputParamStr" class=" form-control input-sm"  placeholder=""  style="width:128px" />
+												<label>资源名称:</label>
+												 <input type="text" name="resourceName" class=" form-control input-sm" placeholder="" style="width:128px" />
+												<label>执行结果:</label>
+												<select id="searchResult" name="result" class="form-control input-sm" style="width:128px"><option>全部</option><option value="successed">成功</option><option value="failed">失败</option></select>
+											</div>
+											<div class="form-group">
+												<input type="hidden" name="businessDesc" class=" form-control input-sm" placeholder=""  style="width:128px" />	
+											</div>
+										</form>
+									</div>
+									<!-- <div class="pull-right ">
+										<button class="btn btn-primary btn-rounded btn-outline btn-sm " onclick="search()">
+											<i class="fa fa-search"></i> 查询
+										</button>
+										<button class="btn btn-primary btn-rounded btn-outline btn-sm ssc_btn_reset" onclick="$('#searchForm')[0].reset();$('#dxsbeginTime').val(laydate.now(new Date().getTime()));">
+											<i class="fa fa-refresh"></i> 重置
+										</button>
+									</div> -->
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<!-- 工具栏 -->
+				<div class="row">
+					<div class="col-sm-12">
+						<div class="pull-left">
+						<!--<button class="btn ssc-btn-delete btn-sm" data-toggle="tooltip" data-placement="top"  onclick="deleteItemFromGPGridNotifyStatus('../../notifystatus/delete.do','DxsNotifyGrid',this)"><i class="fa fa-trash-o"> 删除</i></button> -->
+							<button class="btn btn-primary btn-sm " data-toggle="tooltip" data-placement="left" onclick="dtOptions.reload('AipComponentLogGrid')" title="刷新"><i class="fa fa-search"></i>&nbsp;查询</button>
+							<button class="btn ssc-btn-add btn-sm " data-toggle="tooltip" data-placement="left" onclick="choose(this)" title="执行"><i class="glyphicon glyphicon-play"></i>&nbsp;执行</button>
+						</div>
+					</div>
+				</div>
+				<!-- "../../log/list" -->
+				<table id="AipComponentLogGrid" data-view="dataTables" data-remote="true" data-pagesize="10" data-url="../../log/list" data-search="#searchForm" class="table table-striped table-bordered table-hover dataTable" width="100%">
+					<thead>
+						<tr>
+							<th width="20" data-sortable="false" data-column="" data-className="details-control text-center"></th>
+							<th valign="middle" data-column="createDate" data-className="text-center" data-ref="renderer" data-renderer="createDateRender">时间戳</th>
+							<th valign="middle" data-column="strategyName" data-className="text-center">所属策略</th>
+							<th valign="middle" data-column="resourceName" data-className="text-center">资源名称</th>
+@*
+							<th valign="middle" data-column="businessDesc" data-className="text-center">服务描述</th>
+*@
+							<th valign="middle" data-column="creator" data-className="text-center">执行人</th>
+							<th valign="middle" data-column="counts" data-className="text-center">执行次数</th>
+							<th valign="middle" data-column="finalResult" data-className="text-center" data-ref="renderer" data-renderer="executeResultRender">执行结果</th>
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+</div>
+<script src='@routes.Assets.versioned("javascripts/js/jquery.min.js?v=2.1.4")'></script>
+<script src='@routes.Assets.versioned("javascripts/js/bootstrap.min.js?v=3.3.6")'></script>
+<script src='@routes.Assets.versioned("javascripts/js/content.min.js?v=1.0.0")'></script>
+<script src='@routes.Assets.versioned("javascripts/js/plugins/layer/layer.js")'></script>
+<script src='@routes.Assets.versioned("javascripts/js/plugins/dataTables/jquery.dataTables.js")'></script>
+<script src='@routes.Assets.versioned("javascripts/js/plugins/dataTables/dataTables.bootstrap.js")'></script>
+<!-- <script src="javascripts/js/plugins/layer/laydate/laydate.js"></script> -->
+<script src='@routes.Assets.versioned("javascripts/js/plugins/layer/laydate-v5.0.9/laydate.js")'></script>
+<script src='@routes.Assets.versioned("javascripts/js/dxs.core.js")'></script>
+<script src='@routes.Assets.versioned("javascripts/js/dxs.dataTables.js")'></script>
+<script src='@routes.Assets.versioned("javascripts/js/grid.js")'></script>
+<script>
+
+function keyDownSearch(e) {    
+    // 兼容FF和IE和Opera    
+    var theEvent = e || window.event;    
+    var code = theEvent.keyCode || theEvent.which || theEvent.charCode;    
+    if (code == 13) {    
+    	search();//具体处理函数    
+        return false;    
+    }    
+    return true;    
+}
+	
+$(document).ready(function(){
+	
+	var status = CommonUtils.getUrlParam('status');
+	console.log(status);
+	if (status == '1')
+		$("#searchResult").val('successed');
+	if (status == '2')
+		$("#searchResult").val('failed');
+	
+	//$("#dxsbeginTime").val(laydate.now(new Date().getTime()));
+	
+	laydate.render({ 
+		  elem: '#dxsbeginTime',
+		  type: 'datetime'
+		 // value: new Date() //参数即为：2018-08-20 20:08:08 的时间戳
+		});
+	
+	//$("#dxsendTime").val(laydate.now(new Date().getTime()));
+	
+	search();
+	
+	$("#AipComponentLogGrid tbody").on('click', 'tr', function(){
+		if ($(this).hasClass('dtSelected')) {
+			$(this).removeClass('dtSelected');
+		} else {
+			 $('#AipComponentLogGrid tbody tr.dtSelected').removeClass('dtSelected');
+	         $(this).addClass('dtSelected');
+		}
+	});
+	
+	
+		$(window).resize(function() {
+			wSize();
+			//解决屏幕尺寸改变后 table header尺寸不符
+			$("#AipComponentLogGrid").DataTable().columns.adjust();
+		
+		});
+		
+		wSize();
+		parent.layer.closeAll('loading');
+});
+
+function choose(updatebtn) {
+	var rowData = $("#AipComponentLogGrid").DataTable().row($('tbody tr.dtSelected')).data();
+ 
+  //  console.info(rowData);
+ 
+    
+	if(rowData == null || rowData == ""){
+		layer.tips('您未选中需要重新执行的记录，请选择！', updatebtn, {
+		  tips: [2, '#18a689'],
+		  time: 2000
+		});
+		return;
+	}
+	if(rowData.executeResult=="成功"){
+		layer.tips('请选择一条符合条件的记录！', updatebtn, {
+			  tips: [2, '#18a689'],
+			  time: 2000
+			});
+			return;
+	}	
+	var confirmId = layer.confirm('<small>确认执行,你确定重新执行[<font color="red">状态异常</font>]任务吗?<br>任务将立即加入[<font color="red">执行队列</font>]中，稍后可查询最新状态！</small>', {
+		title : '<small>系统提示</small>',
+		closeBtn : 0,
+		icon:0,
+		offset : '180px',
+		btn : [ '确定', '取消' ]
+	}, function() {
+		layer.load(1, {
+			shade : [ 0.2 ]
+		});
+		
+		$.ajax({
+			url : '../../componentlog/reload.do',
+			dataType : 'json',
+			type : 'post',
+			data : {
+				"batchId":rowData.batchId,
+				"aipComponentCode":rowData.componentCode,
+			},
+			success : function(data) {
+				if (data.success) {
+					CommonUtils.notify("success", "操作成功", 1500);
+// 					if (typeof callback == "function")
+// 						new callback();
+// 					$("#" + gridId).trigger("reloadGrid");
+				} else {
+					CommonUtils.notify("error", data.responseMessage, 4000);
+				}
+				layer.closeAll('loading');
+				layer.close(confirmId);
+			}
+		});
+
+ 
+	});
+	
+ 
+}
+
+
+function wSize(){
+	var html = $("html");
+	var content = $(".c-content");
+	content.css({"overflow-y":"auto"});
+	var strs = getWindowSize().toString().split(",");
+	html.css({"overflow-x":"hidden", "overflow-y":"hidden"});
+	content.height(strs[0] - 56);
+	$(".ztree").height(content.height() - 46);
+}
+//===========================================打开子表格开始==================================================	
+//添加事件侦听器打开和关闭的细节
+   $('#AipComponentLogGrid tbody').on('click', 'td.details-control', function () {
+   	var table = $('#AipComponentLogGrid').DataTable();
+       var tr = $(this).closest('tr');
+       var row = table.row( tr );
+       if ( row.child.isShown() ) {
+           //这一行已经打开,关闭它
+           row.child.hide();
+           tr.removeClass('shown');
+       }
+       else {
+           //打开这一行
+           row.child(onFind(row,row.data())).show();
+           tr.addClass('shown');
+           tr.addClass('shown');
+       }
+   });
+	
+function onFind(nTr){
+	var table = $('#AipComponentLogGrid').DataTable();
+	var row = table.row(nTr);
+	var  auth= onAuthType(row.data().authType);
+	var execute = onExecute(row.data().executeType);
+	execute = "同步";
+	 $.ajax({
+ 	  	               type:'post',
+ 	  	               url: '../../logItem/list',
+ 	  	               data:{"batchId":row.data().batchId},
+ 	  			       dataType : "json",
+ 	  			       beforeSend:function(xhr){//信息加载中
+ 	  			    		table.row(nTr).child('<center><span><img src="../../assets/img/loading-2.gif"></span></center>').show();
+ 	  				  	},
+ 	  	               success:function (data){
+ 	  	                var logOut;
+	 	  		        if (data.success) {
+	 	  		        logOut = '<div>'
+	     	            logOut += '<table class="table table-striped table-bordered table-hover dataTable"  width="100%">';
+				     	logOut +='<thead class="success">';
+				     	logOut +='<th class="text-center">result</th>';
+				     	logOut +='<th class="text-center">start time</th>';
+				     	logOut +='<th class="text-center">terminal time</th>';
+				     	logOut +='<th class="text-center">time consuming (ms)</th>';
+				     	logOut +='<th class="text-center">authentication</th>';
+				     	logOut +='<th class="text-center">strategy</th>';
+				     	logOut += '</thead>';
+				     	logOut +='<tbody>';
+	       				$.each(data.responseData.datas, function(i){
+	       					debugger
+	       					var succeed=aipSucceed(this.executeResult,this.id);
+	       					   logOut+='<tr>';
+		                       logOut+='<td class="text-center">'+succeed+'</td>';
+		                       logOut+='<td class="text-center">'+getSmpFormatDateByLong(this.startTime, true)+'</td>';
+		                       logOut+='<td class="text-center">'+getSmpFormatDateByLong(this.endTime,true)+'</td>';
+		//                        logOut+='<td class="text-center">'+ timeStamp( (this.endTime - this.startTime) / 1000) +'</td>';
+														console.log(new Date(this.endTime).getTime());
+														console.log(this.endTime - this.startTime);
+		 					  logOut+='<td class="text-center">'+ (new Date(this.endTime).getTime() - new Date(this.startTime).getTime()) +'</td>';
+		// 					   logOut+='<td class="text-center">'+ ((this.executeTime==undefined||this.executeTime==null)?"":this.executeTime) +'</td>';
+		                       logOut+='<td class="text-center">'+auth+'</td>';
+		                       logOut+='<td class="text-center">'+execute+'</td>';
+		                       logOut+='</tr>';
+	       				})
+					    logOut+='</tbody>';
+					    logOut+='</table>';
+					    logOut+='</div>';
+				    	table.row(nTr).child(logOut,'childTdPadding').show();
+			   } 
+ 	  	   },
+ 	  });
+}
+//================================================打开子表格结束======================================================	
+</script>
+
+<script src='@routes.Assets.versioned("javascripts/js/pages/aipComponentLogs/main.js")'></script>
+
+<script type="text/javascript">
+// document.write(unescape("%3Cscript src='../../js/pages/aipComponentLogs/main.js?v=" + version + "' type='text/javascript'%3E%3C/script%3E"));
+/* laydate({elem:"#dxsbeginTime",event:"focus"});
+laydate({elem:"#dxsendTime",event:"focus"}); */
+laydate.render({elem:"#dxsbeginTime",type: 'datetime',event:"focus"});
+laydate.render({elem:"#dxsendTime",type: 'datetime',event:"focus"});
+</script>
+</body>
+</html>

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>批次详情页面</title>
+    <link rel="shortcut icon" href="favicon.ico"> 
+	<link href="../../css/bootstrap.min14ed.css?v=3.3.6" rel="stylesheet">
+ 	<link href="../../css/animate.min.css" rel="stylesheet">
+    <link href="../../css/style.min862f.css?v=4.1.0" rel="stylesheet">
+    <link href="../../css/font-awesome.min93e3.css?v=4.4.0" rel="stylesheet">
+    <style type="text/css">
+		.log-request{
+			background-color:#fff;
+			margin:0px 0px;
+			padding-top:20px;
+			padding-bottom:20px;
+		}
+		.log-detail{
+			padding-left:20px;
+		}
+		.log-info{
+			padding:0px 0px 0px 0px;
+		}
+		.log-content{
+			overflow-y:hidden;
+		}
+		
+ 		#id-pre-inputParam{
+			white-space: pre-wrap;       
+			white-space: -moz-pre-wrap;  
+			white-space: -pre-wrap;      
+			white-space: -o-pre-wrap;    
+			word-wrap: break-word;       
+		} 
+		
+</style>
+    
+</head>
+
+<body class="gray-bg log-content">
+    <div class="wrapper wrapper-content">
+        <div class="row animated fadeInRight">
+            <div class="col-sm-4">
+                <div class="ibox float-e-margins">
+                    <div class="ibox-title">
+                        <h5>基础信息</h5>
+                    </div>
+                    <div>
+                        <div class="ibox-content no-padding border-left-right">
+                      </div>
+                        <div id="id-request" class="ibox-content profile-content">
+                           </br>
+                           </br>
+                           请求编码：<span id="batchId"></span>
+                           </br>
+                           </br>
+                           服务编码：<span id="componentcode"></span>
+                             </br>
+                             </br>
+                            服务名称：<span id="componentname"></span>
+                              </br>
+                              </br>
+                             响应结果：<span id="returnResult"></span>
+                             <hr>
+                            <div class="row m-t-lg">
+                                <div class="col-sm-4">
+                                   <i class="fa fa-signal"></i>&nbsp; <span class="bar">网络流量</span>
+                                   </br>
+                                    <h5><strong id="flowSize"></strong> </h5>
+                                </div>
+                                <div class="col-sm-4">
+                                    <i class="fa fa-heartbeat"></i>&nbsp; <span class="line">响应状态</span>
+                                    </br>
+                                    <h5><strong id="responsecode"></strong></h5>
+                                </div>
+                                <div class="col-sm-4">
+                                    <i class="fa fa-info"></i>&nbsp; <span class="bar">响应信息</span>
+                                    </br>
+                                    <h5><strong id="responsemessage"></strong></h5>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-8 table-responsive">
+                <div class="ibox float-e-margins">
+                    <div class="ibox-title">
+                        <h5>日志信息</h5>
+                    </div>
+                    <div class="ibox-content log-info">
+
+                        <div >
+                            <div id="id-log-detail" class="feed-activity-list" >
+
+                              <div class="feed-element log-request">
+                                    <div class="pull-left">
+                                        <span class="log-detail">请求参数：</span>
+                                    </div>
+                                    <div class="media-body ">
+                                         <span id="requestParamDiv"></span>
+                                        <br>
+                                    </div>
+                                </div>
+
+                                <div class="feed-element log-request">
+                                   <div class="pull-left">
+                                        <span class="log-detail">执行日志：</span>
+                                    </div>
+                                    <div class="media-body">
+                                        <span id="execLog"></span>
+                                        <br>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+<script src="../../js/jquery.min.js?v=2.1.4"></script>
+<script src="../../js/bootstrap.min.js?v=3.3.6"></script>
+<script src="../../js/content.min.js?v=1.0.0"></script>
+<script src="../../js/plugins/jqgrid/i18n/grid.locale-cnffe4.js?v=20160622"></script>
+<script src="../../js/plugins/jqgrid/jquery.jqGrid.minffe4.js?0820"></script>
+<script src="../../js/plugins/layer/layer.js"></script>
+<script src="../../js/dxs.core.js"></script>
+	
+<script>
+$(function(){
+	initItemDetail();
+})
+	
+function initItemDetail() {
+	layer.load(1, {
+		shade : [ 0.2 ]
+		// 透明度调整
+	});
+	var entityId = CommonUtils.getUrlParam("entityId");
+	
+	$.ajax({
+		url : '../../componentlog/item_detail.do',
+		dataType : 'json',
+		type : 'post',
+		data : {"itemId":entityId},
+		success : function (itemresult) {
+			var inputParam = $("<pre id=\"id-pre-inputParam\"></pre>");
+			inputParam.html(itemresult.responseData.inputParam.substring(1,itemresult.responseData.inputParam.length-1));
+			$("#requestParamDiv").append(inputParam);
+			var executeDetailLog = $("<pre  id=\"id-pre-executeDetailLog\"></pre>");
+			// executeDetailLog.text(itemresult.responseData.executeDetailLog.substring(1,itemresult.responseData.executeDetailLog.length-1));
+            executeDetailLog.html(itemresult.responseData.executeDetailLog + "<hr/>"+ itemresult.responseData.outputParam);
+            $("#execLog").append(executeDetailLog);
+		//	var xmp = $("<span></span>");
+		//	xmp.text(itemresult.responseData.executeDetailLog);
+		//	$("#execLog").append(xmp);
+			$("#returnResult").text(itemresult.responseData.output.substring(1,itemresult.responseData.output.length-1));
+			$("#batchId").html('<span>' + itemresult.responseData.batchId + '</span>');
+			$("#responsemessage").html(itemresult.responseData.executeResult == "失败" ? "<font color=red>失败</font>" : "<font color=green>成功</font>");
+			$("#componentcode").text(itemresult.responseData.componentCode);
+			$("#componentname").text(itemresult.responseData.componentName);
+			$("#responsecode").html(itemresult.responseData.executeResult == "失败" ? "<font color=red>500</font>" : "<font color=green>200</font>");
+			$("#flowSize").text(itemresult.responseData.flowSize);
+			layer.closeAll('loading');
+		}
+		
+	});
+	
+	var log_height = document.body.clientHeight-100;
+	$("#id-log-detail").css({height:log_height});
+	$("#id-request").css({height:log_height});
+}
+</script>
+</body>
+</html>

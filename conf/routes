@@ -1,0 +1,116 @@
+
+# Routes
+# This file defines all application routes (Higher priority routes first)
+# ~~~~
+
+# An example controller showing a sample home page
+#GET     /                           controllers.HomeController.index
+# An example controller showing how to use dependency injection
+GET     /count                      controllers.CountController.count
+# An example controller showing how to write asynchronous code
+GET     /message                    controllers.AsyncController.message
+
+# Map static resources from the /public folder to the /assets URL path
+GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)
+
+GET     /test/:id       controllers.TestController.getValue(id:String)
+GET     /test           controllers.TestController.execBigSim(resourceId:String, strategyId:String)
+
+GET     /getResource    controllers.TestController.getResourceById
+GET     /getList    controllers.TestController.getList
+POST    /postData   controllers.TestController.postData
+
+GET     /foo        controllers.TestController.foo(p: domain.TestData)
+
+
+#GET     /dbTest1       controllers.TestController.dbTest1
+
+
+
+
+GET     /index                                   controllers.IndexController.index
+GET     /                                   controllers.IndexController.login
+
+
+GET     /log                                   controllers.LogController.log
+POST     /log/list                                   controllers.LogController.list
+GET     /log/getById/:id                                 controllers.LogController.getById(id:String)
+GET     /log/getByBatchId/:batchId                                 controllers.LogController.getByBatchId(batchId:String)
+
+
+POST    /log/savaOrUpdate                           controllers.LogController.savaOrUpdate
+GET     /log/delById/:id                                 controllers.LogController.delById(id:String)
+
+
+
+GET     /logItem                                   controllers.LogItemController.log
+POST     /logItem/list                                   controllers.LogItemController.list
+GET     /logItem/getById/:id                                 controllers.LogItemController.getById(id:String)
+POST    /logItem/savaOrUpdate                           controllers.LogItemController.savaOrUpdate
+GET     /logItem/delById/:id                                 controllers.LogItemController.delById(id:String)
+
+
+
+GET     /startegy                                   controllers.StrategyController.form
+GET     /strategyManager                            controllers.StrategyManagerController.strategy
+POST    /strategy/list                                   controllers.StrategyManagerController.list
+GET     /strategy/getById/:id                                 controllers.StrategyManagerController.getById(id:String)
+POST    /strategy/savaOrUpdate                           controllers.StrategyManagerController.savaOrUpdate
+GET     /strategy/delById/:id                                 controllers.StrategyManagerController.delById(id:String)
+POST    /strategy/delByIds                                controllers.StrategyManagerController.delByIds
+POST    /strategy/listAll                                   controllers.StrategyManagerController.listAll
+POST    /strategy/execSimulate                                   controllers.StrategyController.execSimulate
+
+
+
+GET     /resource                    controllers.ResourceController.resource
+GET     /resourceForm                    controllers.ResourceController.form
+POST    /resource/list                                   controllers.ResourceController.list
+GET     /resource/getById/:id                                 controllers.ResourceController.getById(id:String)
+POST    /resource/savaOrUpdate                           controllers.ResourceController.savaOrUpdate
+GET     /resource/delById/:id                                 controllers.ResourceController.delById(id:String)
+POST     /resource/delByIds                                controllers.ResourceController.delByIds
+POST    /resource/listAll                                   controllers.ResourceController.listAll
+
+# BigM auto execuetion
+POST    /auto/exec                                   controllers.AutoLoginController.autoExec
+
+
+
+GET     /menu                                   controllers.MenuController.menu
+GET     /menu/menuTree                                  controllers.MenuController.tree
+POST    /menu/list                                   controllers.MenuController.list
+GET     /menu/getById/:id                                 controllers.MenuController.getById(id:String)
+POST    /menu/savaOrUpdate                           controllers.MenuController.savaOrUpdate
+GET     /menu/delById/:id                                 controllers.MenuController.delById(id:String)
+POST    /menu/delByIds                                controllers.MenuController.delByIds
+POST     /menu/indexMenu                                  controllers.MenuController.indexMenu
+
+
+GET     /user                                  controllers.UserController.user
+POST    /user/list                                   controllers.UserController.list
+GET     /user/getById/:id                                 controllers.UserController.getById(id:String)
+POST    /user/savaOrUpdate                           controllers.UserController.savaOrUpdate
+GET     /user/delById/:id                                 controllers.UserController.delById(id:String)
+POST    /user/delByIds                                controllers.UserController.delByIds
+POST    /user/listAll                                   controllers.UserController.listAll
+
+
+POST     /log/findExecuteLogSum                                   controllers.LogController.findExecuteLogSum
+
+
+POST    /acl/list                                   controllers.AclController.list
+GET     /acl/getById/:id                                 controllers.AclController.getById(id:String)
+POST    /acl/savaOrUpdate                           controllers.AclController.savaOrUpdate
+GET     /acl/delById/:id                                 controllers.AclController.delById(id:String)
+POST    /acl/delByIds                                controllers.AclController.delByIds
+POST    /acl/listAll                                   controllers.AclController.listAll
+POST    /acl/saveRenewPermissions                                   controllers.AclController.saveRenewPermissions
+POST    /acl/getByPrincipalId                                   controllers.AclController.getByPrincipalId
+
+
+POST   /user/login                                   controllers.UserController.getUserByPass
+POST   /user/loginout                                controllers.UserController.logOut
+
+POST    /jwt/getToken                                   controllers.JwtController.getToken
+POST    /jwt/validToken                                   controllers.JwtController.validToken

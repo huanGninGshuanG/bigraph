@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>策略管理维护主界面</title>
+<link href='@routes.Assets.versioned("stylesheets/css/bootstrap.min14ed.css?v=3.3.6")' rel="stylesheet">
+<link href='@routes.Assets.versioned("stylesheets/css/font-awesome.min93e3.css?v=4.4.0")' rel="stylesheet">
+<link href='@routes.Assets.versioned("stylesheets/css/animate.min.css")' rel="stylesheet">
+<link href='@routes.Assets.versioned("stylesheets/css/style.min862f.css?v=4.1.0")' rel="stylesheet">
+<link href='@routes.Assets.versioned("stylesheets/css/plugins/dataTables/dataTables.bootstrap.css")'
+	rel="stylesheet">
+<link
+	href='@routes.Assets.versioned("stylesheets/css/plugins/dataTables/responsive/responsive.bootstrap.css")'
+	rel="stylesheet">
+<link rel="stylesheet" href='@routes.Assets.versioned("stylesheets/css/style.css")' media="screen"
+	type="text/css" />
+<link href='@routes.Assets.versioned("stylesheets/css/plugins/ztree/metroStyle/metroStyle.css")'
+	rel="stylesheet">
+<link href='@routes.Assets.versioned("stylesheets/css/dxs.min.css")' rel="stylesheet">
+<link href='@routes.Assets.versioned("stylesheets/css/ssc_style.css")' rel="stylesheet">
+</head>
+
+<body class="gray-bg">
+	<div class="wrapper wrapper-content animated fadeInRight">
+
+@*		<div class="col-sm-2 clearRightPadding" style="padding-left: 0px">
+			<div class="ibox float-e-margins">
+				<div class="ibox-content c-content">
+					<div class="ztreeContent">
+						<ul id="StrategyCategoryTree" class="ztree"></ul>
+					</div>
+				</div>
+			</div>
+		</div>*@
+
+		<div class="col-sm-12" style="padding-left: 0px; padding-right: 0px;">
+			<div class="ibox float-e-margins">
+				<div class="ibox-content c-content">
+
+					<form name='form1' action='../../Strategy/down' method='post'>
+						<input id="id" name="entityId" type="hidden" class="form-control">
+
+					</form>
+					<!-- 查询条件 -->
+					<div class="row">
+						<div class="col-sm-12">
+							<div class="ibox">
+								<div class="ibox-content clearContentBorder">
+									<div class="row">
+										<div class="col-sm-9">
+											<form id="searchForm" class="form-inline">
+												<input type="hidden" id="aipStrategyCategoryId" name="aipCategory.id"/>
+												<input type="hidden" id="aipStrategyCategoryName"/>
+@*												<div class="form-group">
+													<label>锁定分类:</label> 
+													<select id="isSelectCategory" name="isSelectCategory" class="form-control">
+														<option value="yes" selected>是</option>
+														<option value="no" >否</option>
+													</select>
+												</div>*@
+												<div class="form-group">
+													<label>策略名称:</label> 
+													<input type="text" name="name" class=" form-control input-sm" placeholder="请输入策略名称" />
+												</div>
+											</form>
+										</div>
+										<div class="pull-right ">
+											<button
+												class="btn btn-primary btn-rounded btn-outline btn-sm "
+												onclick="search()">
+												<i class="fa fa-search"></i> 查询
+											</button>
+											<button
+												class="btn btn-primary btn-rounded btn-outline btn-sm ssc_btn_reset"
+												onclick="StrategyReset();">
+												<i class="fa fa-refresh"></i> 重置
+											</button>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="row">
+						<div class="col-sm-12">
+							<div class="pull-left">
+								<button class="btn ssc-btn-add btn-sm" data-toggle="tooltip"
+									data-placement="left"
+									onclick="openAipChannelLayer(false,'',this)" title="添加">
+									<i class="fa fa-plus"></i> 添加
+								</button>
+								<button class="btn ssc-btn-delete btn-sm" data-toggle="tooltip"
+									data-placement="top"
+									onclick="dtOptions.deleteItemFromGPGrid('../../strategy/delByIds','aipDesourceGrid',this)">
+									<i class="fa fa-trash-o"> 删除</i>
+								</button>
+								<button class="btn ssc-btn-reload btn-sm " data-toggle="tooltip"
+									data-placement="left"
+									onclick="dtOptions.reload('aipDesourceGrid')" title="刷新">
+									<i class="glyphicon glyphicon-repeat"></i> 刷新
+								</button>
+							</div>
+						</div>
+					</div>
+					<table id="aipDesourceGrid" data-view="dataTables"
+						data-remote="true" data-pagesize="10" 
+						data-url="../../strategy/list" data-search="#searchForm"
+						class="table table-striped table-bordered table-hover dataTable"
+						width="100%">
+						<thead>
+							<tr>
+								<th width="20" data-sortable="false" data-column="id"
+									data-className="text-center" data-ref="renderer"
+									data-renderer="loadCheckBoxValue"><input type="checkbox"
+									name="all" id="all" onClick="checkAll()"></th>
+
+								<th valign="middle" data-width="15%" data-column="code"
+									data-className="text-center">策略编码</th>
+								<th valign="middle" data-width="15%" data-column="name"
+									data-className="text-center">策略名称</th>
+							<!--	<th valign="middle" data-width="15%" data-column="strategyType"
+									data-className="text-center">策略类型</th>
+							-->
+								<th valign="middle" data-column="description"
+									data-className="text-center">描述</th>
+								<th valign="middle" data-width="5%" data-column="orderNo"
+									data-className="text-center">排序</th>
+								<th valign="middle" data-width="15%" data-column="id"
+									data-className="text-center" data-ref="renderer"
+									data-renderer="operateRender">操作</th>
+							</tr>
+						</thead>
+					</table>
+				</div>
+			</div>
+		</div>
+	</div>
+	<script src='@routes.Assets.versioned("javascripts/js/jquery.min.js?v=2.1.4")' type="text/javascript"></script>
+	<script src='@routes.Assets.versioned("javascripts/js/bootstrap.min.js?v=3.3.6")'></script>
+	<script src='@routes.Assets.versioned("javascripts/js/content.min.js?v=1.0.0")'></script>
+	<script src='@routes.Assets.versioned("javascripts/js/plugins/layer/layer.js")'></script>
+	<script src='@routes.Assets.versioned("javascripts/js/plugins/dataTables/jquery.dataTables.js")'></script>
+	<script src='@routes.Assets.versioned("javascripts/js/plugins/dataTables/dataTables.bootstrap.js")'></script>
+	<script
+		src='@routes.Assets.versioned("javascripts/js/plugins/dataTables/responsive/dataTables.responsive.min.js")'></script>
+	<script
+		src='@routes.Assets.versioned("javascripts/js/plugins/dataTables/responsive/responsive.bootstrap.min.js")'></script>
+	<script src='@routes.Assets.versioned("javascripts/js/dxs.core.js")'></script>
+	<script src='@routes.Assets.versioned("javascripts/js/plugins/ztree/jquery.ztree.core.min.js")'></script>
+	<script src='@routes.Assets.versioned("javascripts/js/plugins/ztree/jquery.ztree.excheck.min.js")'></script>
+	<script src='@routes.Assets.versioned("javascripts/js/plugins/ztree/jquery.ztree.exedit.js")'></script>
+	<script src='@routes.Assets.versioned("javascripts/js/dxs.dataTables.js")'></script>
+	<script src='@routes.Assets.versioned("javascripts/js/grid.js")'></script>
+
+
+	<script src='@routes.Assets.versioned("javascripts/js/pages/aipStrategy/main.js")'></script>
+
+
+	<script type="text/javascript">
+		// document
+		// 		.write(unescape("%3Cscript src='../../js/pages/aipStrategy/main.js?v="
+		// 				+ version + "' type='text/javascript'%3E%3C/script%3E"));
+
+	</script>
+	<script>
+		$(document).ready(
+				function() {
+					//树加载遮罩
+/*					layer.load(1, {
+						shade : [ 0.2 ]
+					});
+					//加载树
+					$.fn.zTree.init($("#StrategyCategoryTree"),
+							settingTreeForStrategyMain);
+
+					$(window).resize(function() {
+						wSize();
+						//解决屏幕尺寸改变后 table header尺寸不符
+						$("#aipDesourceGrid").DataTable().columns.adjust();
+
+					});
+					wSize();
+					parent.layer.closeAll('loading');*/
+					search();
+				});
+
+		function loadCheckBoxValue(data, type, full) {
+			return '<input type="checkbox" name="ids" value="'+data+'" class="selector">';
+		}
+
+		function checkAll() {
+			$(':checkbox[name="ids"]').prop('checked',
+					$('#all').prop('checked'));
+		}
+		function wSize() {
+			var html = $("html");
+			var content = $(".c-content");
+			content.css({
+				"overflow-y" : "auto"
+			});
+			var strs = getWindowSize().toString().split(",");
+			html.css({
+				"overflow-x" : "hidden",
+				"overflow-y" : "hidden"
+			});
+			content.height(strs[0] - 56);
+			$(".ztree").height(content.height() - 46);
+		}
+	</script>
+</body>
+</html>

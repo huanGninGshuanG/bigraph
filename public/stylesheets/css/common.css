@@ -1,0 +1,26 @@
+@charset "utf-8";
+/* CSS Document */
+body{background:#fff; font-size:100%;font-family: "Helvetica Neue", Helvetica, Microsoft Yahei, Hiragino Sans GB, WenQuanYi Micro Hei, sans-serif;line-height:150%; margin:0 auto; padding:0; color:#404040;}
+div{margin:0 auto; padding:0;}
+h1,h2,h3,h4,h5,h6,ul,li,dl,dt,dd,form,img,p{
+margin:0; padding:0; border:none; list-style-type:none;
+}
+a{ margin:0; padding:0; color:#333; text-decoration:none;}
+.clearfix:after {
+	content: ".";
+	display: block;
+	height: 0;
+	clear: both;
+	visibility: hidden;
+}
+*html .clearfix {
+	height: 1%;
+}
+*+html .clearfix {
+	height: 1%;
+}
+
+.f_l{ float:left;}
+.f_r{ float:right;}
+.blank5{ height:5px; line-height:5px; clear:both; visibility:hidden;}
+.block{width:1380px; margin:0 auto; padding:0; clear:both; position:relative; text-align:center;}

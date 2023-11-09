@@ -1,0 +1,33 @@
+body {
+	line-height: 0.6;
+}
+
+dropdown#rMenu {
+	position: absolute;
+	visibility: hidden;
+	top: 0;
+	text-align: left;
+	padding: 0px;
+	z-index: 100;
+}
+
+dropdown {
+	display: inline-block;
+	margin: 0px 0px;
+}
+
+div#rMenu a {
+	padding: 3px 15px 3px 15px;
+	background-color: #cad4e6;
+	vertical-align: middle;
+}
+
+div#rMenu ul li {
+	visibility: hidden;
+	margin: 0px 0;
+	padding: 0 12px;
+	cursor: pointer;
+	list-style: none outside none;
+	background-color: #DFDFDF;
+	border-color: #F5F5F6
+}

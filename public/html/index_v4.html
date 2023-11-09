@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html>
+<!-- Mirrored from www.zi-han.net/theme/hplus/index_v3.html by HTTrack Website Copier/3.x [XR&CO'2014], Wed, 20 Jan 2016 14:18:46 GMT -->
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>首页</title>
+<link rel="shortcut icon" href="favicon.ico">
+<link href="../stylesheets/css/bootstrap.min14ed.css?v=3.3.6" rel="stylesheet">
+<link href="../stylesheets/css/font-awesome.min93e3.css?v=4.4.0" rel="stylesheet">
+<!-- Morris -->
+<link href="../stylesheets/css/plugins/morris/morris-0.4.3.min.css" rel="stylesheet">
+<!-- Gritter -->
+<link href="../javascripts/js/plugins/gritter/jquery.gritter.css" rel="stylesheet">
+<link href="../stylesheets/css/animate.min.css" rel="stylesheet">
+<link href="../stylesheets/css/style.min862f.css?v=4.1.0" rel="stylesheet">
+<link href="../stylesheets/css/tooltip.css" rel="stylesheet">
+
+	<style type="text/css">
+ ::-webkit-scrollbar { 
+     width: 6px; 
+      background-color: #F5F5F5;  
+}	 
+::-webkit-scrollbar-thumb {
+    background-color: #DEDEE0;
+}
+
+</style>
+<style type="text/css">
+	
+	.rows .col-sm-4{list-style:none;height:120px;width: 24%; margin-right:1.3%;
+	margin-bottom:20px;background: goldenrod;float: left;display: block;
+	border-radius: 5px;color: #fff;position: relative;}
+	
+	.rows .col-sm-4:nth-child(1){background: #348fe2;}
+	.rows .col-sm-4:nth-child(2){background: #00acac;}
+	.rows .col-sm-4:nth-child(3){background: #ff5b57;}
+	.rows .col-sm-4:nth-child(4){background: #f59c1a;margin-right:0 ;}
+	.rows .col-sm-4 p{font-family: "微软雅黑";font-size: 12px;margin-top:14px ;}
+	.rows .col-sm-4 span{font-family: "微软雅黑";font-size: 28px;line-height: 20px ;}
+	.rows .col-sm-4 .bot{height: 32px;width: 100%;position: absolute;bottom: 0;left: 0;font-family: "微软雅黑";font-size: 12px;line-height: 32px; text-align: right;padding-right: 12px;cursor: pointer;opacity:0.5;background: #000;}
+	.rows .col-sm-4 .rightPic{position: absolute;top:14%;right: 6%;display: block;width: 50px ;height: 50px;}
+	.rows .col-sm-4 .bot img{display: block;float: right;margin: 8px;}
+	.rows .col-sm-4 .bot:hover{opacity: 0.6;}
+
+	#serverMonitor tbody td{cursor: pointer;font-weight: 100;color: #666;}
+	
+	#serverMonitor tbody tr:hover{background: #f9f9f9;}
+	#serverMonitor button{width: 85px;height: 23px;color: #fff;border: none;border-radius: 3px;margin:-5px -5px -5px 0;font-weight: 100;}
+	#serverMonitor button.c{background: #00acac;}
+	#serverMonitor button.s{background: #348fe2;}
+	#serverMonitor button.k{background: #f59c1a;}
+</style>
+</head>
+<body class="gray-bg">
+	<div class="wrapper wrapper-content">
+		<!-- 这是第一个div开始 -->
+		<div class="rows">
+			<div class="col-sm-4">				
+				<p>今日消息量</p>
+				<span id="todayTotal">0</span>
+				<img class="rightPic" src="/assets/img/ld.png" />
+				<div class="bot"><a onclick="findLogLayer()">更多信息</a>
+				    <img src="/assets/img/right.png" />
+				</div>
+			</div>
+			<div class="col-sm-4">				
+				<p>今日成功量</p>
+				<span id="todaySuccess">0</span>
+				<img class="rightPic" src="/assets/img/yes.png" />
+				<div class="bot"><a onclick="findLogLayer('成功')">更多信息</a>
+				    <img src="/assets/img/right.png" />
+				</div>
+			</div>
+			<div class="col-sm-4">				
+				<p>今日失败量</p>
+				<span id="todayError">0</span>
+				<img class="rightPic" src="/assets/img/no.png" />
+				<div class="bot"><a onclick="findLogLayer('失败')">更多信息</a>
+				    <img src="/assets/img/right.png" />
+				</div>
+			</div>
+			<div class="col-sm-4">				
+				<p>待执行</p>
+				<span id="" >0</span>
+				<img class="rightPic" src="/assets/img/time.png" />
+				<div class="bot"><a onclick="findLogLayer()">更多信息</a>
+				    <img src="/assets/img/right.png" />
+				</div>
+			</div>
+		</div>
+		<!-- 这是第一个div结束 -->
+
+		<div class="row">
+			<div class="col-sm-12">
+				<div class="ibox float-e-margins">
+					<div class="ibox-title">
+						<h5>模拟图展示</h5>
+						<div class="ibox-tools">
+							<a class="collapse-link"> <i class="fa fa-chevron-up"></i></a>
+						</div>
+					</div>
+					<div class="ibox-content" style="padding-top:0px;">
+						<div class="row">
+							<div class="col-sm-12">
+								<div id="graph" style="text-align: center;"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+
+
+
+		<!-- 这是第二个div开始 -->
+		<div class="row hide">
+			<div class="col-sm-12">
+				<div class="ibox float-e-margins">
+				
+					<!-- 最近十天div -->
+					<div class="ibox-title">
+						<h5>最近十天消息统计</h5>
+						<div class="ibox-tools">
+							<a class="collapse-link"> <i class="fa fa-chevron-up"></i></a>
+							<!-- <a class="close-link"> <i class="fa fa-times"></i></a> -->
+						</div>
+					</div>
+					<!-- 报表div -->
+					<div class="ibox-content" style="padding-top:0px;">
+						<div class="row">
+							<div class="col-sm-12">
+								<div class="col-sm-12" ><!--style="width:75%;height:350px;"-->
+<!--  									<div class="ibox float-e-margins" >  -->
+										<div class="ibox-content" style="border-top-width:0;"><!-- style="width:100%;height:350px;" -->
+											<div class="jqGrid_wrapper">
+ 												<!--查询接口 -->
+												<div class="row m-b-lg">
+													<div class="panel blank-panel">
+														<div class="panel-heading">
+															<div class="panel-options">
+
+																<ul class="nav nav-tabs" id="biaotou" style="border-bottom: 0px solid #ddd;">
+																</ul>
+																
+																<div class="panel-body">
+<!-- 																	<div class="tab-content" id="echarts" ></div> -->
+																	<div class="tab-content" id="echartsMain" style="width: 100%px;height:300px;" ></div>
+																</div>
+															</div>
+														</div>
+													</div>
+												</div>
+											</div>
+										</div>
+<!-- 									</div> -->
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- 这是第二个div结束 -->
+		
+		<!--这是第三个div开始  -->
+		<div class="row hide">
+			<div class="">
+				<div class="col-sm-8">
+					<div class="ibox float-e-margins">
+						<div class="ibox-title">
+							<h5>集群服务监控</h5>
+							<div class="ibox-tools">
+								<a class="collapse-link"> <i class="fa fa-chevron-up"></i></a> 
+								<!-- <a class="close-link"> <i class="fa fa-times"></i></a> -->
+							</div>
+						</div>
+						
+						<div class="ibox-content" style="height: 310px; overflow-x:hidden;overflow-y:scroll;">
+							<table id="serverMonitor"  class="table no-margin">
+								<thead>
+									<tr>
+										<th style="width: 34%;">集群编号</th>
+										<th style="width: 52%;">集群名称</th>
+										<th style="width: 14%;">集群运行状态</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+										<td>集群编号</td>
+										<td>集群名称</td>
+										<td><button class="s">生产环境</button></td>
+									</tr>
+									<tr>
+										<td>集群编号</td>
+										<td>集群名称</td>
+										<td><button class="c">测试环境</button></td>
+									</tr>
+									<tr>
+										<td>集群编号</td>
+										<td>集群名称</td>
+										<td><button class="s">生产环境</button></td>
+									</tr>
+									<tr>
+										<td>集群编号</td>
+										<td>集群名称</td>
+										<td><button class="k">开发环境</button></td>
+									</tr>
+									<tr>
+										<td>集群编号</td>
+										<td>集群名称</td>
+										<td><button class="c">测试环境</button></td>
+									</tr>
+									<tr>
+										<td>集群编号</td>
+										<td>集群名称</td>
+										<td><button class="c">测试环境</button></td>
+									</tr>
+									<tr>
+										<td>集群编号</td>
+										<td>集群名称</td>
+										<td><button class="k">开发环境</button></td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+				<div class="col-sm-4">
+					<div class="ibox float-e-margins">
+						<div class="ibox-title">
+							<h5>任务调度统计</h5>
+							<div class="ibox-tools">
+								<a class="collapse-link"> <i class="fa fa-chevron-up"></i></a>
+								<!-- <a class="close-link"> <i class="fa fa-times"></i></a> -->
+							</div>
+						</div>
+						<div  class="ibox-content" style="padding-top: 0px;" id="echartsP">
+						<div class="tab-content" id="echartsPie"style="width: 100%px; height: 290px;"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+		<!--这是第三个div結束 -->
+	<script src="../javascripts/js/jquery.min.js?v=2.1.4"></script>
+	<script src="../javascripts/js/bootstrap.min.js?v=3.3.6"></script>
+	<script src="../javascripts/js/plugins/flot/jquery.flot.js"></script>
+	<script src="../javascripts/js/plugins/flot/jquery.flot.tooltip.min.js"></script>
+	<script src="../javascripts/js/plugins/flot/jquery.flot.spline.js"></script>
+	<script src="../javascripts/js/plugins/flot/jquery.flot.resize.js"></script>
+	<script src="../javascripts/js/plugins/flot/jquery.flot.pie.js"></script>
+	<script src="../javascripts/js/plugins/flot/jquery.flot.symbol.js"></script>
+	<script src="../javascripts/js/plugins/peity/jquery.peity.min.js"></script>
+	<script src="../javascripts/js/demo/peity-demo.min.js"></script>
+	<script src="../javascripts/js/content.min.js?v=1.0.0"></script>
+	<script src="../javascripts/js/plugins/jquery-ui/jquery-ui.min.js"></script>
+	<script src="../javascripts/js/plugins/jvectormap/jquery-jvectormap-1.2.2.min.js"></script>
+	<script src="../javascripts/js/plugins/jvectormap/jquery-jvectormap-world-mill-en.js"></script>
+	<script src="../javascripts/js/plugins/easypiechart/jquery.easypiechart.js"></script>
+	<script src="../javascripts/js/plugins/sparkline/jquery.sparkline.min.js"></script>
+	<script src="../javascripts/js/demo/sparkline-demo.min.js"></script>
+	<script src="../javascripts/js/dxs.core.js"></script>
+    <script type="text/javascript"  src="../javascripts/js/Echarts/echarts.min.js"></script>
+
+<!--	<script src="//d3js.org/d3.v4.min.js"></script>
+	<script src="https://unpkg.com/viz.js@1.8.1/viz.js" type="javascript/worker"></script>
+	<script src="https://unpkg.com/d3-graphviz@2.6.1/build/d3-graphviz.js"></script>-->
+<!--	<script src="//d3js.org/d3.v4.min.js"></script>
+	<script src="https://unpkg.com/viz.js@1.8.0/viz.js"></script>
+	<script src="https://unpkg.com/d3-graphviz@0.1.2/build/d3-graphviz.js"></script>-->
+	<script src="../javascripts/js/d3.v4.min.js"></script>
+	<script src="../javascripts/js/viz.js"></script>
+	<script src="../javascripts/js/d3-graphviz.js"></script>
+	<!--tips-->
+	<script src="../javascripts/js/tooltip.js"></script>
+
+	<script>
+
+		var dotSrc = `
+				digraph reaction_graph {
+				   rankdir=LR;
+				   Node [shape = circle];
+				   BigSim_Report [shape = component color = forestgreen style=filled label="BigSim
+				Report"];
+				BigSim_Report -> N_A[color = aliceblue label = ""];
+				 N_A
+				 [shape=circle, color=lightblue2, style=filled tooltip="(a:ConsortiumBlockchains[idle].(b:Node[a:edge,idle].f:Consensus[idle].nil|c:Node[a:edge,idle].g:Consensus[idle].nil|d:Node[a:edge,idle].h:Consensus[idle].nil|e:Node[a:edge,idle].i:Consensus[idle].nil)|j:Attacker[idle].nil)"];
+				N_B[ label="N_B" tooltip="(a:ConsortiumBlockchains[b:edge].(b:Node[a:edge,b:edge].f:Consensus[idle].nil|c:Node[a:edge,idle].g:Consensus[idle].nil|d:Node[a:edge,idle].h:Consensus[idle].nil|e:Node[a:edge,idle].i:Consensus[idle].nil)|j:Attacker[b:edge].nil)"];
+				 N_B -> N_C[ color = coral1 label = "r_cbc04"];
+				N_D[ label="N_D" tooltip="(a:ConsortiumBlockchains[b:edge].(b:Node[idle,b:edge].f:Consensus[b:edge].nil|c:Node[idle,b:edge].g:Consensus[b:edge].nil|d:Node[idle,b:edge].h:Consensus[b:edge].nil|e:Node[idle,idle].i:Consensus[idle].nil)|j:Attacker[b:edge].nil)"];
+				N_E[ label="N_E" tooltip="(a:ConsortiumBlockchains[b:edge].(b:Node[a:edge,b:edge].f:Consensus[idle].nil|c:Node[a:edge,b:edge].g:Consensus[idle].nil|d:Node[a:edge,idle].h:Consensus[idle].nil|e:Node[a:edge,idle].i:Consensus[idle].nil)|j:Attacker[b:edge].nil)"];
+				 N_E -> N_F[ color = coral1 label = "r_cbc07"];
+				N_G[ label="N_G" tooltip="(a:ConsortiumBlockchains[b:edge].(b:Node[a:edge,b:edge].f:Consensus[idle].nil|c:Node[a:edge,b:edge].g:Consensus[idle].nil|d:Node[a:edge,b:edge].h:Consensus[idle].nil|e:Node[a:edge,b:edge].i:Consensus[idle].nil)|j:Attacker[b:edge].nil)"];
+				 N_G -> N_E[ color = coral1 label = "r_cbc06"];
+				 N_G -> N_B[ color = coral1 label = "r_cbc03"];
+				 N_G -> N_H[ color = coral1 label = "r_cbc10"];
+				N_H[ label="N_H" tooltip="(a:ConsortiumBlockchains[b:edge].(b:Node[a:edge,b:edge].f:Consensus[idle].nil|c:Node[a:edge,b:edge].g:Consensus[idle].nil|d:Node[a:edge,b:edge].h:Consensus[idle].nil|e:Node[a:edge,idle].i:Consensus[idle].nil)|j:Attacker[b:edge].nil)"];
+				 N_H -> N_I[ color = coral1 label = "r_cbc11"];
+				N_I[ label="N_I" tooltip="(a:ConsortiumBlockchains[b:edge].(b:Node[a:edge,b:edge].f:Consensus[b:edge].nil|c:Node[a:edge,b:edge].g:Consensus[b:edge].nil|d:Node[a:edge,b:edge].h:Consensus[b:edge].nil|e:Node[a:edge,idle].i:Consensus[idle].nil)|j:Attacker[b:edge].nil)"];
+				 N_I -> N_D[ color = coral1 label = "r_cbc14"];
+				 N_I -> N_F[ color = coral1 label = "r_cbc13"];
+				 N_I -> N_C[ color = coral1 label = "r_cbc12"];
+				N_J[ label="N_J" tooltip="(a:ConsortiumBlockchains[b:edge].(b:Node[idle,b:edge].f:Consensus[b:edge].nil|c:Node[a:edge,idle].g:Consensus[idle].nil|d:Node[a:edge,idle].h:Consensus[idle].nil|e:Node[a:edge,idle].i:Consensus[idle].nil)|j:Attacker[b:edge].nil)"];
+				N_C[ label="N_C" tooltip="(a:ConsortiumBlockchains[b:edge].(b:Node[a:edge,b:edge].f:Consensus[b:edge].nil|c:Node[a:edge,idle].g:Consensus[idle].nil|d:Node[a:edge,idle].h:Consensus[idle].nil|e:Node[a:edge,idle].i:Consensus[idle].nil)|j:Attacker[b:edge].nil)"];
+				 N_C -> N_J[ color = coral1 label = "r_cbc05"];
+				N_K[ label="N_K" tooltip="(a:ConsortiumBlockchains[b:edge].(b:Node[idle,b:edge].f:Consensus[b:edge].nil|c:Node[idle,b:edge].g:Consensus[b:edge].nil|d:Node[a:edge,idle].h:Consensus[idle].nil|e:Node[a:edge,idle].i:Consensus[idle].nil)|j:Attacker[b:edge].nil)"];
+				N_F[ label="N_F" tooltip="(a:ConsortiumBlockchains[b:edge].(b:Node[a:edge,b:edge].f:Consensus[b:edge].nil|c:Node[a:edge,b:edge].g:Consensus[b:edge].nil|d:Node[a:edge,idle].h:Consensus[idle].nil|e:Node[a:edge,idle].i:Consensus[idle].nil)|j:Attacker[b:edge].nil)"];
+				 N_F -> N_K[ color = coral1 label = "r_cbc09"];
+				 N_F -> N_C[ color = coral1 label = "r_cbc08"];
+				N_A[ label="N_A"];
+				 N_A -> N_L[ color = coral1 label = "r_cbc01"];
+				N_L[ label="N_L" tooltip="(a:ConsortiumBlockchains[b:edge].(b:Node[a:edge,idle].f:Consensus[idle].nil|c:Node[a:edge,idle].g:Consensus[idle].nil|d:Node[a:edge,idle].h:Consensus[idle].nil|e:Node[a:edge,idle].i:Consensus[idle].nil)|j:Attacker[b:edge].nil)"];
+				 N_L -> N_G[ color = coral1 label = "r_cbc02"];
+				}
+				`;
+
+		var graphviz = d3.select("#graph").graphviz();
+		function render(dotSrc) {
+			console.log('DOT source =', dotSrc);
+			var dotSrcLines = dotSrc.split('\n');
+
+			transition1 = d3.transition()
+					.delay(100)
+					.duration(1000);
+			graphviz
+					.transition(transition1)
+					.renderDot(dotSrc);
+
+			nodes = d3.selectAll('.node,.edge');
+			nodes.each(function(){
+				var id = d3.select(this).attr('id');
+				// $('#'+id).tooltip('autoTip', {
+				// 	displayTime: 4000,
+				// 	fadeOutDuration: 5000,
+				// 	onShowCallback: function() {
+				// 		console.log(1111)
+				// 		this.text = 1111;
+				// 	}
+				// });
+				// $('#'+id).tooltip({text: 'a:Room.low:Light'+id,position:"r",arrow:false});
+				// $(this).tooltip({text: '这是一个Tooltip44！'+id});
+			});
+
+			console.log(nodes);
+
+			// nodes
+			// 		.on("click", function () {
+			// 			var title = d3.select(this).selectAll('title').text().trim();
+			// 			var text = d3.select(this).selectAll('text').text();
+			// 			var id = d3.select(this).attr('id');
+			// 			var class1 = d3.select(this).attr('class');
+			//
+			// 			dotElement = title.replace('->',' -> ');
+			// 			console.log('Element id="%s" class="%s" title="%s" text="%s" dotElement="%s"', id, class1, title, text, dotElement);
+			// 			console.log('Finding and deleting references to %s "%s" from the DOT source', class1, dotElement);
+						// for (i = 0; i < dotSrcLines.length;) {
+						// 	if (dotSrcLines[i].indexOf(dotElement) >= 0) {
+						// 		console.log('Deleting line %d: %s', i, dotSrcLines[i]);
+						// 		dotSrcLines.splice(i, 1);
+						// 	} else {
+						// 		i++;
+						// 	}
+						// }
+						// dotSrc = dotSrcLines.join('\n');
+						// render(dotSrc);
+					// });
+		}
+
+		render(dotSrc);
+
+
+	</script>
+
+
+	<script>
+		$(document).ready(function() {
+		//今日消息初始化
+		$.ajax({
+			type : "POST",
+			dataType : "json",
+			url : '/log/findExecuteLogSum',
+			data : {
+				'createDate':GetDateStr(0),
+				},
+			success : function(data) {
+				debugger
+				// $('#todayTotal').html(data.responseData.log);
+				// $('#todaySuccess').html(data.responseData.logSuccess);
+				// $('#todayError').html(data.responseData.logFail);
+				$('#todayTotal').html(data.responseData.value1);
+				$('#todaySuccess').html(data.responseData.value2);
+				$('#todayError').html(data.responseData.value3);
+				$('#percentError').html(data.responseData.logPercentError);
+				$('#percentSuccess').html(data.responseData.logPercentSuccess);
+			}
+		});	
+        /*//服务器监控初始化
+			// 声明两个变量，存放所获取的值
+			var logDate = new Array();
+			var logNum0 = new Array();
+			var logNum1 = new Array();
+			var logNum2 = new Array();
+			// 遮罩
+			top.layer.load(1, {
+				shade : [ 0.2 ]
+			});
+			// ajax请求数据
+			$.ajax({
+				url : 'log/findEChartsNumberCodeslog.do',
+				type : "POST",
+				dataType : "json",
+				async : false, // 同步执行才能读取数据 不写默认true 为异步加载
+				success : function(data) {
+
+					var logdata = data.responseData;
+					for ( var i = 0; i < logdata.length; i++) {
+						logDate.push(logdata[i].date);
+						logNum0.push(logdata[i].all);
+						logNum1.push(logdata[i].success);
+						logNum2.push(logdata[i].fail);
+					}
+					var myChart = echarts.init(document.getElementById('echartsMain'));
+					option = {
+							//控制图标的上下左右
+							grid:{			
+								x:33,
+							    y:50,
+							    x2:10,
+							    y2:25,
+								//containLabel: true
+							},
+						// 报表统计标题
+						title : {
+							text : '',
+							subtext : '',
+							// 标题位置 left默认 center 中间 rigth 右
+							x : 'left'
+						},
+						// 提示信息。。。trigger-axis代表轴线提示信息
+						tooltip : {
+							trigger : '',
+							axisPointer : { // 坐标轴指示器，坐标轴触发有效
+								type : 'shadow' // 默认为直线，可选为：'line' | 'shadow'
+							}
+						},
+						// 说明当前报表根据数据进行统计
+						legend : {
+							data : [ '所有日志', '执行成功', '执行失败' ]
+						// 此属性默认为中间
+						// x:'left'
+						},
+						// 工具箱显示下载.刷新.则线图.柱状图.数据视图
+						toolbox : {
+							// 是否显示工具箱 true为显示 false为不显示!!!
+							show : false,
+							// 显示工具箱的容貌功能
+							feature : {
+								// 说是表记 但是还没看出效果
+								mark : {
+									show : true
+								},
+								// 数据视图
+								dataView : {
+									show : true,
+									readOnly : false
+								},
+								// 点击显示折线图
+								magicType : {
+									show : true,
+									type : [ 'bar', 'line', 'stack', 'tiled' ]
+								},
+								// 刷新当前状态
+								restore : {
+									show : true
+								},
+								// 下载当前报表图片
+								saveAsImage : {
+									show : true
+								}
+							}
+						},
+						// 从计算数据
+						calculable : true,
+						// 定义的轴线有几个
+						xAxis : [ {
+							type : 'category',
+							// boundaryGap 边界范围的意思
+							// 等于true或者不写的时候所实现的效果是在表格的中间，当写上的时候会在单元格分隔线上
+							boundaryGap : true,
+							// 自定义
+							// axisLabel : {
+							// interval : 0
+							// },
+							data : logDate
+						} ],
+						yAxis : [ {
+							type : 'value',
+							axisLabel : {
+								formatter : '{value}'
+							}
+						} ],
+						// 鼠标上移蒸发量触发显示数据
+						series : [ {
+							name : '所有日志',
+							type : 'bar',
+							itemStyle : {
+								normal : {
+									color : '#348fe2'
+								}
+								
+							},
+							data : logNum0
+						}, {
+							name : '执行成功',
+							type : 'bar',
+							  itemStyle : {
+									normal : {
+										color : '#00acac'
+									}
+								},
+							data : logNum1
+
+						}, {
+							name : '执行失败',
+							type : 'bar',
+							  itemStyle : {
+									normal : {color : '#ff5c57'}
+								},
+							data : logNum2
+						} ]
+					};
+					// 指定的配置项和数据显示图表使用setOption方法放进初始化的echarts，也就是事先准备好的div容器里。
+					myChart.setOption(option);
+					top.layer.closeAll('loading');
+				},
+			});*/
+			var logFail = new Array();
+			var logSuccess = new Array();
+			/* $.ajax({
+				type : "POST",
+				dataType : "json",
+				async : false, // 同步执行才能读取数据 不写默认true 为异步加载
+				url : 'findTaskExecuteLog.do',
+				success : function(data) {
+					logSuccess = data.responseData.logSuccess;
+					logFail = data.responseData.logFail;
+					var myChart = echarts.init(document.getElementById('echartsPie'));
+					option = {
+						    title : {
+						        text: '日志统计结果',
+						        subtext: '',
+						        x:'center'
+						    },
+						    tooltip : {
+						        trigger: 'item',
+						        formatter: "{a} <br/>{b} : {c} ({d}%)"
+						    },
+						    legend: {
+						        orient : 'vertical',
+						        x : 'left',
+						        data:['成功日志','失败日志']
+						    },
+						    calculable : true,
+						    series : [
+						        {
+						            name:'调度统计',
+						            type:'pie',
+						            radius : '66%',
+						            center: ['55%', '60%'],
+						            data:[
+						                {value:logSuccess, name:'成功日志',itemStyle:{normal:{color:'#00acac'}}},
+						                {value:logFail, name:'失败日志',itemStyle:{normal:{color:'#ff5c57'}}}
+						            ]
+						        }
+						    ]
+						};
+					// 指定的配置项和数据显示图表使用setOption方法放进初始化的echarts，也就是事先准备好的div容器里。
+					myChart.setOption(option);
+					top.layer.closeAll('loading');
+				},
+			}); */
+	});
+	</script>
+</body>
+<!-- Mirrored from www.zi-han.net/theme/hplus/index_v3.html by HTTrack Website Copier/3.x [XR&CO'2014], Wed, 20 Jan 2016 14:18:49 GMT -->
+<script type="text/javascript">
+function GetDateStr(AddDayCount) {
+	var dd = new Date();
+	dd.setDate(dd.getDate()+AddDayCount);//获取AddDayCount天后的日期
+	var y = dd.getFullYear();
+	var m = dd.getMonth()+1;//获取当前月份的日期
+	var d = dd.getDate();
+    if (m >= 1 && m <= 9) {
+        m = "0" + m;
+    }
+    if (d >= 0 && d <= 9) {
+        d = "0" + d;
+    }
+	return y+"-"+m+"-"+d;
+	}; 
+	function findLogLayer(status){
+		var a = top.$('.J_menuItem:contains("运行日志")').first();
+		if (status == "成功")
+			a.attr('data-extra', "status=1");
+		if (status == "失败")
+			a.attr('data-extra', "status=2");
+		a.click();
+		a.attr("data-extra", "");
+	}
+</script>
+</html>

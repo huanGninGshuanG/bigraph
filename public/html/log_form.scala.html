@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>批次详情页面</title>
+    <link rel="shortcut icon" href="favicon.ico"> 
+	<link href="../stylesheets/css/bootstrap.min14ed.css?v=3.3.6" rel="stylesheet">
+ 	<link href="../stylesheets/css/animate.min.css" rel="stylesheet">
+    <link href="../stylesheets/css/style.min862f.css?v=4.1.0" rel="stylesheet">
+    <link href="../stylesheets/css/font-awesome.min93e3.css?v=4.4.0" rel="stylesheet">
+    <style type="text/css">
+		.log-request{
+			background-color:#fff;
+			margin:0px 0px;
+			padding-top:20px;
+			padding-bottom:20px;
+		}
+		.log-detail{
+			padding-left:20px;
+		}
+		.log-info{
+			padding:0px 0px 0px 0px;
+		}
+		.log-content{
+			overflow-y:hidden;
+		}
+		
+ 		#id-pre-inputParam{
+			white-space: pre-wrap;       
+			white-space: -moz-pre-wrap;  
+			white-space: -pre-wrap;      
+			white-space: -o-pre-wrap;    
+			word-wrap: break-word;       
+		} 
+		
+</style>
+    
+</head>
+
+<body class="gray-bg log-content">
+    <div class="wrapper wrapper-content">
+        <div class="row animated fadeInRight">
+            <div class="col-sm-4">
+                <div class="ibox float-e-margins">
+                    <div class="ibox-title">
+                        <h5>基础信息</h5>
+                    </div>
+                    <div>
+                        <div class="ibox-content no-padding border-left-right">
+                      </div>
+                        <div id="id-request" class="ibox-content profile-content">
+                           </br>
+                           </br>
+                           请求编码：<span id="batchId"></span>
+                           </br>
+                           </br>
+                           策略名称：<span id="componentcode"></span>
+                             </br>
+                           </br>
+                               检测公式：<span id="componentformula"></span>
+                           </br>
+                           </br>
+                               检测结果：<span id="componentres"></span>
+                           </br>
+                             </br>
+                            资源名称：<span id="componentname"></span>
+                              </br>
+                              </br>
+       <!--                     响应结果：<span id="returnResult"></span>  -->
+                             <hr>
+                            <div class="row m-t-lg">
+                                <div class="col-sm-4">
+                                   <i class="fa fa-signal"></i>&nbsp; <span class="bar">网络流量</span>
+                                   </br>
+                                    <h5><strong id="flowSize"></strong> </h5>
+                                </div>
+                                <div class="col-sm-4">
+                                    <i class="fa fa-heartbeat"></i>&nbsp; <span class="line">响应状态</span>
+                                    </br>
+                                    <h5><strong id="responsecode"></strong></h5>
+                                </div>
+                                <div class="col-sm-4">
+                                    <i class="fa fa-info"></i>&nbsp; <span class="bar">响应信息</span>
+                                    </br>
+                                    <h5><strong id="responsemessage"></strong></h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-8 table-responsive">
+                <div class="ibox float-e-margins">
+                    <div class="ibox-title">
+                        <h5>日志信息</h5>
+                    </div>
+                    <div class="ibox-content log-info">
+
+                        <div >
+                            <div id="id-log-detail" class="feed-activity-list" >
+
+
+                                <div id="graph" style="text-align: center;"></div>
+
+
+                              <div class="feed-element log-request">
+                                    <div class="pull-left">
+                                        <span class="log-detail">请求参数：</span>
+                                    </div>
+                                    <div class="media-body ">
+                                         <span id="requestParamDiv"></span>
+                                        <br>
+                                    </div>
+                                </div>
+
+                                <div class="feed-element log-request">
+                                   <div class="pull-left">
+                                        <span class="log-detail">执行日志：</span>
+                                    </div>
+                                    <div class="media-body">
+                                        <span id="execLog"></span>
+                                        <br>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+<script src="../javascripts/js/jquery.min.js?v=2.1.4"></script>
+<script src="../javascripts/js/bootstrap.min.js?v=3.3.6"></script>
+<script src="../javascripts/js/content.min.js?v=1.0.0"></script>
+<script src="../javascripts/js/plugins/jqgrid/i18n/grid.locale-cnffe4.js?v=20160622"></script>
+<script src="../javascripts/js/plugins/jqgrid/jquery.jqGrid.minffe4.js?0820"></script>
+<script src="../javascripts/js/plugins/layer/layer.js"></script>
+<script src="../javascripts/js/dxs.core.js"></script>
+<!--<script src="//d3js.org/d3.v4.min.js"></script>
+<script src="https://unpkg.com/viz.js@1.8.1/viz.js" type="javascript/worker"></script>
+<script src="https://unpkg.com/d3-graphviz@2.6.1/build/d3-graphviz.js"></script> -->
+<script src="../javascripts/js/d3.v4.min.js"></script>
+<script src="../javascripts/js/viz.js" type="javascript/worker"></script>
+<script src="../javascripts/js/d3-graphviz.js"></script>
+
+
+
+<script>
+$(function(){
+	initItemDetail();
+})
+
+function initDot(dot) {
+    var dotIndex = 0;
+    var graphviz = d3.select("#graph").graphviz()
+            .transition(function () {
+                return d3.transition("main")
+                        .ease(d3.easeLinear)
+                        .delay(500)
+                        .duration(1500);
+            })
+            .logEvents(true)
+            .on("initEnd", render);
+
+    function render() {
+        // var dotLines = dots[dotIndex];
+        // var dot = dotLines.join('');
+        graphviz
+                .renderDot(dot)
+                .on("end", function () {
+                    // dotIndex = (dotIndex + 1) % dots.length;
+                    render();
+                });
+    }
+
+    // var dots = [
+    //     [
+    //         'digraph reaction_graph {',
+    //         '   rankdir=LR;',
+    //         '   Node [shape = circle];',
+    //         '   BigSim_Report [shape = parallelogram color = aliceblue style=filled label="BigSim',
+    //         'Report"];',
+    //         'BigSim_Report -> N_A[color = aliceblue label = ""];',
+    //         ' N_A',
+    //         ' [shape=circle, color=lightblue2, style=filled];',
+    //         'N_B[ label="N_B"];',
+    //         ' N_B -> N_C[ color = coral1 label = "r_cbc04"];',
+    //         'N_D[ label="N_D"];',
+    //         'N_E[ label="N_E"];',
+    //         ' N_E -> N_F[ color = coral1 label = "r_cbc07"];',
+    //         'N_G[ label="N_G"];',
+    //         ' N_G -> N_B[ color = coral1 label = "r_cbc03"];',
+    //         ' N_G -> N_E[ color = coral1 label = "r_cbc06"];',
+    //         ' N_G -> N_H[ color = coral1 label = "r_cbc10"];',
+    //         'N_H[ label="N_H"];',
+    //         ' N_H -> N_I[ color = coral1 label = "r_cbc11"];',
+    //         'N_I[ label="N_I"];',
+    //         ' N_I -> N_C[ color = coral1 label = "r_cbc12"];',
+    //         ' N_I -> N_F[ color = coral1 label = "r_cbc13"];',
+    //         ' N_I -> N_D[ color = coral1 label = "r_cbc14"];',
+    //         'N_J[ label="N_J"];',
+    //         'N_C[ label="N_C"];',
+    //         ' N_C -> N_J[ color = coral1 label = "r_cbc05"];',
+    //         'N_K[ label="N_K"];',
+    //         'N_F[ label="N_F"];',
+    //         ' N_F -> N_K[ color = coral1 label = "r_cbc09"];',
+    //         ' N_F -> N_C[ color = coral1 label = "r_cbc08"];',
+    //         'N_A[ label="N_A"];',
+    //         ' N_A -> N_L[ color = coral1 label = "r_cbc01"];',
+    //         'N_L[ label="N_L"];',
+    //         ' N_L -> N_G[ color = coral1 label = "r_cbc02"];',
+    //         '}'
+    //     ]
+    // ];
+}
+
+function initItemDetail() {
+	layer.load(1, {
+		shade : [ 0.2 ]
+		// 透明度调整
+	});
+	var entityId = CommonUtils.getUrlParam("entityId");
+
+	$.ajax({
+		url : '../../logItem/getById/'+entityId,
+		dataType : 'json',
+		type : 'get',
+		data : {"itemId":entityId},
+		success : function (itemresult) {
+
+            var strategyName = "";
+            var resourceName = "";
+            var detectionResult = "";
+            var formula = "";
+            $.ajax({
+                url : '../../log/getByBatchId/'+itemresult.responseData.batchId,
+                dataType : 'json',
+                type : 'get',
+                data : {"itemId":itemresult.responseData.batchId},
+                async:false,
+                success : function (itemresult) {
+                    strategyName = itemresult.responseData.strategyName;
+                    resourceName = itemresult.responseData.resourceName;
+                    detectionResult = itemresult.responseData.detectionResult;
+                    formula = itemresult.responseData.formula;
+                }
+            });
+
+
+			var inputParam = $("<pre id=\"id-pre-inputParam\"></pre>");
+			// inputParam.text(itemresult.responseData.inputParam.substring(1,itemresult.responseData.inputParam.length-1));
+            inputParam.html(itemresult.responseData.inputParam);
+            $("#requestParamDiv").append(inputParam);
+			var executeDetailLog = $("<pre  id=\"id-pre-executeDetailLog\"></pre>");
+			// executeDetailLog.text(itemresult.responseData.executeDetailLog.substring(1,itemresult.responseData.executeDetailLog.length-1));
+            executeDetailLog.html(itemresult.responseData.executeDetailLog + "<hr/>"+ itemresult.responseData.outputParam);
+			$("#execLog").append(executeDetailLog);
+		//	var xmp = $("<span></span>");
+		//	xmp.text(itemresult.responseData.executeDetailLog);
+		//	$("#execLog").append(xmp);
+		// 	$("#returnResult").text(itemresult.responseData.output.substring(1,itemresult.responseData.output.length-1));
+			$("#batchId").html('<span>' + itemresult.responseData.batchId + '</span>');
+			$("#responsemessage").html(itemresult.responseData.executeResult == "失败" ? "<font color=red>失败</font>" : "<font color=green>成功</font>");
+			$("#componentcode").text(strategyName);
+			$("#componentname").text(resourceName);
+            $("#componentformula").text(formula);
+            $("#componentres").text(detectionResult);
+			$("#responsecode").html(itemresult.responseData.executeResult == "失败" ? "<font color=red>500</font>" : "<font color=green>200</font>");
+			$("#flowSize").text(itemresult.responseData.flowSize);
+            initDot(itemresult.responseData.outputGraph);
+			layer.closeAll('loading');
+		}
+		
+	});
+	
+	var log_height = document.body.clientHeight-100;
+	$("#id-log-detail").css({height:log_height});
+	$("#id-request").css({height:log_height});
+}
+</script>
+</body>
+</html>
