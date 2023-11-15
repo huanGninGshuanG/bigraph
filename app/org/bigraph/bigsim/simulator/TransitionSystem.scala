@@ -290,7 +290,7 @@ class BuildKripkeStructure (trans: TransitionSystem) {
       // println("这里也查看一下==============")
       val b_hash: Int = {if (b.root != null) b.root.toString.hashCode; else "".hashCode;}
       if(!bigToState.contains(b_hash)){
-        println("那就因该是没有保存下来了")
+        println("error situation: " + b)
 //        println(bigToState)
 //        println(b_hash)
 //        println(matchMap.keys)

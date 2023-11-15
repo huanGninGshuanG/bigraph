@@ -5,7 +5,7 @@ import java.util
 import org.bigraph.bigsim.BRS.{Graph, Match, Vertex}
 import org.bigraph.bigsim.Verify
 import org.bigraph.bigsim.model.{Bigraph, BindingChecker, Nil, ReactionRule}
-import org.bigraph.bigsim.modelchecker.CTLModelChecker
+import org.bigraph.bigsim.modelchecker.{CTLModelChecker, CTLModelCheckerENF}
 import org.bigraph.bigsim.parser.{BGMParser, BGMTerm}
 import org.bigraph.bigsim.transitionsystem.State
 import org.bigraph.bigsim.utils.{GlobalCfg, OS, bankV3}
@@ -37,26 +37,29 @@ class CTLSimulator
   var recordMap: Map[State, State] = Map()
 
 
-
-
   def simulate: Unit = {
     if (b == null || b.root == null) {
       println("CTL simulator::simulate(): null");
-      return ;
+      return;
     } else {
       val buildKripke = new BuildKripkeStructure(transition)
       val kripke = buildKripke.buildKripke
       val ctlModelChecker = new CTLModelChecker(kripke)
       this.checkRes = ctlModelChecker.satisfies(ctlParser.getCTLFormula())
-      if(ctlModelChecker.recordPath != null){
-      this.recordPath = ctlModelChecker.recordPath.toList
-      if (recordPath.nonEmpty){
-        var pre: State = this.recordPath(0)
-        this.recordPath.tail.foreach(x => {
-          this.recordMap += (pre -> x)
-          pre = x
-        })
-      }}
+      val enfRes = CTLModelCheckerENF.satisfy(kripke, ctlParser.getCTLFormula())
+      if (enfRes != checkRes) {
+        logger.error("enf实现错误")
+      }
+      if (ctlModelChecker.recordPath != null) {
+        this.recordPath = ctlModelChecker.recordPath.toList
+        if (recordPath.nonEmpty) {
+          var pre: State = this.recordPath(0)
+          this.recordPath.tail.foreach(x => {
+            this.recordMap += (pre -> x)
+            pre = x
+          })
+        }
+      }
       this.v = transition.v
       this.g = transition.g
       this.g.addCTLRes(recordPath, checkRes)
@@ -92,7 +95,7 @@ class CTLSimulator
     r
   }
 
-  def getFormula():String={
+  def getFormula(): String = {
     return ctlParser.getCTLFormula().toString
   }
 }
@@ -129,7 +132,7 @@ object testCTLSimulator {
       |%rule r_test4 a:Client[idle,a:edge].(h:Register[idle] | c:Coin[idle,idle] | $0) | b:Client[idle,a:edge].(d:Coin[idle,idle] | i:Register[idle] | e:Coin[idle,idle]) -> nil{};
       |
       |# prop
-      |%prop test a:Client[idle,a:edge].(c:Coin[idle,idle] | d:Coin[idle,idle] | e:Coin[idle,idle] | h:Register[idle]) | b:Client[idle,a:edge].(f:Coin[idle,idle] | g:Coin[idle,idle] | i:Register[idle]);
+      |%prop test a:Client[idle,a:edge].(c:Coin[idle,idle] | d:Coin[idle,idle] | e:Coin[idle,idle] | h:Register[idle]) | b:Client[idle,a:edge].(f:Coin[idle,idle] | g:Coin[idle,idle] | i:Register[idle]){};
       |
       |# Model
       |%agent a:Client[idle,a:edge].(c:Coin[idle,idle] | d:Coin[idle,idle] | e:Coin[idle,idle] | h:Register[idle]) | b:Client[idle,a:edge].(f:Coin[idle,idle] | g:Coin[idle,idle] | i:Register[idle]);
@@ -286,27 +289,26 @@ object testCTLSimulator {
       |""".stripMargin
 
 
-   //val t = BGMParser.parseFromString(kgqbankattack)
-//  val t = BGMParser.parseFromString(s)
-
-
+  //val t = BGMParser.parseFromString(kgqbankattack)
+  //  val t = BGMParser.parseFromString(s)
 
 
   val test = "# Controls\n%active Greater : 2;\n%active Less : 2;\n%active GreaterOrEqual : 2;\n%active LessOrEqual : 2;\n%active Equal : 2;\n%active NotEqual : 2;\n%active Exist : 1;\n%active InstanceOf : 2;\n%active Plus : 3;\n%active Minus : 3;\n%active Multiply : 3;\n%active Division : 3;\n%active Opposite : 2;\n%active Abs : 2;\n%active User : 2;\n%active File : 2;\n%active Permission : 2;\n%active Root : 0;\n%active Command : 2;\n%active Parameter : 0;\n%binding Bind;\n%active String : 2;\n%active OwnerGroup : 2;\n%active Group : 0;\n\n# Rules\n%rule r_0 file:File[idle,idle] | u1:User[idle,idle] | $0 -> file:File[idle,idle].(rwx:Permission[idle,idle].owner:User[idle,idle] | r:Permission[idle,idle].a:OwnerGroup[idle,idle]) | u1:User[idle,idle].(name1:String[idle,idle] | A:Group) | $0{};\n\n%rule r_1 file:File[idle,idle] | u2:User[idle,idle] | $0 -> file:File[idle,idle].rwx:Permission[idle,idle] | u2:User[idle,idle].(name2:String[idle,idle] | A:Group) | $0{};\n\n\n\n\n# Model\n%agent  file:File[idle,idle] | u1:User[idle,idle] | u2:User[idle,idle] | u3:User[idle,idle] | u4:User[idle,idle];\n\n\n\n\n\n\n\n\n#SortingLogic\n\n\n# Go!\n%check;"
-  val t = BGMParser.parseFromString(OS.rw2Process)
-
+//  val t = BGMParser.parseFromString(OS.rwWithEFP)
+  val t = BGMParser.parseFromString(bigraphExam)
   val b = BGMTerm.toBigraph(t)
+
   def main(args: Array[String]): Unit = {
-    val startTime=System.currentTimeMillis()
+    val startTime = System.currentTimeMillis()
     val simulator = new CTLSimulator(b)
     simulator.simulate
     //simulator.simulatorRes()
     //var dotStr = simulator.dumpPaths()
     //println(simulator.recordPath.size)
 
-    val endTime=System.currentTimeMillis()
+    val endTime = System.currentTimeMillis()
     printf("=========================================================模型检测耗时: ")
-    print((endTime-startTime)/1000f)
+    print((endTime - startTime) / 1000f)
     println("s")
   }
 }

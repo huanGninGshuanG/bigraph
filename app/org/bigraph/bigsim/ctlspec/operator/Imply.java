@@ -1,6 +1,7 @@
 package org.bigraph.bigsim.ctlspec.operator;
 
 import org.bigraph.bigsim.ctlspec.Formula;
+import org.bigraph.bigsim.ctlspec.FormulaVisitor;
 
 import java.util.Objects;
 
@@ -44,5 +45,15 @@ public class Imply implements Formula{
     @Override
     public Formula convertToCTLBase() {
         return new Or(new Not(operand1.convertToCTLBase()),operand2.convertToCTLBase());
+    }
+
+    @Override
+    public Formula convertToENF() {
+        return new Not(new And(operand1.convertToENF(), new Not(operand2.convertToENF())));
+    }
+
+    @Override
+    public void accept(FormulaVisitor visitor) {
+        visitor.visit(this);
     }
 }

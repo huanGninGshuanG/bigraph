@@ -1,5 +1,7 @@
 package org.bigraph.bigsim.ctlspec.operator;
 import org.bigraph.bigsim.ctlspec.Formula;
+import org.bigraph.bigsim.ctlspec.FormulaVisitor;
+
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
@@ -37,4 +39,16 @@ public class Or implements Formula{
         return or(operands.stream().map(Formula::convertToCTLBase).collect(Collectors.toList()).toArray(new Formula[]{}));
     }
 
+    @Override
+    public Formula convertToENF() {
+        return new Not(new And(operands.stream()
+                .map(operand->new Not(operand.convertToENF()))
+                .collect(Collectors.toList())
+                .toArray(new Formula[]{})));
+    }
+
+    @Override
+    public void accept(FormulaVisitor visitor) {
+        visitor.visit(this);
+    }
 }

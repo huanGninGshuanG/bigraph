@@ -1,5 +1,7 @@
 package org.bigraph.bigsim.ctlspec.operator;
 import org.bigraph.bigsim.ctlspec.Formula;
+import org.bigraph.bigsim.ctlspec.FormulaVisitor;
+
 import java.util.Objects;
 
 import static org.bigraph.bigsim.ctlspec.atom.True.True;
@@ -30,5 +32,15 @@ public class EF implements Formula{
     @Override
     public Formula convertToCTLBase(){
         return EU(True(),operand).convertToCTLBase();
+    }
+
+    @Override
+    public Formula convertToENF() {
+        return EU(True(),operand).convertToENF();
+    }
+
+    @Override
+    public void accept(FormulaVisitor visitor) {
+        visitor.visit(this);
     }
 }

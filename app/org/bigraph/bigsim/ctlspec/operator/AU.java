@@ -1,6 +1,10 @@
 package org.bigraph.bigsim.ctlspec.operator;
 import org.bigraph.bigsim.ctlspec.Formula;
+import org.bigraph.bigsim.ctlspec.FormulaVisitor;
+
 import java.util.Objects;
+import static org.bigraph.bigsim.ctlspec.operator.Not.not;
+
 public class AU implements Formula {
     private final Formula operand1;
     private final Formula operand2;
@@ -36,5 +40,16 @@ public class AU implements Formula {
     @Override
     public Formula convertToCTLBase(){
         return AU(operand1.convertToCTLBase(),operand2.convertToCTLBase());
+    }
+
+    @Override
+    public Formula convertToENF() {
+        Formula op1 = operand1.convertToENF(), op2 = operand2.convertToENF();
+        return new And(not(new EU(not(op2), new And(not(op1), not(op2)))), not(new EG(not(op2)))).convertToENF();
+    }
+
+    @Override
+    public void accept(FormulaVisitor visitor) {
+        visitor.visit(this);
     }
 }

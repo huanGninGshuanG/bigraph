@@ -1,6 +1,7 @@
 package org.bigraph.bigsim.ltlspec.operator;
 
 import org.bigraph.bigsim.ctlspec.Formula;
+import org.bigraph.bigsim.ctlspec.FormulaVisitor;
 import org.bigraph.bigsim.ctlspec.operator.Not;
 import org.bigraph.bigsim.ctlspec.operator.Or;
 
@@ -46,5 +47,15 @@ public class LTLOperatorR implements Formula {
     @Override
     public Formula convertToCTLBase() {
         return new Or(new Not(operand1.convertToCTLBase()),operand2.convertToCTLBase());
+    }
+
+    @Override
+    public Formula convertToENF() {
+        throw new UnsupportedOperationException("LTL not supported yet");
+    }
+
+    @Override
+    public void accept(FormulaVisitor visitor) {
+        throw new UnsupportedOperationException("LTL not supported yet");
     }
 }
