@@ -1,5 +1,6 @@
 package org.bigraph.bigsim.ctlspec.operator;
 import org.bigraph.bigsim.ctlspec.Formula;
+import org.bigraph.bigsim.ctlspec.FormulaVisitor;
 
 import java.util.Objects;
 
@@ -33,5 +34,15 @@ public class AF implements Formula {
     @Override
     public Formula convertToCTLBase() {
         return AU(True(), operand).convertToCTLBase();
+    }
+
+    @Override
+    public Formula convertToENF() {
+        return new Not(new EG(new Not(operand.convertToENF()))).convertToENF();
+    }
+
+    @Override
+    public void accept(FormulaVisitor visitor) {
+        visitor.visit(this);
     }
 }

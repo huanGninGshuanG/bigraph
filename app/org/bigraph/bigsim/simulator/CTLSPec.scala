@@ -23,13 +23,14 @@ class CTLSpec(ctlSpec: List[String], ctlProp: Map[String, Tuple2[String, String]
 
   val _formula = getCTLFormula(ctlSpec, ctlProp)
 
-  val debug: Boolean = true
+  var debug: Boolean = true
 
   def getCTLFormula(): Formula = {
     this._formula
   }
 
   def getCTLFormula(ctlSpec: List[String], ctlProp: Map[String, Tuple2[String, String]]): Formula = {
+    debug = true
     var formula: Stack[Formula] = Stack();
     var operand: Stack[String] = Stack();
     var Sbuff: String = ""; // 为了扩展原子命题的名称，采用Sbuff来暂存字符
@@ -197,7 +198,7 @@ class CTLSpec(ctlSpec: List[String], ctlProp: Map[String, Tuple2[String, String]
               if (debug) println("\t\t\t 优先级低于栈顶操作符: " + operand)
               oneOp()
             }
-            operand.push(y.toString) //最后把当前操作符放入到操作符栈中去, 此时，当前操作符优先级 <= 栈顶操作符优先级
+            operand.push(y.toString) //最后把当前操作符放入到操作符栈中去, 此时，当前操作符优先级 >= 栈顶操作符优先级
             if (debug) println("\t\t当前是一个操作符: " + operand)
           }
         }
@@ -212,7 +213,7 @@ class CTLSpec(ctlSpec: List[String], ctlProp: Map[String, Tuple2[String, String]
 object TestCTLFunc {
 
   def main(args: Array[String]): Unit = {
-    val example = "(EX(a))|(E(bU(!(c)))"
+    val example = "A((AX(a))U!c)"
     val ctlexample = List(example)
     val propexample: Map[String, Tuple2[String, String]] = Map(
       "ab" -> ("agent[a]", ""),
@@ -221,6 +222,7 @@ object TestCTLFunc {
     val ctlParser = new CTLSpec(ctlexample, propexample)
     println("InputSpec: ", ctlexample)
     println("InputProp: ", propexample)
-    println("Output:" , ctlParser.getCTLFormula)
+    println("Ori Output:", ctlParser.getCTLFormula())
+    println("Output:" , ctlParser.getCTLFormula().convertToENF())
   }
 }

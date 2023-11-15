@@ -1,5 +1,6 @@
 package org.bigraph.bigsim.ctlspec.operator;
 import org.bigraph.bigsim.ctlspec.Formula;
+import org.bigraph.bigsim.ctlspec.FormulaVisitor;
 
 import java.util.Objects;
 
@@ -44,5 +45,15 @@ public class EU implements Formula{//EU表示存在某条路径的某个状态�
     @Override
     public Formula convertToCTLBase() {
         return EU(operand1.convertToCTLBase(), operand2.convertToCTLBase());
+    }
+
+    @Override
+    public Formula convertToENF() {
+        return EU(operand1.convertToENF(), operand2.convertToENF());
+    }
+
+    @Override
+    public void accept(FormulaVisitor visitor) {
+        visitor.visit(this);
     }
 }

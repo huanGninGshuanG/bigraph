@@ -1,5 +1,7 @@
 package org.bigraph.bigsim.ctlspec.operator;
 import org.bigraph.bigsim.ctlspec.Formula;
+import org.bigraph.bigsim.ctlspec.FormulaVisitor;
+
 import java.util.Objects;
 
 public class Not implements Formula{
@@ -31,5 +33,18 @@ public class Not implements Formula{
     @Override
     public Formula convertToCTLBase(){
         return not(operand.convertToCTLBase());
+    }
+
+    @Override
+    public Formula convertToENF() {
+        Formula op = operand.convertToENF();
+        if(op instanceof Not) {
+            return ((Not) op).getOperand(); // 化简not(not(a))为a
+        } else return not(op);
+    }
+
+    @Override
+    public void accept(FormulaVisitor visitor) {
+        visitor.visit(this);
     }
 }
