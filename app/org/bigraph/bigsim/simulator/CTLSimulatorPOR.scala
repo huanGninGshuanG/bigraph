@@ -4,11 +4,12 @@ import java.util
 
 import org.bigraph.bigsim.BRS.{Graph, Match, Vertex}
 import org.bigraph.bigsim.Verify
+import org.bigraph.bigsim.ctlimpl.CTLCheckResult
 import org.bigraph.bigsim.model.{Bigraph, BindingChecker, Nil, ReactionRule}
 import org.bigraph.bigsim.modelchecker.CTLModelChecker
 import org.bigraph.bigsim.parser.{BGMParser, BGMTerm}
 import org.bigraph.bigsim.transitionsystem.State
-import org.bigraph.bigsim.utils.{GlobalCfg, OS,  bankV3}
+import org.bigraph.bigsim.utils.{GlobalCfg, OS, bankV3}
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.collection.mutable
@@ -51,7 +52,7 @@ class CTLSimulatorPOR
       if(ctlModelChecker.recordPath != null){
         this.recordPath = ctlModelChecker.recordPath.toList
         if (recordPath.nonEmpty){
-          var pre: State = this.recordPath(0)
+          var pre: State = this.recordPath.head
           this.recordPath.tail.foreach(x => {
             this.recordMap += (pre -> x)
             pre = x
@@ -59,7 +60,7 @@ class CTLSimulatorPOR
         }}
       this.v = transition.v
       this.g = transition.g
-      this.g.addCTLRes(recordPath, checkRes)
+      this.g.addCTLRes(recordPath, checkRes, CTLCheckResult.PathType.CounterExample)
 
       //logger.debug("CTL模型检测结果: " + ctlModelChecker.satisfies(ctlParser.getCTLFormula()))
       logger.debug("==========================CTL模型检测结果: " + this.checkRes)

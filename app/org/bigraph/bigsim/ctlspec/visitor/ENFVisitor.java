@@ -35,6 +35,10 @@ public class ENFVisitor implements FormulaVisitor {
         return sat.containsKey(formula) && sat.get(formula).contains(state);
     }
 
+    public HashMap<Formula, Set<State>> getSat() {
+        return sat;
+    }
+
     @Override
     public void visit(True f) {
         sat.put(f, ks.getAllStates());

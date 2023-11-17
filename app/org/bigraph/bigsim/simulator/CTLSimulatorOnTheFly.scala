@@ -4,6 +4,7 @@ import java.util
 
 import org.bigraph.bigsim.BRS.{Graph, Match, Vertex}
 import org.bigraph.bigsim.Verify
+import org.bigraph.bigsim.ctlimpl.CTLCheckResult
 import org.bigraph.bigsim.model.{Bigraph, BindingChecker, Nil, Paraller, Prefix, ReactionRule}
 import org.bigraph.bigsim.modelchecker.{CTLModelChecker, CTLModelCheckerOnTheFly}
 import org.bigraph.bigsim.parser.{BGMParser, BGMTerm}
@@ -54,7 +55,7 @@ class CTLSimulatorOnTheFly(nb: Bigraph) extends Simulator {
       }}
       this.v = transition.v
       this.g = transition.g
-      this.g.addCTLRes(recordPath, checkRes)
+      this.g.addCTLRes(recordPath, checkRes, CTLCheckResult.PathType.CounterExample)
 
       logger.debug("CTL模型检测结果: " + ctlModelChecker.satisfies(ctlParser.getCTLFormula()))
 

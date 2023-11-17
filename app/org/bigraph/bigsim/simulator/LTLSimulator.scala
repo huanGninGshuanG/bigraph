@@ -4,6 +4,7 @@ import java.util
 
 import org.bigraph.bigsim.BRS.{Graph, Match, Vertex}
 import org.bigraph.bigsim.Verify
+import org.bigraph.bigsim.ctlimpl.CTLCheckResult
 import org.bigraph.bigsim.model.{Bigraph, BindingChecker, Nil, ReactionRule}
 import org.bigraph.bigsim.modelchecker.{CTLModelChecker, LTLModelChecker}
 import org.bigraph.bigsim.parser.{BGMParser, BGMTerm}
@@ -24,7 +25,7 @@ class LTLSimulator
 (nb: Bigraph) extends Simulator {
 
   // 这里的b用于测试， 不测试记得把这句注释掉,并且把主构造器里面的 nb 改成b
-//  val b = testLTLSimulator.b
+  //  val b = testLTLSimulator.b
   val b = nb
 
   var v: Vertex = new Vertex(b, null, null); // 每个节点包含一个bigraph、第一个节点是初始agent，Vertex传入的参数分别表示：当前偶图，该偶图的“父节点”，父节点反应到当前的反应规则
@@ -37,30 +38,28 @@ class LTLSimulator
   var recordPath: List[State] = List()
   var recordMap: Map[State, State] = Map()
 
-
-
-
   def simulate: Unit = {
     if (b == null || b.root == null) {
       println("LTL simulator::simulate(): null");
-      return ;
+      return;
     } else {
       val buildKripke = new BuildKripkeStructure(transition)
       val kripke = buildKripke.buildKripke
       val ltlModelChecker = new LTLModelChecker(kripke)
       this.checkRes = ltlModelChecker.satisfies(ltlParser.getLTLFormula())
-      if(ltlModelChecker.recordPath != null){
+      if (ltlModelChecker.recordPath != null) {
         this.recordPath = ltlModelChecker.recordPath.toList
-        if (recordPath.nonEmpty){
+        if (recordPath.nonEmpty) {
           var pre: State = this.recordPath(0)
           this.recordPath.tail.foreach(x => {
             this.recordMap += (pre -> x)
             pre = x
           })
-        }}
+        }
+      }
       this.v = transition.v
       this.g = transition.g
-      this.g.addCTLRes(recordPath, checkRes)
+      this.g.addCTLRes(recordPath, checkRes, CTLCheckResult.PathType.CounterExample)
 
       logger.debug("LTL模型检测结果: " + ltlModelChecker.satisfies(ltlParser.getLTLFormula()))
 
@@ -75,6 +74,7 @@ class LTLSimulator
     val dotStr = this.g.dumpDotFile() //打印到dot文件
     dotStr
   }
+
   def dumpPaths(): String = {
     val paths = this.g.dumpPaths()
     paths
@@ -91,14 +91,14 @@ class LTLSimulator
     r
   }
 
-  def getFormula():String={
+  def getFormula(): String = {
     return ltlParser.getLTLFormula().toString
   }
 }
 
 
 object testLTLSimulator {
-  val example2=
+  val example2 =
     """
       |# Controls
       |%active Greater : 2;
@@ -152,7 +152,7 @@ object testLTLSimulator {
       |""".stripMargin
 
   var example1 =
-  """
+    """
       |# Controls
       |%active Greater : 2;
       |%active Less : 2;
@@ -210,6 +210,7 @@ object testLTLSimulator {
 
   val t = BGMParser.parseFromString(example1)
   val b = BGMTerm.toBigraph(t)
+
   def main(args: Array[String]): Unit = {
     val simulator = new LTLSimulator(b)
     simulator.simulate

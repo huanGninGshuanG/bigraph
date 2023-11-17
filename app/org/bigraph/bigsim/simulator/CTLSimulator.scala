@@ -1,21 +1,13 @@
 package org.bigraph.bigsim.simulator
 
-import java.util
-
-import org.bigraph.bigsim.BRS.{Graph, Match, Vertex}
-import org.bigraph.bigsim.Verify
-import org.bigraph.bigsim.model.{Bigraph, BindingChecker, Nil, ReactionRule}
+import org.bigraph.bigsim.BRS.{Graph, Vertex}
+import org.bigraph.bigsim.model.Bigraph
 import org.bigraph.bigsim.modelchecker.{CTLModelChecker, CTLModelCheckerENF}
 import org.bigraph.bigsim.parser.{BGMParser, BGMTerm}
 import org.bigraph.bigsim.transitionsystem.State
-import org.bigraph.bigsim.utils.{GlobalCfg, OS, bankV3}
-import org.slf4j.{Logger, LoggerFactory}
 
-import scala.collection.mutable
-import scala.collection.mutable.Buffer
-import scala.collection.mutable.{Map, Queue, Set}
+import scala.collection.mutable.Map
 // 需要使用到java中的变量
-import scala.collection.JavaConverters._
 import scala.collection.JavaConversions._
 
 
@@ -44,16 +36,15 @@ class CTLSimulator
     } else {
       val buildKripke = new BuildKripkeStructure(transition)
       val kripke = buildKripke.buildKripke
-      val ctlModelChecker = new CTLModelChecker(kripke)
-      this.checkRes = ctlModelChecker.satisfies(ctlParser.getCTLFormula())
+      //      val ctlModelChecker = new CTLModelChecker(kripke)
+      //      this.checkRes = ctlModelChecker.satisfies(ctlParser.getCTLFormula())
       val enfRes = CTLModelCheckerENF.satisfy(kripke, ctlParser.getCTLFormula())
-      if (enfRes != checkRes) {
-        logger.error("enf实现错误")
-      }
-      if (ctlModelChecker.recordPath != null) {
-        this.recordPath = ctlModelChecker.recordPath.toList
+      checkRes = enfRes.res
+      logger.debug("CTL result: " + enfRes.path + " " + enfRes.`type`)
+      if (enfRes.path != null) {
+        this.recordPath = enfRes.path.toList;
         if (recordPath.nonEmpty) {
-          var pre: State = this.recordPath(0)
+          var pre: State = this.recordPath.head
           this.recordPath.tail.foreach(x => {
             this.recordMap += (pre -> x)
             pre = x
@@ -62,14 +53,13 @@ class CTLSimulator
       }
       this.v = transition.v
       this.g = transition.g
-      this.g.addCTLRes(recordPath, checkRes)
+      this.g.addCTLRes(recordPath, checkRes, enfRes.`type`)
 
       //logger.debug("CTL模型检测结果: " + ctlModelChecker.satisfies(ctlParser.getCTLFormula()))
       logger.debug("==========================CTL模型检测结果: " + this.checkRes)
       logger.debug("==========================生成的状态个数: " + buildKripke.bigraphList.size)
       if (!checkRes) {
-        println(recordPath)
-        println(recordMap)
+        logger.debug("反例路径: " + recordPath)
       }
     }
   }
@@ -138,7 +128,7 @@ object testCTLSimulator {
       |%agent a:Client[idle,a:edge].(c:Coin[idle,idle] | d:Coin[idle,idle] | e:Coin[idle,idle] | h:Register[idle]) | b:Client[idle,a:edge].(f:Coin[idle,idle] | g:Coin[idle,idle] | i:Register[idle]);
       |
       |# CTL_Formula
-      |%ctlSpec AG(test);
+      |%ctlSpec EF(!test);
       |
       |#SortingLogic
       |
@@ -294,7 +284,7 @@ object testCTLSimulator {
 
 
   val test = "# Controls\n%active Greater : 2;\n%active Less : 2;\n%active GreaterOrEqual : 2;\n%active LessOrEqual : 2;\n%active Equal : 2;\n%active NotEqual : 2;\n%active Exist : 1;\n%active InstanceOf : 2;\n%active Plus : 3;\n%active Minus : 3;\n%active Multiply : 3;\n%active Division : 3;\n%active Opposite : 2;\n%active Abs : 2;\n%active User : 2;\n%active File : 2;\n%active Permission : 2;\n%active Root : 0;\n%active Command : 2;\n%active Parameter : 0;\n%binding Bind;\n%active String : 2;\n%active OwnerGroup : 2;\n%active Group : 0;\n\n# Rules\n%rule r_0 file:File[idle,idle] | u1:User[idle,idle] | $0 -> file:File[idle,idle].(rwx:Permission[idle,idle].owner:User[idle,idle] | r:Permission[idle,idle].a:OwnerGroup[idle,idle]) | u1:User[idle,idle].(name1:String[idle,idle] | A:Group) | $0{};\n\n%rule r_1 file:File[idle,idle] | u2:User[idle,idle] | $0 -> file:File[idle,idle].rwx:Permission[idle,idle] | u2:User[idle,idle].(name2:String[idle,idle] | A:Group) | $0{};\n\n\n\n\n# Model\n%agent  file:File[idle,idle] | u1:User[idle,idle] | u2:User[idle,idle] | u3:User[idle,idle] | u4:User[idle,idle];\n\n\n\n\n\n\n\n\n#SortingLogic\n\n\n# Go!\n%check;"
-//  val t = BGMParser.parseFromString(OS.rwWithEFP)
+  //  val t = BGMParser.parseFromString(OS.rwWithEFP)
   val t = BGMParser.parseFromString(bigraphExam)
   val b = BGMTerm.toBigraph(t)
 
