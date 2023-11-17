@@ -4,6 +4,7 @@ import java.util
 
 import org.bigraph.bigsim.BRS.{Graph, Match, Vertex}
 import org.bigraph.bigsim.Verify
+import org.bigraph.bigsim.ctlimpl.CTLCheckResult
 import org.bigraph.bigsim.model.{Bigraph, BindingChecker, Nil, ReactionRule}
 import org.bigraph.bigsim.modelchecker.{CTLModelChecker, LTLModelChecker}
 import org.bigraph.bigsim.parser.{BGMParser, BGMTerm}
@@ -58,7 +59,7 @@ class LTLSimulator
       }
       this.v = transition.v
       this.g = transition.g
-      this.g.addCTLRes(recordPath, checkRes)
+      this.g.addCTLRes(recordPath, checkRes, CTLCheckResult.PathType.CounterExample)
 
       logger.debug("LTL模型检测结果: " + ltlModelChecker.satisfies(ltlParser.getLTLFormula()))
 

@@ -1,21 +1,13 @@
 package org.bigraph.bigsim.simulator
 
-import java.util
-
-import org.bigraph.bigsim.BRS.{Graph, Match, Vertex}
-import org.bigraph.bigsim.Verify
-import org.bigraph.bigsim.model.{Bigraph, BindingChecker, Nil, ReactionRule}
+import org.bigraph.bigsim.BRS.{Graph, Vertex}
+import org.bigraph.bigsim.model.Bigraph
 import org.bigraph.bigsim.modelchecker.{CTLModelChecker, CTLModelCheckerENF}
 import org.bigraph.bigsim.parser.{BGMParser, BGMTerm}
 import org.bigraph.bigsim.transitionsystem.State
-import org.bigraph.bigsim.utils.{GlobalCfg, OS, bankV3}
-import org.slf4j.{Logger, LoggerFactory}
 
-import scala.collection.mutable
-import scala.collection.mutable.Buffer
-import scala.collection.mutable.{Map, Queue, Set}
+import scala.collection.mutable.Map
 // 需要使用到java中的变量
-import scala.collection.JavaConverters._
 import scala.collection.JavaConversions._
 
 
@@ -44,17 +36,15 @@ class CTLSimulator
     } else {
       val buildKripke = new BuildKripkeStructure(transition)
       val kripke = buildKripke.buildKripke
-      val ctlModelChecker = new CTLModelChecker(kripke)
-      this.checkRes = ctlModelChecker.satisfies(ctlParser.getCTLFormula())
+      //      val ctlModelChecker = new CTLModelChecker(kripke)
+      //      this.checkRes = ctlModelChecker.satisfies(ctlParser.getCTLFormula())
       val enfRes = CTLModelCheckerENF.satisfy(kripke, ctlParser.getCTLFormula())
-      if (enfRes.res != this.checkRes) {
-        throw new Exception("enf 实现错误")
-      }
-      logger.debug("test111: " + enfRes.path + " " + enfRes.`type`)
-      if (ctlModelChecker.recordPath != null) {
-        this.recordPath = ctlModelChecker.recordPath.toList
+      checkRes = enfRes.res
+      logger.debug("CTL result: " + enfRes.path + " " + enfRes.`type`)
+      if (enfRes.path != null) {
+        this.recordPath = enfRes.path.toList;
         if (recordPath.nonEmpty) {
-          var pre: State = this.recordPath(0)
+          var pre: State = this.recordPath.head
           this.recordPath.tail.foreach(x => {
             this.recordMap += (pre -> x)
             pre = x
@@ -63,16 +53,13 @@ class CTLSimulator
       }
       this.v = transition.v
       this.g = transition.g
-      this.g.addCTLRes(recordPath, checkRes)
+      this.g.addCTLRes(recordPath, checkRes, enfRes.`type`)
 
       //logger.debug("CTL模型检测结果: " + ctlModelChecker.satisfies(ctlParser.getCTLFormula()))
       logger.debug("==========================CTL模型检测结果: " + this.checkRes)
       logger.debug("==========================生成的状态个数: " + buildKripke.bigraphList.size)
       if (!checkRes) {
         logger.debug("反例路径: " + recordPath)
-        logger.debug("反例映射: " + recordMap)
-        //        println(recordPath)
-        //        println(recordMap)
       }
     }
   }
@@ -141,7 +128,7 @@ object testCTLSimulator {
       |%agent a:Client[idle,a:edge].(c:Coin[idle,idle] | d:Coin[idle,idle] | e:Coin[idle,idle] | h:Register[idle]) | b:Client[idle,a:edge].(f:Coin[idle,idle] | g:Coin[idle,idle] | i:Register[idle]);
       |
       |# CTL_Formula
-      |%ctlSpec AG(test);
+      |%ctlSpec EF(!test);
       |
       |#SortingLogic
       |

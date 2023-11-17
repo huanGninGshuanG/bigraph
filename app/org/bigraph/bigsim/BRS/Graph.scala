@@ -1,32 +1,21 @@
 package org.bigraph.bigsim.BRS
 
-import java.io.File
-import java.io.FileWriter
-import java.io.Writer
+import java.io.{File, FileWriter, Writer}
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.{BlockingQueue, ConcurrentHashMap, CountDownLatch, Executor, Executors, LinkedBlockingQueue, ThreadPoolExecutor, TimeUnit}
+import java.util.concurrent._
 
-import akka.http.scaladsl.model.headers.CacheDirectives.public
-
-import scala.collection.mutable.Map
-import scala.collection.mutable.Set
-import scala.collection.mutable.Stack
-import scala.xml.XML
-import org.bigraph.bigsim.data.DataModel
-import org.bigraph.bigsim.model.ReactionRule
-import org.bigraph.bigsim.strategy.ParseRules
-import org.bigraph.bigsim.strategy.ParseXML
-import org.bigraph.bigsim.utils.GlobalCfg
+import org.bigraph.bigsim.ctlimpl.CTLCheckResult
 import org.bigraph.bigsim.data.Data
-import org.bigraph.bigsim.utils.Graphviz
-import org.bigraph.bigsim.strategy.PatternFlow
-import org.bigraph.bigsim.model.Term
-import javax.xml.bind.annotation.XmlElementDecl.GLOBAL
+import org.bigraph.bigsim.model.ReactionRule
+import org.bigraph.bigsim.strategy.{ParseRules, ParseXML, PatternFlow}
 import org.bigraph.bigsim.transitionsystem.State
+import org.bigraph.bigsim.utils.{GlobalCfg, Graphviz}
 import org.slf4j.{Logger, LoggerFactory}
 import utils.BigSimThreadFactory
 
+import scala.collection.mutable.{Map, Set, Stack}
 import scala.util.Random
+import scala.xml.XML
 
 //object Graph {
 //  var pathNum: Int = 0; //对每次只产生一条模拟路径的模拟器，pathNum即loopNum
@@ -42,12 +31,12 @@ import scala.util.Random
 
 class Graph(init: Vertex) {
 
-  def logger : Logger = LoggerFactory.getLogger(this.getClass)
+  def logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   val root: Vertex = init;
-  var pathColor: String = Graphviz.getColor
+  var pathColor: String = Graphviz.getColor()
   //lut: look up table
-  val lut: Map[Int, Vertex] = Map();                 // lut表的功能就是从一个节点的hash，找到这个节点Vertex
+  val lut: Map[Int, Vertex] = Map(); // lut表的功能就是从一个节点的hash，找到这个节点Vertex
   if (root != null) lut(root.hash) = root;
 
   def add(v: Vertex): Unit = {
@@ -122,6 +111,7 @@ class Graph(init: Vertex) {
     })
     selectedPaths
   }
+
   /*
 	 * 找一个数据结构，存储根据Vertexs中属性terminal为true的找出来每一条路径。
 	 * 中间，根绝策略筛选路径。
@@ -244,13 +234,13 @@ class Graph(init: Vertex) {
     var out: String = ""
     var pathNum: AtomicInteger = new AtomicInteger(-1)
 
-    val BigSimPool = new ThreadPoolExecutor(10,10,
+    val BigSimPool = new ThreadPoolExecutor(10, 10,
       1L, TimeUnit.SECONDS,
       new LinkedBlockingQueue,
       new BigSimThreadFactory("Graph"),
       new ThreadPoolExecutor.AbortPolicy);
 
-    val endGate = new CountDownLatch(math.min(200,paths.size));
+    val endGate = new CountDownLatch(math.min(200, paths.size));
 
 
     try {
@@ -306,7 +296,7 @@ class Graph(init: Vertex) {
               case e: Exception => {
                 e.printStackTrace()
               }
-            }finally {
+            } finally {
               endGate.countDown();
             }
           }
@@ -332,7 +322,7 @@ class Graph(init: Vertex) {
       writer.close()
     }
 
-    if (GlobalCfg.defPathMapFile != "") {   // 这条分支目前没有走
+    if (GlobalCfg.defPathMapFile != "") { // 这条分支目前没有走
       var defPath: String = ""
       defPathMap.map(ite => {
         defPath += ite._1 + "{"
@@ -358,15 +348,16 @@ class Graph(init: Vertex) {
 
   var concurrent = new ConcurrentHashMap[String, String]();
   var charIndex = 0;
+
   def formatHash(hash: Int): String = { //格式化生成的hashCode，若小于零则返回 "_hashcode绝对值"
     var str = "";
     if (hash < 0) str = "" + hash.abs;
     else str = hash.toString;
 
-    if(!concurrent.containsKey(str)){
-//      concurrent.put(str, ((charIndex + 'A').toChar).toString)
+    if (!concurrent.containsKey(str)) {
+      //      concurrent.put(str, ((charIndex + 'A').toChar).toString)
       concurrent.put(str, getStrValue(charIndex))
-      charIndex = charIndex+1
+      charIndex = charIndex + 1
     }
 
     concurrent.get(str)
@@ -462,7 +453,11 @@ class Graph(init: Vertex) {
           ruleNameSet.add(itN.reactionRule.name)
           rrStr += (itN.reactionRule.name + "\n")
         } else if (itN.reactionRules.size > 0) { // add by LBJ 添加并发反应处理
-          itN.reactionRules.foreach { x => { ruleNameSet.add(x.name); rrStr += (x.name + "\n") } }
+          itN.reactionRules.foreach { x => {
+            ruleNameSet.add(x.name);
+            rrStr += (x.name + "\n")
+          }
+          }
         }
 
       })
@@ -475,7 +470,9 @@ class Graph(init: Vertex) {
         pathNum += 1
 
         variableStr = pathNum + "{\n"
-        if (GlobalCfg.checkTime) { ite.foreach { x => variableStr += ("SysClk=" + x.sysClk + "," + x.variables + ";\n") } } //考虑时间则打印时间
+        if (GlobalCfg.checkTime) {
+          ite.foreach { x => variableStr += ("SysClk=" + x.sysClk + "," + x.variables + ";\n") }
+        } //考虑时间则打印时间
         else ite.foreach { x => variableStr += (x.variables + ";\n") }
         variableStr += "}\n"
 
@@ -499,19 +496,19 @@ class Graph(init: Vertex) {
       }
     })
 
-//    if ((GlobalCfg.SimulatorClass.startsWith("Enum")) && (loopNumPath == GlobalCfg.simLoop)) { //枚举输出哪次结果都一样，这里输出最后一次的结果
-//
-//      if (GlobalCfg.pathOutput != "") {
-//        var file: File = new File(GlobalCfg.pathOutput);
-//        var writer: Writer = new FileWriter(file);
-//        writer.write(out);
-//        writer.flush;
-//        writer.close();
-//      }
-//    }
+    //    if ((GlobalCfg.SimulatorClass.startsWith("Enum")) && (loopNumPath == GlobalCfg.simLoop)) { //枚举输出哪次结果都一样，这里输出最后一次的结果
+    //
+    //      if (GlobalCfg.pathOutput != "") {
+    //        var file: File = new File(GlobalCfg.pathOutput);
+    //        var writer: Writer = new FileWriter(file);
+    //        writer.write(out);
+    //        writer.flush;
+    //        writer.close();
+    //      }
+    //    }
 
   }
-  
+
   /**
    * select paths has pattern's define/cuse/puse
    * add by lbj
@@ -527,27 +524,43 @@ class Graph(init: Vertex) {
 
         if (itN.reactionRules.size > 0) {
           logger.debug("itN.reactionRules: " + itN.reactionRules)
-          itN.reactionRules.map { rr =>
-            {
-              if (PatternFlow.patternDefRules.size > 0 && PatternFlow.patternDefRules.contains(rr.name)) { containPattern = true; selectedPaths.+=(ite) }
-              if (PatternFlow.patternPUseRules.size > 0 && PatternFlow.patternPUseRules.contains(rr.name)) { containPattern = true; selectedPaths.+=(ite) }
-              if (PatternFlow.patternCUseRules.size > 0 && PatternFlow.patternCUseRules.contains(rr.name)) { containPattern = true; selectedPaths.+=(ite) }
+          itN.reactionRules.map { rr => {
+            if (PatternFlow.patternDefRules.size > 0 && PatternFlow.patternDefRules.contains(rr.name)) {
+              containPattern = true;
+              selectedPaths.+=(ite)
             }
+            if (PatternFlow.patternPUseRules.size > 0 && PatternFlow.patternPUseRules.contains(rr.name)) {
+              containPattern = true;
+              selectedPaths.+=(ite)
+            }
+            if (PatternFlow.patternCUseRules.size > 0 && PatternFlow.patternCUseRules.contains(rr.name)) {
+              containPattern = true;
+              selectedPaths.+=(ite)
+            }
+          }
           }
         }
 
         if (itN.reactionRule != null) {
           logger.debug("itN.reactionRule: " + itN.reactionRule)
-          if (PatternFlow.patternDefRules.size > 0 && PatternFlow.patternDefRules.contains(itN.reactionRule.name)) { containPattern = true; selectedPaths.+=(ite) }
-          if (PatternFlow.patternPUseRules.size > 0 && PatternFlow.patternPUseRules.contains(itN.reactionRule.name)) { containPattern = true; selectedPaths.+=(ite) }
-          if (PatternFlow.patternCUseRules.size > 0 && PatternFlow.patternCUseRules.contains(itN.reactionRule.name)) { containPattern = true; selectedPaths.+=(ite) }
+          if (PatternFlow.patternDefRules.size > 0 && PatternFlow.patternDefRules.contains(itN.reactionRule.name)) {
+            containPattern = true;
+            selectedPaths.+=(ite)
+          }
+          if (PatternFlow.patternPUseRules.size > 0 && PatternFlow.patternPUseRules.contains(itN.reactionRule.name)) {
+            containPattern = true;
+            selectedPaths.+=(ite)
+          }
+          if (PatternFlow.patternCUseRules.size > 0 && PatternFlow.patternCUseRules.contains(itN.reactionRule.name)) {
+            containPattern = true;
+            selectedPaths.+=(ite)
+          }
         }
       })
       if (containPattern) {
-        ite.map { x =>
-          {
-            x.visited = true
-          }
+        ite.map { x => {
+          x.visited = true
+        }
         }
       }
     })
@@ -618,8 +631,7 @@ class Graph(init: Vertex) {
   }
 
 
-
-  def  dumpDotForward: String = {
+  def dumpDotForward: String = {
     //if (GlobalCfg.graphOutput == "") return "";
     var out: String = "";
     out += "digraph reaction_graph {\n";
@@ -639,7 +651,7 @@ class Graph(init: Vertex) {
       if (x.terminal) {
         dc = "shape = doublecircle, color=lightblue2, style=filled, ";
       }
-      out += "N_" + formatHash(x.hash) + "[ " + dc + "label=\"N_" + formatHash(x.hash) + "\n" + x.variables + "\"];\n";//data太多了不输出了
+      out += "N_" + formatHash(x.hash) + "[ " + dc + "label=\"N_" + formatHash(x.hash) + "\n" + x.variables + "\"];\n"; //data太多了不输出了
       //out += "N_" + formatHash(x.hash) + "[ " + dc + "label=\"N_" + formatHash(x.hash) + "\"];\n"; //输出Bigraph模型的HashCode作为名字
       x.target.map(y => {
         rr = "?";
@@ -667,7 +679,7 @@ class Graph(init: Vertex) {
   }
 
 
-  def  dumpDotForward1: String = {
+  def dumpDotForward1: String = {
 
     //if (GlobalCfg.graphOutput == "") return "";
     var out: String = "";
@@ -676,7 +688,7 @@ class Graph(init: Vertex) {
     out += "   Node [shape = circle];\n";
     out += "   BigSim_Report [shape = parallelogram color = aliceblue style=filled label=\"BigSim\nReport\"];\n"
     out += "BigSim_Report -> N_" + formatHash(root.hash) + "[color = aliceblue label = \"";
-  //  getStateHashCode() + "->" + getStateHashCode()
+    //  getStateHashCode() + "->" + getStateHashCode()
     if (!Data.getWeightExpr.equals("wExpr=")) //读取agent的权重表达式，输出模拟报告 表示权重表达式不为空，即有权重表达式
       out += Data.getWeightExpr + "=" + Data.getReport + "\n";
     out += Data.getValues(",") + "\"];\n";
@@ -688,7 +700,7 @@ class Graph(init: Vertex) {
       if (x.terminal) {
         dc = "shape = doublecircle, color=lightblue2, style=filled, ";
       }
-      out += "N_" + formatHash(x.hash) + "[ " + dc + "label=\"N_" + formatHash(x.hash) + "\n" + x.variables + "\"];\n";//data太多了不输出了
+      out += "N_" + formatHash(x.hash) + "[ " + dc + "label=\"N_" + formatHash(x.hash) + "\n" + x.variables + "\"];\n"; //data太多了不输出了
       //out += "N_" + formatHash(x.hash) + "[ " + dc + "label=\"N_" + formatHash(x.hash) + "\"];\n"; //输出Bigraph模型的HashCode作为名字
       x.target.map(y => {
         rr = "?";
@@ -742,13 +754,13 @@ class Graph(init: Vertex) {
     out += "   BigSim_Report [shape = component color = forestgreen style=filled label=\"BigSim\nReport\"];\n"
 
     out += "BigSim_Report -> N_" + formatHash(root.hash) + "[color = aliceblue label = \"";
-    if (!Data.getWeightExpr.equals("wExpr=")) {//读取agent的权重表达式，输出模拟报告 表示权重表达式不为空，即有权重表达式
+    if (!Data.getWeightExpr.equals("wExpr=")) { //读取agent的权重表达式，输出模拟报告 表示权重表达式不为空，即有权重表达式
       out += Data.getWeightExpr + "=" + Data.getReport + "\n"; //有权重表达式才输出到图上
     }
     out += "\"];\n";
-    out += " N_" + formatHash(root.hash) + "\n" + " [shape=circle, color=lightblue2, style=filled tooltip=\""+root.bigraph.root+"\"];\n"
+    out += " N_" + formatHash(root.hash) + "\n" + " [shape=circle, color=lightblue2, style=filled tooltip=\"" + root.bigraph.root + "\"];\n"
 
-    getConcurrenceRRs  // 这个好像是基于节点的parents集合进行操作的，（目前应该还是可以使用的）   具体的作用我现在还是不太懂， 好像和并发反应规则有关系？？
+    getConcurrenceRRs // 这个好像是基于节点的parents集合进行操作的，（目前应该还是可以使用的）   具体的作用我现在还是不太懂， 好像和并发反应规则有关系？？
 
     // lut : root.hash -> vertex,    checkPattern = true  x is vertex
     println(lut)
@@ -761,9 +773,11 @@ class Graph(init: Vertex) {
       }
 
       if (!x.terminal && GlobalCfg.checkPattern) { //终止节点的pattern flow就显示正常的蓝色
-        if (x.reactionRules.size > 0) {    // 这里考虑的是并发的反应规则
+        if (x.reactionRules.size > 0) { // 这里考虑的是并发的反应规则
           x.reactionRules.map { y =>
-            if (PatternFlow.patternDefRules.contains(y.name)) { dc = "shape = circle, color=green, style=filled, "; }
+            if (PatternFlow.patternDefRules.contains(y.name)) {
+              dc = "shape = circle, color=green, style=filled, ";
+            }
             if (PatternFlow.patternCUseRules.contains(y.name)) {
               dc = "shape = circle, color=orange, style=filled, ";
             } //cuse显示橙色
@@ -773,8 +787,10 @@ class Graph(init: Vertex) {
           }
         }
 
-        if (x.reactionRule != null) {   // 对于正常的反应规则
-          if (PatternFlow.patternDefRules.contains(x.reactionRule.name)) { dc = "shape = circle, color=green, style=filled, ";}
+        if (x.reactionRule != null) { // 对于正常的反应规则
+          if (PatternFlow.patternDefRules.contains(x.reactionRule.name)) {
+            dc = "shape = circle, color=green, style=filled, ";
+          }
           if (PatternFlow.patternCUseRules.contains(x.reactionRule.name)) {
             dc = "shape = circle, color=orange, style=filled, ";
           } //cuse显示橙色
@@ -804,15 +820,15 @@ class Graph(init: Vertex) {
       }
       //logger.debug("[kgq] let see, the reactionRule is what", x.reactionRule)
 
-      if (ctlCheck) {   // 根据ctl检测结果对节点的属性进行设置，如果节点在返回的路径里面，且ctl检测结果为false，那么颜色为红，否则颜色为黄色
+      if (ctlCheck) { // 根据ctl检测结果对节点的属性进行设置，如果节点在返回的路径里面，且ctl检测结果为false，那么颜色为红，否则颜色为黄色
         if (recordPathInt.contains(x.hash)) {
-          if (ctlCheckRes) dc = "shape=doublecircle, color=yellow, style=filled, "
-          else dc = "shape = doublecircle, color=red, style=filled, "
+          if (ctlCheckRes && pathType == CTLCheckResult.PathType.WitnessType) dc = "shape=doublecircle, color=yellow, style=filled, "
+          else if (!ctlCheckRes && pathType == CTLCheckResult.PathType.CounterExample) dc = "shape = doublecircle, color=red, style=filled, "
         }
       }
 
-      if(x.reactionRule == null) out += "N_" + formatHash(x.hash) + "[ " + dc + "label=\"N_" + formatHash(x.hash) + "\"];\n"
-      else out += "N_" + formatHash(x.hash) + "[ " + dc + "label=\"N_" + formatHash(x.hash) + "\" tooltip=\""+ x.bigraph.root + "\"];\n"
+      if (x.reactionRule == null) out += "N_" + formatHash(x.hash) + "[ " + dc + "label=\"N_" + formatHash(x.hash) + "\"];\n"
+      else out += "N_" + formatHash(x.hash) + "[ " + dc + "label=\"N_" + formatHash(x.hash) + "\" tooltip=\"" + x.bigraph.root + "\"];\n"
 
       //Graph.dot += "N_" + formatHash(x.hash) + "[ " + dc + "label=\"N_" + formatHash(x.hash) + "\"];\n";
 
@@ -824,7 +840,7 @@ class Graph(init: Vertex) {
           // y._2 是反应规则，y._1 是 根据这条反应规则生成的vertex 首先根据反应规则的信息，把描述记录到rr中去
           if (y._2 != null) {
             rr = y._2.name;
-            if (GlobalCfg.checkPattern) {   // 搞不懂这些patternflow是用来干什么的
+            if (GlobalCfg.checkPattern) { // 搞不懂这些patternflow是用来干什么的
               if (PatternFlow.patternDefRules.contains(rr)) {
                 var defStr = "(define: " + root.bigraph.pattern + ")";
                 rr = rr + " " + defStr
@@ -968,8 +984,8 @@ class Graph(init: Vertex) {
   }
 
   def getConcurrenceRRs = {
-    lut.values.map(x => {   // 对于查找表中的每一个节点
-      if (x.terminal && x.parents.size > 0 && !x.parents.contains(null)) {  // 如果这个节点是终端节点 并且 其 parents 不为空，且parents 中不包括null
+    lut.values.map(x => { // 对于查找表中的每一个节点
+      if (x.terminal && x.parents.size > 0 && !x.parents.contains(null)) { // 如果这个节点是终端节点 并且 其 parents 不为空，且parents 中不包括null
         addConcurrenceRRs(x)
       }
     });
@@ -977,13 +993,13 @@ class Graph(init: Vertex) {
 
   def addConcurrenceRRs(v: Vertex) {
     if (!v.parents.contains(null) && v.parents.size > 0) {
-      var parentArr: Array[Vertex] = new Array[Vertex](v.parents.size)  // 声明一个array，大小是v.parents的大小，类型为vertex
-      parentArr = v.parents.toArray     // v.parents 本来是一个immutable.Set类型， 里面存放的是 当前这个节点的所有的父亲
+      var parentArr: Array[Vertex] = new Array[Vertex](v.parents.size) // 声明一个array，大小是v.parents的大小，类型为vertex
+      parentArr = v.parents.toArray // v.parents 本来是一个immutable.Set类型， 里面存放的是 当前这个节点的所有的父亲
       for (i <- 0 to parentArr.size - 1) {
         var lineSpendTime: Double = v.sysClk - parentArr(i).sysClk;
         parentArr(i).targets.map(y => {
           y._2.map(r => {
-            if (r.sysClkIncr > lineSpendTime) {       // 这个应该是根据反应规则的时间来判断的 当前这条线的反应时间
+            if (r.sysClkIncr > lineSpendTime) { // 这个应该是根据反应规则的时间来判断的 当前这条线的反应时间
               //logger.debug("pathNum: " + parentArr(i).parent.getTargetsRRs(parentArr(i)).size)
               var newRRs: Set[ReactionRule] = parentArr(i).parent.getTargetsRRs(parentArr(i)).+=(r) // 先把对应的反应规则取出来，然后把当前的反应规则放进去
               //logger.debug("pathNum: " + newRRs.size)
@@ -1002,13 +1018,18 @@ class Graph(init: Vertex) {
   var recordPathInt: List[Int] = List()
   var ctlCheckRes: Boolean = false
   var ctlCheck: Boolean = false
-  def addCTLRes(recordPath: List[State], checkRes: Boolean) = {
+  var pathType: CTLCheckResult.PathType = CTLCheckResult.PathType.NoNeed
+
+  def addCTLRes(recordPath: List[State], checkRes: Boolean, pathType: CTLCheckResult.PathType): Unit = {
+    logger.debug("add CTL res: " + pathType + ", result: " + checkRes)
     this.recordPathInt = recordPath.map(x => x.getName.toInt)
     this.ctlCheckRes = checkRes
     this.ctlCheck = true
+    this.pathType = pathType
   }
 
 }
+
 //object testMG{
 //  def main(args: Array[String]): Unit = {
 //    val BigSimPool = new ThreadPoolExecutor(10,10,
