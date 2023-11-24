@@ -1,23 +1,14 @@
 package org.bigraph.bigsim.simulator
 
-import java.util
-
-import org.bigraph.bigsim.BRS.{Graph, Match, Vertex}
-import org.bigraph.bigsim.Verify
+import org.bigraph.bigsim.BRS.{Graph, Vertex}
 import org.bigraph.bigsim.ctlimpl.CTLCheckResult
-import org.bigraph.bigsim.model.{Bigraph, BindingChecker, Nil, ReactionRule}
-import org.bigraph.bigsim.modelchecker.{CTLModelChecker, LTLModelChecker}
+import org.bigraph.bigsim.model.Bigraph
+import org.bigraph.bigsim.modelchecker.LTLModelChecker
 import org.bigraph.bigsim.parser.{BGMParser, BGMTerm}
 import org.bigraph.bigsim.transitionsystem.State
-import org.bigraph.bigsim.utils.GlobalCfg
-import org.bigraph.bigsim.utils.bankV3
-import org.slf4j.{Logger, LoggerFactory}
 
-import scala.collection.mutable
-import scala.collection.mutable.Buffer
-import scala.collection.mutable.{Map, Queue, Set}
+import scala.collection.mutable.Map
 // 需要使用到java中的变量
-import scala.collection.JavaConverters._
 import scala.collection.JavaConversions._
 
 
@@ -47,6 +38,7 @@ class LTLSimulator
       val kripke = buildKripke.buildKripke
       val ltlModelChecker = new LTLModelChecker(kripke)
       this.checkRes = ltlModelChecker.satisfies(ltlParser.getLTLFormula())
+      logger.debug("LTL check res: " + checkRes)
       if (ltlModelChecker.recordPath != null) {
         this.recordPath = ltlModelChecker.recordPath.toList
         if (recordPath.nonEmpty) {
@@ -196,7 +188,7 @@ object testLTLSimulator {
       |
       |
       |# LTL_Formula
-      |%ltlSpec G!(a)
+      |%ltlSpec G!(a);
       |
       |
       |
@@ -207,8 +199,53 @@ object testLTLSimulator {
       |%check;
       |""".stripMargin
 
+  var example3 =
+    """
+      |# Controls
+      |%active CriticalSection : 1;
+      |%active Process : 1;
+      |
+      |# Names
+      |%outername a;
+      |
+      |# Rules
+      |%rule r_0 a:CriticalSection[a:outername].$0 | b:Process[a:outername] -> a:CriticalSection[a:outername].($0 | b:Process[a:outername]){};
+      |
+      |%rule r_1 a:CriticalSection[a:outername].(b:Process[a:outername] | $0) -> a:CriticalSection[a:outername].$0 | b:Process[idle]{};
+      |
+      |%rule r_2 a:CriticalSection[a:outername].$0 | b:Process[idle] -> a:CriticalSection[a:outername].$0 | b:Process[a:outername]{};
+      |
+      |%rule r_3 a:CriticalSection[a:outername].$0 | c:Process[a:outername] -> a:CriticalSection[a:outername].($0 | c:Process[a:outername]){};
+      |
+      |%rule r_4 a:CriticalSection[a:outername].(c:Process[a:outername] | $0) -> a:CriticalSection[a:outername].$0 | c:Process[idle]{};
+      |
+      |%rule r_5 a:CriticalSection[a:outername].$0 | c:Process[idle] -> a:CriticalSection[a:outername].$0 | c:Process[a:outername]{};
+      |
+      |%rule r_6 a:CriticalSection[idle] | b:Process[idle] -> a:CriticalSection[a:edge] | b:Process[a:edge]{};
+      |
+      |%rule r_7 a:CriticalSection[idle] | c:Process[idle] -> a:CriticalSection[a:edge] | c:Process[a:edge]{};
+      |
+      |# prop
+      |%prop p  a:CriticalSection[a:edge].(b:Process[a:edge] | $0){};
+      |
+      |
+      |# Model
+      |%agent  a:CriticalSection[idle] | b:Process[idle] | c:Process[idle];
+      |
+      |
+      |
+      |# LTL_Formula
+      |%ltlSpec G!(p);
+      |
+      |#SortingLogic
+      |
+      |
+      |# Go!
+      |%check;
+      |""".stripMargin
 
-  val t = BGMParser.parseFromString(example1)
+
+  val t = BGMParser.parseFromString(example3)
   val b = BGMTerm.toBigraph(t)
 
   def main(args: Array[String]): Unit = {

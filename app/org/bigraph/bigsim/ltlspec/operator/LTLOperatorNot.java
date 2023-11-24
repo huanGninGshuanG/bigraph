@@ -2,13 +2,15 @@ package org.bigraph.bigsim.ltlspec.operator;
 
 import visitor.LTLFormula;
 import visitor.LTLFormulaVisitor;
+import visitor.visitor.LTLNegationVisitor;
 
 import java.util.Objects;
 
-public class LTLOperatorX implements LTLFormula {
+public class LTLOperatorNot implements LTLFormula {
+
     private final LTLFormula operand;
 
-    public LTLOperatorX(LTLFormula operand) {
+    public LTLOperatorNot(LTLFormula operand) {
         this.operand = operand;
     }
 
@@ -16,7 +18,7 @@ public class LTLOperatorX implements LTLFormula {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        LTLOperatorX not = (LTLOperatorX) o;
+        LTLOperatorNot not = (LTLOperatorNot) o;
         return Objects.equals(operand, not.operand);
     }
 
@@ -26,12 +28,12 @@ public class LTLOperatorX implements LTLFormula {
     }
 
     public static LTLFormula not(LTLFormula op) {
-        return new LTLOperatorX(op);
+        return new LTLOperatorNot(op);
     }
 
     @Override
     public String toString() {
-        return "X(" + operand + ")";
+        return "NOT(" + operand + ")";
     }
 
     public LTLFormula getOperand() {
@@ -40,7 +42,9 @@ public class LTLOperatorX implements LTLFormula {
 
     @Override
     public LTLFormula convertToPNF() {
-        return new LTLOperatorX(operand.convertToPNF());
+        LTLNegationVisitor visitor = new LTLNegationVisitor();
+        operand.accept(visitor);
+        return visitor.getResult();
     }
 
     @Override

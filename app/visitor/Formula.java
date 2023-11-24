@@ -1,4 +1,4 @@
-package org.bigraph.bigsim.ctlspec;
+package visitor;
 
 public interface Formula {
 //    int low=0;

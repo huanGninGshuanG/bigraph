@@ -1,8 +1,8 @@
-package org.bigraph.bigsim.ctlspec.visitor;
+package visitor.visitor;
 
 import org.bigraph.bigsim.ctlimpl.CTLCheckResult;
-import org.bigraph.bigsim.ctlspec.Formula;
-import org.bigraph.bigsim.ctlspec.FormulaVisitor;
+import visitor.Formula;
+import visitor.FormulaVisitor;
 import org.bigraph.bigsim.ctlspec.atom.Atom;
 import org.bigraph.bigsim.ctlspec.atom.False;
 import org.bigraph.bigsim.ctlspec.atom.True;
@@ -22,7 +22,6 @@ public class PathGenVisitor implements FormulaVisitor {
     private final Map<Formula, Set<State>> sat;
     private CTLCheckResult result = new CTLCheckResult();
     private final KripkeStructure ks;
-    private boolean debug = true;
     private static final Logger logger = LoggerFactory.getLogger(PathGenVisitor.class);
 
     public PathGenVisitor(Map<Formula, Set<State>> sat, KripkeStructure ks, boolean result) {

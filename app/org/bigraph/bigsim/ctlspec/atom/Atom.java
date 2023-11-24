@@ -1,10 +1,12 @@
 package org.bigraph.bigsim.ctlspec.atom;
-import org.bigraph.bigsim.ctlspec.Formula;
-import org.bigraph.bigsim.ctlspec.FormulaVisitor;
+import visitor.Formula;
+import visitor.FormulaVisitor;
+import visitor.LTLFormula;
+import visitor.LTLFormulaVisitor;
 
 import java.util.Objects;
 //定义原子命题的谓词符号，原子命题是不含与或非的简单判断句
-public class Atom implements Formula{
+public class Atom implements Formula, LTLFormula {
     private final String atomicPredicate;
     public Atom(String atomicPredicate){
         this.atomicPredicate = atomicPredicate;
@@ -41,6 +43,16 @@ public class Atom implements Formula{
 
     @Override
     public void accept(FormulaVisitor visitor) {
+        visitor.visit(this);
+    }
+
+    @Override
+    public LTLFormula convertToPNF() {
+        return this;
+    }
+
+    @Override
+    public void accept(LTLFormulaVisitor visitor) {
         visitor.visit(this);
     }
 }
