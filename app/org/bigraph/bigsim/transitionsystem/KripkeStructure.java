@@ -9,6 +9,10 @@ public class KripkeStructure {
     private Map<State, Set<State>> transitions = new HashMap<>();//是一个map，key是当前状态state，value是当前状态的下一个可到达的状态的集合
     private Map<State, Set<State>> revTransitions = new HashMap<>(); // 反向边，方便不动点算法使用
 
+    public Map<State, Set<State>> getTransitions() {
+        return transitions;
+    }
+
     /**
      * 把参数 states状态加入到成员变量states集合中去
      *

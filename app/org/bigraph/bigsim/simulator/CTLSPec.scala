@@ -204,7 +204,9 @@ class CTLSpec(ctlSpec: List[String], ctlProp: Map[String, Tuple2[String, String]
         }
       })
     })
-    while (!operand.isEmpty)
+    if (Sbuff.nonEmpty)
+      formula.push(new Atom(Sbuff))
+    while (operand.nonEmpty)
       oneOp()
     formula.pop()
   }
@@ -213,7 +215,7 @@ class CTLSpec(ctlSpec: List[String], ctlProp: Map[String, Tuple2[String, String]
 object TestCTLFunc {
 
   def main(args: Array[String]): Unit = {
-    val example = "A((AX(a))U!c)"
+    val example = "AGa"
     val ctlexample = List(example)
     val propexample: Map[String, Tuple2[String, String]] = Map(
       "ab" -> ("agent[a]", ""),

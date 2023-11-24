@@ -39,26 +39,25 @@ class LTLShortestSimulator
   var recordMap: Map[State, State] = Map()
 
 
-
-
   def simulate: Unit = {
     if (b == null || b.root == null) {
       println("LTL simulator::simulate(): null");
-      return ;
+      return;
     } else {
       val buildKripke = new BuildKripkeStructure(transition)
       val kripke = buildKripke.buildKripke
       val ltlModelChecker = new LTLModelChecker(kripke)
       this.checkRes = ltlModelChecker.satisfies(ltlParser.getLTLFormula())
-      if(ltlModelChecker.recordPath != null){
+      if (ltlModelChecker.recordPath != null) {
         this.recordPath = ltlModelChecker.recordPath.toList
-        if (recordPath.nonEmpty){
+        if (recordPath.nonEmpty) {
           var pre: State = this.recordPath(0)
           this.recordPath.tail.foreach(x => {
             this.recordMap += (pre -> x)
             pre = x
           })
-        }}
+        }
+      }
       this.v = transition.v
       this.g = transition.g
       this.g.addCTLRes(recordPath, checkRes, CTLCheckResult.PathType.CounterExample)
@@ -76,6 +75,7 @@ class LTLShortestSimulator
     val dotStr = this.g.dumpDotFile() //打印到dot文件
     dotStr
   }
+
   def dumpPaths(): String = {
     val paths = this.g.dumpPaths()
     paths
@@ -86,14 +86,14 @@ class LTLShortestSimulator
     res
   }
 
-  def getFormula():String={
+  def getFormula(): String = {
     return ltlParser.getLTLFormula().toString
   }
 }
 
 
 object testLTLShortestSimulator {
-  val example1=
+  val example1 =
     """
       |# Controls
       |%active Greater : 2;
@@ -147,10 +147,9 @@ object testLTLShortestSimulator {
       |""".stripMargin
 
 
-
-
   val t = BGMParser.parseFromString(example1)
   val b = BGMTerm.toBigraph(t)
+
   def main(args: Array[String]): Unit = {
     val simulator = new LTLSimulator(b)
     simulator.simulate

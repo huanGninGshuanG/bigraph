@@ -14,7 +14,7 @@ import scala.collection.mutable
 
 /**
  * @author tanch
- * version 0.1
+ *         version 0.1
  */
 object TermType {
   val TPREF: Int = 1;
@@ -36,7 +36,8 @@ object TermType {
     }
   }
 }
-class T{
+
+class T {
   def A = {
     var a = Term.uTermIncrement;
     a
@@ -54,7 +55,7 @@ object Term {
 
 class Term {
 
-  def logger : Logger = LoggerFactory.getLogger(this.getClass)
+  def logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   var termType: Int = 0;
   /**
@@ -69,15 +70,16 @@ class Term {
 
   var directParent: Term = null; // add by kgq 20220317  为了方便删除某个Term，要获得某个Term的 直接双亲的信息。
 
-  override def clone:Term={
-    var t=new Term()
-    t.termType=termType
-    t.remaining=remaining
-    t.parent=parent
-    t.id=id
-    t.directParent=directParent
+  override def clone: Term = {
+    var t = new Term()
+    t.termType = termType
+    t.remaining = remaining
+    t.parent = parent
+    t.id = id
+    t.directParent = directParent
     t
   }
+
   override def toString = TermString.preOrderString(this);
 
   def size: Int = 0;
@@ -85,11 +87,11 @@ class Term {
   /**
    *
    * @return
-   *         kongguanqiao：我就是来写个注释
-   *         Term中维护了一个工作队列，当查找下一个的时候，就取队首Term，
-   *         对于Prefix， Paraller， Region结构，分别把它们的子结构放入到工作队列中去。
-   *         next的使用，可以参考Matcher.tryMatchTermReactionRule
-   *         虽然Term是递归定义的，而且工作队列remaining是非静态的，但是在使用这个队列的时候，只会使用到根节点的这个队列，问题不大。
+   * kongguanqiao：我就是来写个注释
+   * Term中维护了一个工作队列，当查找下一个的时候，就取队首Term，
+   * 对于Prefix， Paraller， Region结构，分别把它们的子结构放入到工作队列中去。
+   * next的使用，可以参考Matcher.tryMatchTermReactionRule
+   * 虽然Term是递归定义的，而且工作队列remaining是非静态的，但是在使用这个队列的时候，只会使用到根节点的这个队列，问题不大。
    *
    */
   def next: Term = {
@@ -127,7 +129,7 @@ class Term {
     remaining.enqueue(this);
   }
 
-  def checkIsAnonymous():Boolean={
+  def checkIsAnonymous(): Boolean = {
     return false
   }
 
@@ -155,17 +157,17 @@ class Term {
   //for test
   val remainingTest: Queue[Int] = Queue();
 
-//  override def equals(o: Any): Boolean = {
-//    if (o == null || (getClass != o.getClass)) return false
-//    val other = o.asInstanceOf[Term]
-//    Objects.equals(other.id,id)
-//  }
-//
-//  override def hashCode: Int = id.asInstanceOf[Int]
+  //  override def equals(o: Any): Boolean = {
+  //    if (o == null || (getClass != o.getClass)) return false
+  //    val other = o.asInstanceOf[Term]
+  //    Objects.equals(other.id,id)
+  //  }
+  //
+  //  override def hashCode: Int = id.asInstanceOf[Int]
 }
 
 object Paraller {
-  def logger : Logger = LoggerFactory.getLogger(this.getClass)
+  def logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   def constuctParaller(terms: Set[Term]): Paraller = {
     if (terms == null || terms.size < 2) {
@@ -212,6 +214,7 @@ class Paraller(sid: Long, lt: Term, rt: Term) extends Term {
   /**
    * 这个函数是为了修复bug提供的，在 applymatch的过程中，当前 Paraller结构匹配了redex的根。
    * 函数的作用是，将匹配内容之外的term保留下来，和生成物的实例化结果一起组成最后结果
+   *
    * @param m 匹配结果
    * @param r 生成物 reactum的实例化结果
    * @return
@@ -221,16 +224,16 @@ class Paraller(sid: Long, lt: Term, rt: Term) extends Term {
     if (GlobalCfg.DEBUG) logger.debug("Paraller.applyMatch, add extra content")
     var subterm = this.getChildren
 
-    subterm = subterm.filter(x => {             // 将已经匹配到的 child 过滤掉，只保留其余部分
+    subterm = subterm.filter(x => { // 将已经匹配到的 child 过滤掉，只保留其余部分
       !m.mapping.contains(x)
     })
 
-    if (subterm.isEmpty) {                  // 如果没有其余部分，则直接返回 r
+    if (subterm.isEmpty) { // 如果没有其余部分，则直接返回 r
       return r
     } else {
-      var retTerm = r                       // 如果存在其余部分，则将其余部分 applymatch，并将结果和r并置到一起
+      var retTerm = r // 如果存在其余部分，则将其余部分 applymatch，并将结果和r并置到一起
       subterm.foreach(x => {
-        retTerm = new Paraller(retTerm, x.applyMatch(m))    // 新构造Paraller结构
+        retTerm = new Paraller(retTerm, x.applyMatch(m)) // 新构造Paraller结构
       })
       return retTerm
     }
@@ -241,8 +244,8 @@ class Paraller(sid: Long, lt: Term, rt: Term) extends Term {
     if (GlobalCfg.DEBUG) logger.debug("Paraller.applyMatch, m.root= " + m.root + " m.root.id= " + m.root.id + " curterm is " + this + " cur term id is " + id)
     //递归可能存在错误，需再仔细斟酌 m.root是否可能为空？
     if (id == m.root.id) {
-     //var r: Term = m.rule.reactum;//关键的关键 lry
-      var r: Term = m.rule.reactum.instantiate(m);//是否原地修改?lry delete 2018.3.30  // recovered by kgq 20220228，原为 上一行，现恢复为此条语句；否则会导致applymatch后的偶图存在“匿名节点”（如果reactum中存在“匿名节点”）
+      //var r: Term = m.rule.reactum;//关键的关键 lry
+      var r: Term = m.rule.reactum.instantiate(m); //是否原地修改?lry delete 2018.3.30  // recovered by kgq 20220228，原为 上一行，现恢复为此条语句；否则会导致applymatch后的偶图存在“匿名节点”（如果reactum中存在“匿名节点”）
       //r = r1;
       if (GlobalCfg.DEBUG) logger.debug("\tParaller.applyMatch, 调用 m.rule.reactum.instantiate(m), result is: " + r)
       //logger.debug("instantiate()执行后Term r========"+r);
@@ -282,7 +285,7 @@ class Paraller(sid: Long, lt: Term, rt: Term) extends Term {
   override def instantiate(m: Match) = {
     //if (GlobalCfg.DEBUG) logger.debug("[kgq] Paraller.instantiate")
     if (GlobalCfg.DEBUG) logger.debug("Paraller.instantiate, cur term is: " + this + " leftTerm: " + leftTerm + " rightTerm: " + rightTerm)
-//    logger.debug("Paraller.instantiate: leftterm= " + leftTerm + "rightTerm= " + rightTerm)
+    //    logger.debug("Paraller.instantiate: leftterm= " + leftTerm + "rightTerm= " + rightTerm)
     // 注意过滤Nil
     //logger.debug("this Term="+this+"leftTerm="+leftTerm+"rightTerm"+rightTerm);//lry
     //logger.debug("before before3.1.1="+BiNode.allBiNodes);//lry
@@ -305,21 +308,22 @@ class Paraller(sid: Long, lt: Term, rt: Term) extends Term {
   }
 
   override def getAllNames: List[Name] = {
-     return leftTerm.getAllNames ++ rightTerm.getAllNames
+    return leftTerm.getAllNames ++ rightTerm.getAllNames
   }
 
   /**
    * add by kgq 20220302
+   *
    * @return
    */
   override def clone(): Paraller = {
-    var newlt:Term = leftTerm.clone()
-    var newrt:Term = rightTerm.clone()
+    var newlt: Term = leftTerm.clone()
+    var newrt: Term = rightTerm.clone()
     new Paraller(id, newlt, newrt)
   }
 
-  override def checkIsAnonymous():Boolean={
-    return leftTerm.checkIsAnonymous&&rightTerm.checkIsAnonymous
+  override def checkIsAnonymous(): Boolean = {
+    return leftTerm.checkIsAnonymous && rightTerm.checkIsAnonymous
   }
 }
 
@@ -337,7 +341,7 @@ class Regions(sid: Long, lt: Term, rt: Term) extends Term {
   override def size = leftTerm.size + rightTerm.size;
 
   def getChildren: List[Term] = {
-    var terms: List[Term] = List();     // comment by kgq 20220309 因为Regions有顺序，所以要以列表的形式保留下来
+    var terms: List[Term] = List(); // comment by kgq 20220309 因为Regions有顺序，所以要以列表的形式保留下来
     if (leftTerm.termType == TermType.TREGION) {
       terms ++= leftTerm.asInstanceOf[Regions].getChildren;
     } else {
@@ -355,10 +359,10 @@ class Regions(sid: Long, lt: Term, rt: Term) extends Term {
   }
 
   override def applyMatch(m: Match) = {
-//    println("[kgq] curterm: ", this, " Region.applyMatch")
+    //    println("[kgq] curterm: ", this, " Region.applyMatch")
     //if (GlobalCfg.DEBUG) logger.debug("[kgq] Region.applyMatch")
     if (GlobalCfg.DEBUG) logger.debug("Region.applyMatch, cur Term is: " + this + " leftTerm is: " + leftTerm + " rightTerm is: " + rightTerm)
-    if (id == m.root.id) {      // 如果是递归的起点，那么直接返回的是
+    if (id == m.root.id) { // 如果是递归的起点，那么直接返回的是
       m.rule.reactum.instantiate(m);
     } else {
       var lt: Term = leftTerm.applyMatch(m);
@@ -381,7 +385,7 @@ class Regions(sid: Long, lt: Term, rt: Term) extends Term {
     if (GlobalCfg.DEBUG) logger.debug("\tRegions.instantiate, leftTerm.instantiate(m) is " + lt)
     var rt: Term = rightTerm.instantiate(m);
     if (GlobalCfg.DEBUG) logger.debug("\tRegions.instantiate, rightTerm.instantiate(m) is: " + rt)
-    new Regions(lt, rt);    // kgq 这时候不用考虑 lt 或者 rt 有一个是 TermType.TNIL 吗？
+    new Regions(lt, rt); // kgq 这时候不用考虑 lt 或者 rt 有一个是 TermType.TNIL 吗？
   }
 
   override def getAllNames: List[Name] = {
@@ -397,7 +401,7 @@ class Regions(sid: Long, lt: Term, rt: Term) extends Term {
     new Regions(id, newlt, newrt)
   }
 
-  override def checkIsAnonymous():Boolean={
+  override def checkIsAnonymous(): Boolean = {
     true
   }
 }
@@ -432,7 +436,7 @@ class Prefix(sid: Long, n: Node, suff: Term) extends Term {
   }
 
   override def applyMatch(m: Match) = {
-//    logger.debug("Prefix.applyMatch, m.root=" + m.root + "m.root.id=" + m.root.id)
+    //    logger.debug("Prefix.applyMatch, m.root=" + m.root + "m.root.id=" + m.root.id)
     if (GlobalCfg.DEBUG) logger.debug("Prefix.applyMatch, curTerm is: " + this + " node is: " + node + " suffix is: " + suffix)
     if (id == m.root.id) {
       if (GlobalCfg.DEBUG) logger.debug("\tPrefix.applyMatch, id == m.root.id -> m.rule.reactum.instantiate(m)")
@@ -443,60 +447,60 @@ class Prefix(sid: Long, n: Node, suff: Term) extends Term {
     }
   }
 
-//  def checkNode(n:Node, nodeMap:Map[Node, Node]): Boolean ={
-//    for(m<-nodeMap){
-//      if(n.ctrl.name==m._1.ctrl.name)
-//        return true
-//    }
-//    false
-//  }
+  //  def checkNode(n:Node, nodeMap:Map[Node, Node]): Boolean ={
+  //    for(m<-nodeMap){
+  //      if(n.ctrl.name==m._1.ctrl.name)
+  //        return true
+  //    }
+  //    false
+  //  }
 
   override def instantiate(m: Match) = {
-//    logger.debug("Prefix.instantiate: node=  " + node + "suffix= " + suffix)
+    //    logger.debug("Prefix.instantiate: node=  " + node + "suffix= " + suffix)
     //if (GlobalCfg.DEBUG) logger.debug("[kgq] Prefix.instantiate")
     if (GlobalCfg.DEBUG) logger.debug("Prefix.instantiate, cur Term is: " + this + " node is: " + node + " suffix is: " + suffix)
     if (m == null) {
       new Prefix(node, suffix.instantiate(m));
     } else {
       var nport: List[Name] = List();
-      for (name <- node.ports) {    // kgq 将名字更新
+      for (name <- node.ports) { // kgq 将名字更新
         nport = nport.:+(m.getName(name));
       }
       if (GlobalCfg.DEBUG) logger.debug("\tPrefix.instantiate, update port list from: " + node.ports + " to: " + nport)
 
       var modelNode = node;
-//      logger.debug("Prefix.instantiate: m.rule.nodeMap is " + m.rule.nodeMap)
+      //      logger.debug("Prefix.instantiate: m.rule.nodeMap is " + m.rule.nodeMap)
 
-//      if(!m.rule.nodeMap.contains(node)){
-//        for(nodeMapElement<-m.rule.nodeMap){
-//          if(node.id==nodeMapElement._1.id){
-//              modelNode=nodeMapElement._1
-//          }
-//        }
-//      }
-      if (m.rule.nodeMap.contains(modelNode)) {    //这里node应该是生成物的node，然后查hash表得到的是反应物的node
+      //      if(!m.rule.nodeMap.contains(node)){
+      //        for(nodeMapElement<-m.rule.nodeMap){
+      //          if(node.id==nodeMapElement._1.id){
+      //              modelNode=nodeMapElement._1
+      //          }
+      //        }
+      //      }
+      if (m.rule.nodeMap.contains(modelNode)) { //这里node应该是生成物的node，然后查hash表得到的是反应物的node
         var redexNode = m.rule.nodeMap(modelNode);
         if (GlobalCfg.DEBUG) logger.debug("\t\tPrefix.instantiate, find node in rr.redex: " + redexNode)
-//        if(!m.nodeMap.contains(redexNode)){
-//          for(nodeMapElement<-m.nodeMap){
-//            if(redexNode.id==nodeMapElement._1.id)
-//              redexNode=nodeMapElement._1
-//          }
-//        }
+        //        if(!m.nodeMap.contains(redexNode)){
+        //          for(nodeMapElement<-m.nodeMap){
+        //            if(redexNode.id==nodeMapElement._1.id)
+        //              redexNode=nodeMapElement._1
+        //          }
+        //        }
         if (m.nodeMap.contains(redexNode)) {
           // modelNode = m.nodeMap(redexNode)
-          modelNode = m.nodeMap(redexNode).clone()   // modified by kgq 20220302 解决 BUG3： applyMatch 后，原偶图被修改
+          modelNode = m.nodeMap(redexNode).clone() // modified by kgq 20220302 解决 BUG3： applyMatch 后，原偶图被修改
           if (GlobalCfg.DEBUG) logger.debug("\t\t\tPrefix.instantiate, find bigraph node in old b: " + modelNode)
         };
       }
       modelNode.ports = nport
 
-      if (m.assignValue.contains(node)) {    // added by kgq 20220301 更新 instantiate 中的node 的数值
+      if (m.assignValue.contains(node)) { // added by kgq 20220301 更新 instantiate 中的node 的数值
         modelNode.number = m.assignValue.getOrElse(node, null)
-//        logger.debug("\t\tPrefix.instantiate: m.nodeMap's number updated with: " + modelNode.number)
+        //        logger.debug("\t\tPrefix.instantiate: m.nodeMap's number updated with: " + modelNode.number)
       }
 
-//      logger.debug("Prefix.instantiate new node is :" + modelNode)
+      //      logger.debug("Prefix.instantiate new node is :" + modelNode)
       if (GlobalCfg.DEBUG) logger.debug("\tPrefix.instantiate, new Prefix(modelNode, suffix.instantiate(m), modelNode is: " + modelNode)
       new Prefix(modelNode, suffix.instantiate(m));
     }
@@ -514,29 +518,29 @@ class Prefix(sid: Long, n: Node, suff: Term) extends Term {
    * add by kgq 20220302
    */
   override def clone(): Prefix = {
-    var t:Term=suffix.clone()
-    var p=new Prefix(id,node.clone(),t)
-    p.termType=termType
+    var t: Term = suffix.clone()
+    var p = new Prefix(id, node.clone(), t)
+    p.termType = termType
     p
   }
 
-  override def checkIsAnonymous():Boolean={
-    return suffix.checkIsAnonymous()&&node.checkIsAnonymous()
+  override def checkIsAnonymous(): Boolean = {
+    return suffix.checkIsAnonymous() && node.checkIsAnonymous()
   }
 }
 
 class Hole(idx: Int) extends Term {
-    
+
   val index: Int = idx;
   termType = TermType.THOLE;
   id = Term.uTermIncrement;
   //add by lbj
-  var parNode: Node=null
+  var parNode: Node = null
 
   override def size = 1;
 
   override def applyMatch(m: Match) = {
-//    println("[kgq] curterm: ", this, " hole.applyMatch")
+    //    println("[kgq] curterm: ", this, " hole.applyMatch")
 
     //if (GlobalCfg.DEBUG) logger.debug("[kgq] Hole.applyMatch")
     null;
@@ -556,14 +560,14 @@ class Hole(idx: Int) extends Term {
     t.instantiate(null);
   }
 
-  override def clone: Hole ={
-    var h=new Hole(index)
+  override def clone: Hole = {
+    var h = new Hole(index)
     h.termType = TermType.THOLE;
     h.id = Term.uTermIncrement;
     h
   }
 
-  override def checkIsAnonymous():Boolean={
+  override def checkIsAnonymous(): Boolean = {
     return true
   }
 }
@@ -578,7 +582,7 @@ class Num(v: Int) extends Term {
   override def size = 1;
 
   override def applyMatch(m: Match) = {
-//    println("[kgq] curterm: ", this, " Num.applyMatch")
+    //    println("[kgq] curterm: ", this, " Num.applyMatch")
 
     //if (GlobalCfg.DEBUG) logger.debug("[kgq] Num.applyMatch")
     if (id == m.root.id) {
@@ -593,7 +597,7 @@ class Num(v: Int) extends Term {
     this;
   }
 
-  override def checkIsAnonymous():Boolean={
+  override def checkIsAnonymous(): Boolean = {
     return true
   }
 }
@@ -601,10 +605,11 @@ class Num(v: Int) extends Term {
 class Nil extends Term {
   termType = TermType.TNIL;
   id = Term.uTermIncrement;
+
   override def size = 0;
 
   override def applyMatch(m: Match) = {
-//    println("[kgq] curterm: ", this, " nil.applyMatch")
+    //    println("[kgq] curterm: ", this, " nil.applyMatch")
 
     //if (GlobalCfg.DEBUG) logger.debug("[kgq] Nil.applyMatch")
     new Nil();
@@ -616,30 +621,30 @@ class Nil extends Term {
   }
 
   override def clone: Nil = {
-    var n=new Nil()
+    var n = new Nil()
     n.termType = TermType.TNIL;
     n.id = Term.uTermIncrement;
     n
   }
 
-  override def checkIsAnonymous():Boolean={
+  override def checkIsAnonymous(): Boolean = {
     return true
   }
 }
 
 object testHashMap {
   def main(args: Array[String]): Unit = {
-    var t1=new Term
-    t1.id=1
-    var t2=new Term
-    t2.id=2
-    var t3=new Term
-    t3.id=2
+    var t1 = new Term
+    t1.id = 1
+    var t2 = new Term
+    t2.id = 2
+    var t3 = new Term
+    t3.id = 2
 
-    var mp=mutable.HashMap[Term,String]()
-    mp+=(t1->"一")
-    mp+=(t2->"二")
-    mp+=(t3->"三")
+    var mp = mutable.HashMap[Term, String]()
+    mp += (t1 -> "一")
+    mp += (t2 -> "二")
+    mp += (t3 -> "三")
 
     println(mp.size)
   }

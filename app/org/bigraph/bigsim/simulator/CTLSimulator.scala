@@ -2,7 +2,7 @@ package org.bigraph.bigsim.simulator
 
 import org.bigraph.bigsim.BRS.{Graph, Vertex}
 import org.bigraph.bigsim.model.Bigraph
-import org.bigraph.bigsim.modelchecker.{CTLModelChecker, CTLModelCheckerENF}
+import org.bigraph.bigsim.modelchecker.CTLModelCheckerENF
 import org.bigraph.bigsim.parser.{BGMParser, BGMTerm}
 import org.bigraph.bigsim.transitionsystem.State
 

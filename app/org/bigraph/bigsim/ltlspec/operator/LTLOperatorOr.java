@@ -5,22 +5,21 @@ import org.bigraph.bigsim.ltlspec.LTLFormulaVisitor;
 
 import java.util.Objects;
 
-public class LTLOperatorW implements LTLFormula {
-    private final LTLFormula operand1;//第一个命题
-    private final LTLFormula operand2;//第二个命题
+public class LTLOperatorOr implements LTLFormula {
+    private final LTLFormula operand1;
+    private final LTLFormula operand2;
 
-    public LTLOperatorW(LTLFormula operand1, LTLFormula operand2) {
-        this.operand1 = operand1;
-        this.operand2 = operand2;
+    public LTLOperatorOr(LTLFormula op1, LTLFormula op2) {
+        this.operand1 = op1;
+        this.operand2 = op2;
     }
 
-    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        LTLOperatorW i = (LTLOperatorW) o;
-        return Objects.equals(operand1, i.operand1) &&
-                Objects.equals(operand2, i.operand2);
+        LTLOperatorOr and = (LTLOperatorOr) o;
+        return Objects.equals(operand1, and.operand1) &&
+                Objects.equals(operand2, and.operand2);
     }
 
     @Override
@@ -30,8 +29,8 @@ public class LTLOperatorW implements LTLFormula {
 
     @Override
     public String toString() {
-        return operand1 + " W " + operand2;
-    }//描述形式为(pWq)
+        return "(" + operand1 + "Or" + operand2 + ")";
+    }
 
     public LTLFormula getOperand1() {
         return operand1;
@@ -43,7 +42,7 @@ public class LTLOperatorW implements LTLFormula {
 
     @Override
     public LTLFormula convertToPNF() {
-        return new LTLOperatorW(operand1.convertToPNF(), operand2.convertToPNF());
+        return new LTLOperatorOr(operand1.convertToPNF(), operand2.convertToPNF());
     }
 
     @Override

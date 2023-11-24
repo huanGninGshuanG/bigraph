@@ -124,21 +124,21 @@ class Node(n: String, act: Boolean, p: List[Name], c: Control, par: Node, num: S
     newNode.hasChild = hasChild
     newNode.hasNum = hasNum
     newNode.number = number
-    newNode.id=id
+    newNode.id = id
     newNode
   }
 
-  def checkIsAnonymous():Boolean={
-    return name==""
+  def checkIsAnonymous(): Boolean = {
+    return name == ""
   }
 
-//  override def equals(o: Any): Boolean = {
-//    if (o == null || (getClass != o.getClass)) return false
-//    val other = o.asInstanceOf[Node]
-//    Objects.equals(other.id,id)
-//  }
-//
-//  override def hashCode: Int = id
+  //  override def equals(o: Any): Boolean = {
+  //    if (o == null || (getClass != o.getClass)) return false
+  //    val other = o.asInstanceOf[Node]
+  //    Objects.equals(other.id,id)
+  //  }
+  //
+  //  override def hashCode: Int = id
 }
 
 object Control {
@@ -165,7 +165,8 @@ class Control(n: String, ar: Int, act: Boolean, s: PlaceSort) {
   def this(n: String) = this(n, 0, true, null);
 
   def this(n: String, ar: Int, act: Boolean, b: Boolean) = {
-    this(n, ar, act); binding = b;
+    this(n, ar, act);
+    binding = b;
   }
 
   override def toString = "Control:(" + name + "," + id + "," + arity + "," + placeSort + "," + binding + ")";
@@ -198,14 +199,14 @@ class Name(n: String, nt: String, nl: List[String]) { //即port
     ret
   }
 
-//  override def equals(o: Any): Boolean = {
-//    //if (this == o) return true
-//    if (o == null || (getClass != o.getClass)) return false
-//    val other = o.asInstanceOf[Name]
-//    Objects.equals(other.id,id)
-//  }
-//
-//  override def hashCode: Int = id
+  //  override def equals(o: Any): Boolean = {
+  //    //if (this == o) return true
+  //    if (o == null || (getClass != o.getClass)) return false
+  //    val other = o.asInstanceOf[Name]
+  //    Objects.equals(other.id,id)
+  //  }
+  //
+  //  override def hashCode: Int = id
 }
 
 // Bigraph is (V,E,ctrl,prnt,link) : <n,K> -> <m,L>
@@ -476,7 +477,6 @@ class Bigraph(roots: Int = 1) {
 
         mp.foreach(m => {
           if (x.check(m)) { //如果cond过不去，这里的x虽然能匹配上但这里会被过滤掉不被加入res中，例第一次就可以匹配r_takeoff这个规则，但因为不满足cond则不加入res中
-
             res.add(m); //如果这条RR没有cond也能加进来，check函数能过
           }
         })
@@ -580,13 +580,13 @@ class Bigraph(roots: Int = 1) {
       //var b: Bigraph = new Bigraph();//lry
       var b: Bigraph = new Bigraph; //lry
       //println("new b="+b.root+b.rules);
-      b.root = root.applyMatch(m);  //lry 已改
-      var rr=Set[ReactionRule]()
-      for(rule<-rules){
-        var r=rule.clone()
-        rr+= r
+      b.root = root.applyMatch(m); //lry 已改
+      var rr = Set[ReactionRule]()
+      for (rule <- rules) {
+        var r = rule.clone()
+        rr += r
       }
-      b.root = arithcal(b.root.clone)     // add by kgq 20220318  增加对算术节点的计算和更新
+      b.root = arithcal(b.root.clone) // add by kgq 20220318  增加对算术节点的计算和更新
       b.inner = inner;
       b.outer = outer;
       b.rules = rules;

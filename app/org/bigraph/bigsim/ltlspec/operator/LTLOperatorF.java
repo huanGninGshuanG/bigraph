@@ -1,48 +1,47 @@
 package org.bigraph.bigsim.ltlspec.operator;
-import org.bigraph.bigsim.ctlspec.Formula;
-import org.bigraph.bigsim.ctlspec.FormulaVisitor;
-import org.bigraph.bigsim.ctlspec.atom.True;
+
+import org.bigraph.bigsim.ltlspec.LTLFormula;
+import org.bigraph.bigsim.ltlspec.LTLFormulaVisitor;
+import org.bigraph.bigsim.ltlspec.atom.LTLTrue;
 
 import java.util.Objects;
 
-public class LTLOperatorF implements Formula {
-    private final Formula operand;
-    public LTLOperatorF(Formula operand){
-        this.operand=operand;
+public class LTLOperatorF implements LTLFormula {
+    private final LTLFormula operand;
+
+    public LTLOperatorF(LTLFormula operand) {
+        this.operand = operand;
     }
-    @Override
-    public boolean equals(Object o){
-        if(this == o) return true;
-        if(o==null || getClass()!=o.getClass()) return false;
-        LTLOperatorF not = (LTLOperatorF) o;
-        return Objects.equals(operand,not.operand);
-    }
-    @Override
-    public int hashCode(){
-        return Objects.hash(operand);
-    }
-    public static Formula not(Formula op){
-        return new LTLOperatorF(op);
-    }
-    @Override
-    public String toString(){
-        return "F("+operand+")";
-    }
-    public Formula getOperand(){
+
+    public LTLFormula getOperand() {
         return operand;
     }
+
     @Override
-    public Formula convertToCTLBase(){
-        return new LTLOperatorU(new True(),operand.convertToCTLBase());
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        LTLOperatorF not = (LTLOperatorF) o;
+        return Objects.equals(operand, not.operand);
     }
 
     @Override
-    public Formula convertToENF() {
-        throw new UnsupportedOperationException("LTL not supported yet");
+    public int hashCode() {
+        return Objects.hash(operand);
     }
 
     @Override
-    public void accept(FormulaVisitor visitor) {
-        throw new UnsupportedOperationException("LTL not supported yet");
+    public String toString() {
+        return "F " + operand;
+    }
+
+    @Override
+    public LTLFormula convertToPNF() {
+        return new LTLOperatorF(operand.convertToPNF());
+    }
+
+    @Override
+    public void accept(LTLFormulaVisitor visitor) {
+        visitor.visit(this);
     }
 }
