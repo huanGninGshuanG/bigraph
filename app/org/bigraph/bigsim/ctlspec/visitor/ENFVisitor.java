@@ -8,6 +8,7 @@ import org.bigraph.bigsim.ctlspec.atom.True;
 import org.bigraph.bigsim.ctlspec.operator.*;
 import org.bigraph.bigsim.transitionsystem.KripkeStructure;
 import org.bigraph.bigsim.transitionsystem.State;
+import org.bigraph.bigsim.utils.DebugPrinter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,7 +18,6 @@ import java.util.stream.Collectors;
 public class ENFVisitor implements FormulaVisitor {
     private KripkeStructure ks;
     private HashMap<Formula, Set<State>> sat = new HashMap<>();
-    private boolean debug = true;
     private static final Logger logger = LoggerFactory.getLogger(ENFVisitor.class);
 
     public ENFVisitor(KripkeStructure ks) {
@@ -42,14 +42,14 @@ public class ENFVisitor implements FormulaVisitor {
     @Override
     public void visit(True f) {
         sat.put(f, ks.getAllStates());
-        if (debug) logger.debug("end check True");
+        DebugPrinter.print(logger, "end check True");
     }
 
     @Override
     public void visit(Atom f) {
         Set<State> valid = ks.getAllStates().stream().filter(state -> state.satisfies(f)).collect(Collectors.toSet());
         sat.put(f, valid);
-        if (debug) logger.debug("end check Atom: " + valid);
+        DebugPrinter.print(logger, "end check Atom: " + valid);
     }
 
     @Override
@@ -64,7 +64,7 @@ public class ENFVisitor implements FormulaVisitor {
             // 该state满足了所有sub-formula应该把这个state放入f的sat集合中
             if (tot == cnt) merge(f, state);
         }
-        if (debug) logger.debug("end check And: " + sat.getOrDefault(f, new HashSet<>()));
+        DebugPrinter.print(logger, "end check And: " + sat.getOrDefault(f, new HashSet<>()));
     }
 
     @Override
@@ -76,7 +76,7 @@ public class ENFVisitor implements FormulaVisitor {
                 merge(f, state);
             }
         }
-        if (debug) logger.debug("end check Not: " + sat.getOrDefault(f, new HashSet<>()));
+        DebugPrinter.print(logger, "end check Not: " + sat.getOrDefault(f, new HashSet<>()));
     }
 
     @Override
@@ -93,7 +93,7 @@ public class ENFVisitor implements FormulaVisitor {
             }
             if (valid) merge(f, state);
         }
-        if (debug) logger.debug("end check EX: " + sat.getOrDefault(f, new HashSet<>()));
+        DebugPrinter.print(logger, "end check EX: " + sat.getOrDefault(f, new HashSet<>()));
     }
 
     @Override
@@ -107,7 +107,7 @@ public class ENFVisitor implements FormulaVisitor {
             merge(f, state);
             vis.add(state);
         }
-        // 不动点算法，不断添加后继在集合内的state
+        // 不动点，不断添加后继在集合内的state
         Queue<State> workList = new LinkedList<>(sat.getOrDefault(op2, new HashSet<>()));
         while (!workList.isEmpty()) {
             State state = workList.poll();
@@ -120,7 +120,7 @@ public class ENFVisitor implements FormulaVisitor {
                 }
             }
         }
-        if (debug) logger.debug("end check EU: " + sat.getOrDefault(f, new HashSet<>()));
+        DebugPrinter.print(logger, "end check EU: " + sat.getOrDefault(f, new HashSet<>()));
     }
 
     @Override
@@ -139,7 +139,7 @@ public class ENFVisitor implements FormulaVisitor {
             if (inside == 0) workList.add(state);
             else cnt.put(state, inside);
         }
-        // 不动点算法，不断删除所有后继在集合外的state
+        // 不动点, 不断删除所有后继在集合外的state
         while (!workList.isEmpty()) {
             State state = workList.poll();
             for (State pre : ks.getAllPreStates(state)) {
@@ -158,7 +158,7 @@ public class ENFVisitor implements FormulaVisitor {
                 merge(f, state);
             }
         }
-        if (debug) logger.debug("end check EG: " + sat.getOrDefault(f, new HashSet<>()));
+        DebugPrinter.print(logger, "end check EG: " + sat.getOrDefault(f, new HashSet<>()));
     }
 
     @Override

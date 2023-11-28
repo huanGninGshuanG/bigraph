@@ -22,7 +22,6 @@ public class PathGenVisitor implements FormulaVisitor {
     private final Map<Formula, Set<State>> sat;
     private CTLCheckResult result = new CTLCheckResult();
     private final KripkeStructure ks;
-    private boolean debug = true;
     private static final Logger logger = LoggerFactory.getLogger(PathGenVisitor.class);
 
     public PathGenVisitor(Map<Formula, Set<State>> sat, KripkeStructure ks, boolean result) {

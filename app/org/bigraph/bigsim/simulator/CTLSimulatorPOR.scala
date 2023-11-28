@@ -1,22 +1,15 @@
 package org.bigraph.bigsim.simulator
 
-import java.util
-
-import org.bigraph.bigsim.BRS.{Graph, Match, Vertex}
-import org.bigraph.bigsim.Verify
+import org.bigraph.bigsim.BRS.{Graph, Vertex}
 import org.bigraph.bigsim.ctlimpl.CTLCheckResult
-import org.bigraph.bigsim.model.{Bigraph, BindingChecker, Nil, ReactionRule}
+import org.bigraph.bigsim.model.Bigraph
 import org.bigraph.bigsim.modelchecker.CTLModelChecker
 import org.bigraph.bigsim.parser.{BGMParser, BGMTerm}
 import org.bigraph.bigsim.transitionsystem.State
-import org.bigraph.bigsim.utils.{GlobalCfg, OS, bankV3}
-import org.slf4j.{Logger, LoggerFactory}
+import org.bigraph.bigsim.utils.OS
 
-import scala.collection.mutable
-import scala.collection.mutable.Buffer
-import scala.collection.mutable.{Map, Queue, Set}
+import scala.collection.mutable.Map
 // 需要使用到java中的变量
-import scala.collection.JavaConverters._
 import scala.collection.JavaConversions._
 
 
@@ -38,26 +31,25 @@ class CTLSimulatorPOR
   var recordMap: Map[State, State] = Map()
 
 
-
-
   def simulate: Unit = {
     if (b == null || b.root == null) {
       println("CTL simulator::simulate(): null");
-      return ;
+      return;
     } else {
       val buildKripke = new BuildKripkeStructurePOR(transition)
       val kripke = buildKripke.buildKripke
       val ctlModelChecker = new CTLModelChecker(kripke)
       this.checkRes = ctlModelChecker.satisfies(ctlParser.getCTLFormula())
-      if(ctlModelChecker.recordPath != null){
+      if (ctlModelChecker.recordPath != null) {
         this.recordPath = ctlModelChecker.recordPath.toList
-        if (recordPath.nonEmpty){
+        if (recordPath.nonEmpty) {
           var pre: State = this.recordPath.head
           this.recordPath.tail.foreach(x => {
             this.recordMap += (pre -> x)
             pre = x
           })
-        }}
+        }
+      }
       this.v = transition.v
       this.g = transition.g
       this.g.addCTLRes(recordPath, checkRes, CTLCheckResult.PathType.CounterExample)
@@ -76,6 +68,7 @@ class CTLSimulatorPOR
     val dotStr = this.g.dumpDotFile() //打印到dot文件
     dotStr
   }
+
   def dumpPaths(): String = {
     val paths = this.g.dumpPaths()
     paths
@@ -103,15 +96,16 @@ object testCTLSimulatorPOR {
 
   val t = BGMParser.parseFromString(OS.rw4DEBUG)
   val b = BGMTerm.toBigraph(t)
+
   def main(args: Array[String]): Unit = {
-    val startTime=System.currentTimeMillis()
+    val startTime = System.currentTimeMillis()
     val simulator = new CTLSimulatorPOR(b)
     simulator.simulate
     //var dotStr = simulator.dumpDotForward("")
     //println(dotStr)
-    val endTime=System.currentTimeMillis()
+    val endTime = System.currentTimeMillis()
     printf("============================================================模型检测耗时: ")
-    print((endTime-startTime)/1000f)
+    print((endTime - startTime) / 1000f)
     println("s")
   }
 }

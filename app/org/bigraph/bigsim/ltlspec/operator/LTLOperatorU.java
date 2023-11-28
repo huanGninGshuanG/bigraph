@@ -1,20 +1,19 @@
 package org.bigraph.bigsim.ltlspec.operator;
 
-import org.bigraph.bigsim.ctlspec.Formula;
-import org.bigraph.bigsim.ctlspec.FormulaVisitor;
+import org.bigraph.bigsim.ltlspec.LTLFormula;
+import org.bigraph.bigsim.ltlspec.LTLFormulaVisitor;
 
 import java.util.Objects;
 
-public class LTLOperatorU implements Formula {
-    private final Formula operand1;//第一个命题
-    private final Formula operand2;//第二个命题
-    public static LTLOperatorU Imply(Formula operand1, Formula operand2){
-        return new LTLOperatorU(operand1,operand2);
-    }
-    public LTLOperatorU(Formula operand1, Formula operand2){
+public class LTLOperatorU implements LTLFormula {
+    private final LTLFormula operand1;//第一个命题
+    private final LTLFormula operand2;//第二个命题
+
+    public LTLOperatorU(LTLFormula operand1, LTLFormula operand2) {
         this.operand1 = operand1;
         this.operand2 = operand2;
     }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -32,28 +31,23 @@ public class LTLOperatorU implements Formula {
     @Override
     public String toString() {
         return operand1 + " U " + operand2;
-    }//描述形式为E(pUq)
+    }
 
-    public Formula getOperand1() {
+    public LTLFormula getOperand1() {
         return operand1;
     }
 
-    public Formula getOperand2() {
+    public LTLFormula getOperand2() {
         return operand2;
     }
 
     @Override
-    public Formula convertToCTLBase() {
-        return this;
+    public LTLFormula convertToPNF() {
+        return new LTLOperatorU(operand1.convertToPNF(), operand2.convertToPNF());
     }
 
     @Override
-    public Formula convertToENF() {
-        throw new UnsupportedOperationException("LTL not supported yet");
-    }
-
-    @Override
-    public void accept(FormulaVisitor visitor) {
-        throw new UnsupportedOperationException("LTL not supported yet");
+    public void accept(LTLFormulaVisitor visitor) {
+        visitor.visit(this);
     }
 }
