@@ -1,9 +1,9 @@
 package org.bigraph.bigsim.simulator
 
 import org.bigraph.bigsim.ctlspec.atom._
-import org.bigraph.bigsim.ltlspec.LTLFormula
 import org.bigraph.bigsim.ltlspec.atom.{LTLFalse, LTLTrue}
 import org.bigraph.bigsim.ltlspec.operator._
+import visitor.LTLFormula
 
 import scala.collection.mutable.Stack
 

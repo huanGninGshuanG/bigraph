@@ -1,8 +1,8 @@
-package org.bigraph.bigsim.ctlspec.visitor;
+package visitor.visitor;
 
 import org.bigraph.bigsim.ctlimpl.CTLCheckResult;
-import org.bigraph.bigsim.ctlspec.Formula;
-import org.bigraph.bigsim.ctlspec.FormulaVisitor;
+import visitor.Formula;
+import visitor.FormulaVisitor;
 import org.bigraph.bigsim.ctlspec.atom.Atom;
 import org.bigraph.bigsim.ctlspec.atom.False;
 import org.bigraph.bigsim.ctlspec.atom.True;

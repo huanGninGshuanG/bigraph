@@ -1,8 +1,7 @@
 package org.bigraph.bigsim.ltlspec.operator;
 
-import org.bigraph.bigsim.ltlspec.LTLFormula;
-import org.bigraph.bigsim.ltlspec.LTLFormulaVisitor;
-import org.bigraph.bigsim.ltlspec.atom.LTLTrue;
+import visitor.LTLFormula;
+import visitor.LTLFormulaVisitor;
 
 import java.util.Objects;
 

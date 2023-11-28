@@ -1,14 +1,10 @@
 package org.bigraph.bigsim.simulator
 
-import org.bigraph.bigsim.BRS.{Graph, Match, Vertex}
-import org.bigraph.bigsim.Verify
-import org.bigraph.bigsim.ctlspec._
 import org.bigraph.bigsim.ctlspec.atom._
 import org.bigraph.bigsim.ctlspec.operator._
-import org.bigraph.bigsim.model.{Bigraph, Nil, ReactionRule}
-import org.bigraph.bigsim.utils.GlobalCfg
-import org.slf4j.{Logger, LoggerFactory}
-import scala.collection.mutable.{Queue, Stack}
+import visitor.Formula
+
+import scala.collection.mutable.Stack
 
 class CTLSpec(ctlSpec: List[String], ctlProp: Map[String, Tuple2[String, String]]) {            // 在这个小括号里定义的变量，会自动成为类的成员，不需要在类的内部增加新的定义
 

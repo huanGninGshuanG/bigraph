@@ -1,8 +1,8 @@
 package org.bigraph.bigsim.ctlspec.atom;
-import org.bigraph.bigsim.ctlspec.Formula;
-import org.bigraph.bigsim.ctlspec.FormulaVisitor;
-import org.bigraph.bigsim.ltlspec.LTLFormula;
-import org.bigraph.bigsim.ltlspec.LTLFormulaVisitor;
+import visitor.Formula;
+import visitor.FormulaVisitor;
+import visitor.LTLFormula;
+import visitor.LTLFormulaVisitor;
 
 import java.util.Objects;
 //定义原子命题的谓词符号，原子命题是不含与或非的简单判断句
