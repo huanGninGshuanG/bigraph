@@ -1,4 +1,4 @@
-package org.bigraph.bigsim.ltlspec;
+package visitor;
 
 public interface LTLFormula {
     LTLFormula convertToPNF(); // positive normal form

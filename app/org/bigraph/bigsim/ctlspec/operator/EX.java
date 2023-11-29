@@ -1,6 +1,6 @@
 package org.bigraph.bigsim.ctlspec.operator;
-import org.bigraph.bigsim.ctlspec.Formula;
-import org.bigraph.bigsim.ctlspec.FormulaVisitor;
+import visitor.Formula;
+import visitor.FormulaVisitor;
 
 import java.util.Objects;
 public class EX implements Formula {

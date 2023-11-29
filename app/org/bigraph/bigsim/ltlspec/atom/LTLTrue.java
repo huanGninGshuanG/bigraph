@@ -1,7 +1,7 @@
 package org.bigraph.bigsim.ltlspec.atom;
 
-import org.bigraph.bigsim.ltlspec.LTLFormula;
-import org.bigraph.bigsim.ltlspec.LTLFormulaVisitor;
+import visitor.LTLFormula;
+import visitor.LTLFormulaVisitor;
 
 public class LTLTrue implements LTLFormula {
     public static LTLTrue True() {

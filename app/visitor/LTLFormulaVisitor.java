@@ -1,4 +1,4 @@
-package org.bigraph.bigsim.ltlspec;
+package visitor;
 
 import org.bigraph.bigsim.ctlspec.atom.Atom;
 import org.bigraph.bigsim.ltlspec.atom.LTLFalse;

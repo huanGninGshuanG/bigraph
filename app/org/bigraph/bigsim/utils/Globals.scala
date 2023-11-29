@@ -1,13 +1,7 @@
 package org.bigraph.bigsim.utils
 
-import java.util.Properties
 import java.io._
-import java.util
-
-import org.bigraph.bigsim.modelchecker.CTLModelChecker
-import org.bigraph.bigsim.transitionsystem.KripkeStructure
-import org.bigraph.bigsim.ctlspec.Formula
-
+import java.util.Properties
 
 
 object GlobalCfg {

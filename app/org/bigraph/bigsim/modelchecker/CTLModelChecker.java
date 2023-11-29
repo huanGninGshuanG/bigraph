@@ -1,6 +1,6 @@
 package org.bigraph.bigsim.modelchecker;
 
-import org.bigraph.bigsim.ctlspec.Formula;
+import visitor.Formula;
 import org.bigraph.bigsim.ctlspec.atom.Atom;
 import org.bigraph.bigsim.ctlspec.atom.True;
 import org.bigraph.bigsim.ctlspec.atom.False;

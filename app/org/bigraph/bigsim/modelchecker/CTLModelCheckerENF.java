@@ -1,15 +1,13 @@
 package org.bigraph.bigsim.modelchecker;
 
 import org.bigraph.bigsim.ctlimpl.CTLCheckResult;
-import org.bigraph.bigsim.ctlspec.Formula;
-import org.bigraph.bigsim.ctlspec.visitor.ENFVisitor;
-import org.bigraph.bigsim.ctlspec.visitor.PathGenVisitor;
+import visitor.Formula;
+import visitor.visitor.ENFVisitor;
+import visitor.visitor.PathGenVisitor;
 import org.bigraph.bigsim.transitionsystem.KripkeStructure;
 import org.bigraph.bigsim.transitionsystem.State;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
 
 public class CTLModelCheckerENF {
 

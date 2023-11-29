@@ -1,8 +1,8 @@
-package org.bigraph.bigsim.ltlspec.visitor;
+package visitor.visitor;
 
 import org.bigraph.bigsim.ctlspec.atom.Atom;
-import org.bigraph.bigsim.ltlspec.LTLFormula;
-import org.bigraph.bigsim.ltlspec.LTLFormulaVisitor;
+import visitor.LTLFormula;
+import visitor.LTLFormulaVisitor;
 import org.bigraph.bigsim.ltlspec.atom.LTLFalse;
 import org.bigraph.bigsim.ltlspec.atom.LTLTrue;
 import org.bigraph.bigsim.ltlspec.operator.*;

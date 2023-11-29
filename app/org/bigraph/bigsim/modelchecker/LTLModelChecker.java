@@ -1,8 +1,8 @@
 package org.bigraph.bigsim.modelchecker;
 
-import org.bigraph.bigsim.ltlspec.LTLFormula;
-import org.bigraph.bigsim.ltlspec.visitor.LTLCheckVisitor;
-import org.bigraph.bigsim.ltlspec.visitor.LTLPathGenVisitor;
+import visitor.LTLFormula;
+import visitor.visitor.LTLCheckVisitor;
+import visitor.visitor.LTLPathGenVisitor;
 import org.bigraph.bigsim.transitionsystem.KripkeStructure;
 import org.bigraph.bigsim.transitionsystem.State;
 import org.slf4j.Logger;

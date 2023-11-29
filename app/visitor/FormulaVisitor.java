@@ -1,4 +1,4 @@
-package org.bigraph.bigsim.ctlspec;
+package visitor;
 
 import org.bigraph.bigsim.ctlspec.atom.Atom;
 import org.bigraph.bigsim.ctlspec.atom.False;
