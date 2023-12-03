@@ -1,24 +1,20 @@
 package org.bigraph.bigsim.model
 
 import java.io.File
+import java.util
 
-import scala.collection.mutable.{Map, Set}
-import org.bigraph.bigsim.parser.{BGMParser, BGMTerm, TermParser}
-import org.bigraph.bigsim.utils.GlobalCfg
-import org.bigraph.bigsim.BRS.WideMatch
-import org.bigraph.bigsim.BRS.Matcher
-import org.bigraph.bigsim.BRS.Match
-import org.bigraph.bigsim.data.Data
+import org.bigraph.bigsim.BRS.{Match, Matcher, WideMatch}
 import org.bigraph.bigsim.data.DataModel
+import org.bigraph.bigsim.model.component._
+import org.bigraph.bigsim.parser.{BGMParser, BGMTerm}
 import org.bigraph.bigsim.simulator.Simulator
-import org.slf4j.{Logger, LoggerFactory}
-import java.lang.NumberFormatException
-import java.util.Objects
-
+import org.bigraph.bigsim.utils.{CachingProxy, DebugPrinter, GlobalCfg, Provider}
 import org.bigraph.bigsim.value.ValueOpCtrl
+import org.slf4j.{Logger, LoggerFactory}
 
+import scala.collection.JavaConversions._
 import scala.collection.mutable
-import scala.util.Random
+import scala.collection.mutable.{Map, Set}
 
 object Node {
   private var id: Int = 0
@@ -310,7 +306,7 @@ object Bigraph {
 
 }
 
-class Bigraph(roots: Int = 1) {
+class Bigraph(roots: Int = 1) extends BigraphHandler {
 
   def logger: Logger = LoggerFactory.getLogger(this.getClass)
 
@@ -709,6 +705,256 @@ class Bigraph(roots: Int = 1) {
     s.append("isNegative:" + isNegative + "\n")
     s.append("VerifyID" + verifyID + "\n")
     s.toString();
+  }
+
+  /*
+    目前项目很多部分不知道是否还在使用，在此重构
+    同时能够更加清晰地表示偶图结构 org.bigraph.bigsim.model.component
+    另一个目的是方便 偶图匹配规约成SAT问题 使用相关API
+   */
+  var bigSignature: Signature = new Signature(new util.ArrayList[component.Control]())
+  final var bigRoots: util.List[Root] = new util.ArrayList[Root]()
+  final var bigSites: util.List[Site] = new util.ArrayList[Site]()
+  final var bigOuter: util.Map[String, OuterName] = new util.HashMap[String, OuterName]()
+  final var bigInner: util.Map[String, InnerName] = new util.HashMap[String, InnerName]()
+
+  private var ancestors: util.Map[Child, util.Collection[Parent]] = new util.WeakHashMap[Child, util.Collection[Parent]]()
+
+  private final val roRoots: util.List[Root] = bigRoots
+  private final val roSites: util.List[Site] = bigSites
+
+  def setSignature(signature: Signature): Unit = {
+    bigSignature = signature
+  }
+
+  override def isEmpty: Boolean = {
+    bigRoots.isEmpty && bigSites.isEmpty && bigOuter.isEmpty && bigInner.isEmpty
+  }
+
+  override def isGround: Boolean = {
+    bigSites.isEmpty && bigInner.isEmpty
+  }
+
+  override def getRoots: util.List[_ <: Root] = {
+    roRoots
+  }
+
+  override def getSites: util.List[_ <: Site] = {
+    roSites
+  }
+
+  override def getOuterNames: util.Collection[_ <: OuterName] = {
+    bigOuter.values()
+  }
+
+  override def getInnerNames: util.Collection[_ <: InnerName] = {
+    bigInner.values()
+  }
+
+  final val EMPTY_ANCS_LST: util.Collection[Parent] = util.Collections.unmodifiableList(util.Collections.emptyList())
+
+  def getAncestors(child: Child): util.Collection[Parent] = {
+    if (child == null)
+      throw new IllegalArgumentException("the argument can't be null")
+    var s = ancestors.get(child)
+    if (s == null) {
+      val parent = child.getParent
+      if (parent.isRoot) {
+        s = EMPTY_ANCS_LST
+      } else {
+        s = new util.LinkedList[Parent](getAncestors(parent.asInstanceOf[Child]))
+        s.add(parent)
+      }
+      ancestors.put(child, s)
+    }
+    s
+  }
+
+  private var edgesProxy: CachingProxy[util.Collection[Edge]] = new CachingProxy[util.Collection[Edge]](
+    () => provideEdges
+  )
+
+  def provideEdges: util.Collection[Edge] = {
+    val nodes = getNodes
+    var s: util.Set[Edge] = new util.HashSet[Edge]()
+    for (n <- nodes) {
+      val ports = n.getPorts
+      for (port <- ports) {
+        val handle = port.getHandle
+        if (handle.isEdge) s.add(handle.asInstanceOf[Edge])
+      }
+    }
+    for ((_, v) <- bigInner) {
+      val handle = v.getHandle
+      if (handle.isEdge) s.add(handle.asInstanceOf[Edge])
+    }
+    s
+  }
+
+  def onEdgeAdded(edge: Edge): Unit = {
+    val edges = edgesProxy.softGet()
+    if (edges != null) edges.add(edge)
+  }
+
+  def onEdgeAdded(edges: util.Collection[Edge]): Unit = {
+    val es = edgesProxy.softGet()
+    if (es != null) es.addAll(edges)
+  }
+
+  def onEdgeRemoved(edge: Edge): Unit = {
+    val edges = edgesProxy.softGet()
+    if (edges != null) edges.remove(edge)
+  }
+
+  def onEdgeRemoved(edges: util.Collection[Edge]): Unit = {
+    val es = edgesProxy.softGet()
+    if (es != null) es.removeAll(edges)
+  }
+
+  def onEdgeSetChanged(): Unit = {
+    nodesProxy.invalidate()
+  }
+
+  override def getEdges: util.Collection[_ <: Edge] = {
+    edgesProxy.get()
+  }
+
+
+  // bigraph的所有nodes，通过softReference缓存
+  private var nodesProxy: CachingProxy[util.Collection[component.Node]] = new CachingProxy[util.Collection[component.Node]](
+    () => provideNodes
+  )
+
+  override def getNodes: util.Collection[_ <: component.Node] = {
+    nodesProxy.get()
+  }
+
+  def provideNodes: util.Collection[component.Node] = {
+    val s: util.Set[component.Node] = new util.HashSet[component.Node]()
+    val q: util.Queue[component.Node] = new util.LinkedList[component.Node]()
+    for (r <- bigRoots) {
+      for (c <- r.getChildren) {
+        if (c.isNode) q.add(c.asInstanceOf[component.Node])
+      }
+    }
+    while (q.nonEmpty) {
+      val node: component.Node = q.poll()
+      s.add(node)
+      for (c <- node.getChildren) {
+        if (c.isNode) q.add(c.asInstanceOf[component.Node])
+      }
+    }
+    s
+  }
+
+  def onNodeAdded(node: component.Node): Unit = {
+    val nodes = nodesProxy.softGet()
+    if (nodes != null) nodes.add(node)
+  }
+
+  def onNodeAdded(nodes: util.Collection[component.Node]): Unit = {
+    val ns = nodesProxy.softGet()
+    if (ns != null) ns.addAll(nodes)
+  }
+
+  def onNodeRemoved(node: component.Node): Unit = {
+    ancestors.clear() // conservative
+    val nodes = nodesProxy.softGet()
+    if (nodes != null) nodes.remove(node)
+  }
+
+  def onNodeRemoved(nodes: util.Collection[component.Node]): Unit = {
+    ancestors.clear() //conservative
+    val ns = nodesProxy.softGet()
+    if (ns != null) ns.removeAll(nodes)
+  }
+
+  /// check whether the bigraph is consistent
+  def isConsistent: Boolean = {
+    val seenPoint: util.HashSet[Point] = new util.HashSet[Point]()
+    val seenHandles: util.HashSet[Handle] = new util.HashSet[Handle]()
+    val unseenSites: util.HashSet[Site] = new util.HashSet[Site]()
+    unseenSites.addAll(getSites)
+    val seenChildren: util.HashSet[Child] = new util.HashSet[Child]()
+    val q = new util.ArrayDeque[Parent]()
+    for (r <- bigRoots) {
+      q.add(r)
+    }
+    while (q.nonEmpty) {
+      val parent = q.poll()
+      for (c <- parent.getChildren) {
+        // 父子节点不对应
+        if (parent != c.getParent) {
+          DebugPrinter.err(logger, "INCOSISTENCY: parent/child mismatch")
+          return false
+        }
+        // child有多个父节点
+        if (!seenChildren.add(c)) {
+          DebugPrinter.err(logger, "INCOSISTENCY: shared place")
+          return false
+        }
+        if (c.isNode) {
+          val node = c.asInstanceOf[component.Node]
+          // control定义的arity与实际不一致
+          if (node.getControl.getArity != node.getPorts.size() || !bigSignature.contains(node.getControl)) {
+            DebugPrinter.err(logger, "INCOSISTENCY: control/arity")
+            return false
+          }
+          q.add(node)
+          for (port <- node.getPorts) {
+            val handle = port.getHandle
+            // 空悬的port
+            if (handle == null) {
+              DebugPrinter.err(logger, "INCOSISTENCY: broken or foreign handle")
+              return false
+            }
+            // handle没有对应该port
+            if (!handle.getPoints.contains(port)) {
+              DebugPrinter.err(logger, "INCOSISTENCY: handle/point mismatch")
+              return false
+            }
+            seenPoint.add(port)
+            seenHandles.add(handle)
+          }
+        } else if (c.isSite) {
+          val site = c.asInstanceOf[Site]
+          unseenSites.remove(site)
+          if (!bigSites.contains(site)) {
+            DebugPrinter.err(logger, "INCOSISTENCY: foreign site")
+            return false
+          }
+        } else {
+          DebugPrinter.err(logger, "INCOSISTENCY: neither a node nor a site")
+          return false
+        }
+      }
+    }
+    for (outerName <- bigOuter.values()) {
+      seenHandles.add(outerName)
+    }
+    for (innerName <- bigInner.values()) {
+      seenHandles.add(innerName.getHandle)
+      seenPoint.add(innerName)
+    }
+    for (handle <- seenHandles) {
+      for (point <- handle.getPoints) {
+        // node看见的所有point与handle看见的point不对应（handle看见得更多）
+        if (!seenPoint.remove(point)) {
+          DebugPrinter.err(logger, "INCOSISTENCY: foreign point")
+          return false
+        }
+      }
+    }
+    // node看见的所有point与handle看见的point不对应（node看见得更多）
+    if (seenPoint.size() > 0) {
+      DebugPrinter.err(logger, "INCOSISTENCY: handle chain broken")
+      return false
+    }
+    if (unseenSites.size() > 0) {
+      DebugPrinter.err(logger, "INCOSISTENCY: unreachable site")
+      return false
+    }
+    true
   }
 }
 

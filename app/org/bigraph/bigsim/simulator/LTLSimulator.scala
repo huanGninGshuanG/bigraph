@@ -6,6 +6,8 @@ import org.bigraph.bigsim.model.Bigraph
 import org.bigraph.bigsim.modelchecker.LTLModelChecker
 import org.bigraph.bigsim.parser.{BGMParser, BGMTerm}
 import org.bigraph.bigsim.transitionsystem.State
+import org.bigraph.bigsim.utils.DebugPrinter
+import org.slf4j.{Logger, LoggerFactory}
 
 import scala.collection.mutable.Map
 // 需要使用到java中的变量
@@ -248,8 +250,11 @@ object testLTLSimulator {
   val t = BGMParser.parseFromString(example3)
   val b = BGMTerm.toBigraph(t)
 
+  def logger: Logger = LoggerFactory.getLogger(this.getClass)
+
   def main(args: Array[String]): Unit = {
     val simulator = new LTLSimulator(b)
+    DebugPrinter.print(logger, "bigraph sites: " + b.inner)
     simulator.simulate
     var dotStr = simulator.dumpDotForward("")
     println(dotStr)
