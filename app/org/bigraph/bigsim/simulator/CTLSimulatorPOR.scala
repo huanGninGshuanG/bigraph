@@ -95,7 +95,7 @@ object testCTLSimulatorPOR {
 
 
   val t = BGMParser.parseFromString(OS.rw4DEBUG)
-  val b = BGMTerm.toBigraph(t)
+  val b = BGMTerm.toBigraph(t)._2
 
   def main(args: Array[String]): Unit = {
     val startTime = System.currentTimeMillis()

@@ -19,10 +19,9 @@ public class Node implements Parent, Child {
     private final List<? extends Port> roPorts; // read only ports
     private final Collection<? extends Child> roChildren; // read only children
 
-    public Node(Control control, Parent parent) {
-        this.name = "N_" + NameGenerator.DEFAULT.generate();
+    public Node(String name, Control control, Parent parent) {
+        this.name = name;
         this.control = control;
-        this.parent = parent;
         List<Port> ports = new ArrayList<>();
         for (int i = 0; i < control.getArity(); i++) {
             ports.add(new Port(i));
@@ -31,10 +30,11 @@ public class Node implements Parent, Child {
         this.children = new HashSet<>();
         this.roPorts = Collections.unmodifiableList(this.ports);
         this.roChildren = Collections.unmodifiableCollection(this.children);
+        setParent(parent);
     }
 
-    public Node(Control control, Parent parent, List<? extends Handle> handles) {
-        this(control, parent);
+    public Node(String name, Control control, Parent parent, List<? extends Handle> handles) {
+        this(name, control, parent);
         for (int i = 0; i < Math.min(handles.size(), control.getArity()); i++) {
             this.ports.get(i).setHandle(handles.get(i));
         }
@@ -141,5 +141,70 @@ public class Node implements Parent, Child {
 
     public Port getPort(int index) {
         return this.ports.get(index);
+    }
+
+    public class Port implements Point {
+        private final int index; // 该port是node的第几个port
+        private Handle handle;
+
+        public Port(int index) {
+            this.index = index;
+        }
+
+        public Node getNode() {
+            return Node.this;
+        }
+
+        public int getIndex() {
+            return index;
+        }
+
+        @Override
+        public String toString() {
+            return index + "@" + Node.this;
+        }
+
+        @Override
+        public void setHandle(Handle handle) {
+            if (handle == this.handle) return;
+            Handle old = this.handle;
+            this.handle = handle;
+            if (old != null) old.unlinkPoint(this);
+            if (this.handle != null) this.handle.linkPoint(this);
+        }
+
+        public Handle getHandle() {
+            return handle;
+        }
+
+        @Override
+        public boolean isHandle() {
+            return false;
+        }
+
+        @Override
+        public boolean isPoint() {
+            return true;
+        }
+
+        @Override
+        public boolean isPort() {
+            return true;
+        }
+
+        @Override
+        public boolean isInnerName() {
+            return false;
+        }
+
+        @Override
+        public boolean isOuterName() {
+            return false;
+        }
+
+        @Override
+        public boolean isEdge() {
+            return false;
+        }
     }
 }

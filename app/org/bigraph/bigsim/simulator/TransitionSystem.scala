@@ -371,7 +371,7 @@ object testTransitionSystem {
         |""".stripMargin
     val t = BGMParser.parseFromString(bigraphExam)
     val b = BGMTerm.toBigraph(t)
-    val transition = new TransitionSystem(b)
+    val transition = new TransitionSystem(b._2)
     println("=-=-=-=-=-==-=-=-=-=-=-==-=-=-=-=-=-==-=-=-=- now to build KripStructure-=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-")
     val buildKripke = new BuildKripkeStructure(transition)
     val kripke = buildKripke.buildKripke
@@ -446,7 +446,7 @@ object testTransitionSystemwithBind {
     val b = BGMTerm.toBigraph(t)
     GlobalCfg.checkBinding = false
 
-    val transition = new TransitionSystem(b)
+    val transition = new TransitionSystem(b._2)
     println("=-=-=-=-=-==-=-=-=-=-=-==-=-=-=-=-=-==-=-=-=- now to build KripStructure-=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-")
     val buildKripke = new BuildKripkeStructure(transition)
     val kripke = buildKripke.buildKripke

@@ -286,7 +286,7 @@ object testCTLSimulator {
   val test = "# Controls\n%active Greater : 2;\n%active Less : 2;\n%active GreaterOrEqual : 2;\n%active LessOrEqual : 2;\n%active Equal : 2;\n%active NotEqual : 2;\n%active Exist : 1;\n%active InstanceOf : 2;\n%active Plus : 3;\n%active Minus : 3;\n%active Multiply : 3;\n%active Division : 3;\n%active Opposite : 2;\n%active Abs : 2;\n%active User : 2;\n%active File : 2;\n%active Permission : 2;\n%active Root : 0;\n%active Command : 2;\n%active Parameter : 0;\n%binding Bind;\n%active String : 2;\n%active OwnerGroup : 2;\n%active Group : 0;\n\n# Rules\n%rule r_0 file:File[idle,idle] | u1:User[idle,idle] | $0 -> file:File[idle,idle].(rwx:Permission[idle,idle].owner:User[idle,idle] | r:Permission[idle,idle].a:OwnerGroup[idle,idle]) | u1:User[idle,idle].(name1:String[idle,idle] | A:Group) | $0{};\n\n%rule r_1 file:File[idle,idle] | u2:User[idle,idle] | $0 -> file:File[idle,idle].rwx:Permission[idle,idle] | u2:User[idle,idle].(name2:String[idle,idle] | A:Group) | $0{};\n\n\n\n\n# Model\n%agent  file:File[idle,idle] | u1:User[idle,idle] | u2:User[idle,idle] | u3:User[idle,idle] | u4:User[idle,idle];\n\n\n\n\n\n\n\n\n#SortingLogic\n\n\n# Go!\n%check;"
   //  val t = BGMParser.parseFromString(OS.rwWithEFP)
   val t = BGMParser.parseFromString(bigraphExam)
-  val b = BGMTerm.toBigraph(t)
+  val b = BGMTerm.toBigraph(t)._2
 
   def main(args: Array[String]): Unit = {
     val startTime = System.currentTimeMillis()

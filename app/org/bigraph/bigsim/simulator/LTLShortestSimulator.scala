@@ -148,7 +148,7 @@ object testLTLShortestSimulator {
 
 
   val t = BGMParser.parseFromString(example1)
-  val b = BGMTerm.toBigraph(t)
+  val b = BGMTerm.toBigraph(t)._2
 
   def main(args: Array[String]): Unit = {
     val simulator = new LTLSimulator(b)

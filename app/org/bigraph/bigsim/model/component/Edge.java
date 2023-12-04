@@ -16,7 +16,15 @@ public class Edge implements Handle {
     private String name;
 
     public Edge() {
-        this.name = "E_" + NameGenerator.DEFAULT.generate();
+        this("E_" + NameGenerator.DEFAULT.generate());
+    }
+
+    public Edge(String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
     }
 
     @Override

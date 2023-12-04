@@ -96,7 +96,7 @@ class MCSimulatorFactory {
     }
   }
 
-    val b: Bigraph = BGMTerm.toBigraph(t) //从bgm文件构建一个偶图 lry val
+    val b: Bigraph = BGMTerm.toBigraph(t)._2 //从bgm文件构建一个偶图 lry val
 
     val simulator = new MCMainSimulator(b)
     val dotStr = simulator.simulate(pkuResource, strategy) //call

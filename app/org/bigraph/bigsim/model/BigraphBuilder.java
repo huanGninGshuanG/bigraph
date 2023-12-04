@@ -1,9 +1,8 @@
 package org.bigraph.bigsim.model;
 
-import org.bigraph.bigsim.model.component.*;
 import org.bigraph.bigsim.model.component.Control;
 import org.bigraph.bigsim.model.component.Node;
-import org.bigraph.bigsim.modelchecker.CTLModelCheckerENF;
+import org.bigraph.bigsim.model.component.*;
 import org.bigraph.bigsim.utils.DebugPrinter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +35,10 @@ public class BigraphBuilder implements BigraphHandler {
     private void assertConsistency() {
         if (!bigraph.isConsistent())
             throw new RuntimeException("Inconsistent bigraph.");
+    }
+
+    public Bigraph getBigraph() {
+        return bigraph;
     }
 
     @Override
@@ -104,17 +107,17 @@ public class BigraphBuilder implements BigraphHandler {
         return r;
     }
 
-    public Site addSite(Parent parent) {
+    public Site addSite(String name, Parent parent) {
         if (parent == null)
             throw new IllegalArgumentException("Argument can not be null.");
         assertOpen();
-        Site s = new Site(parent, this);
+        Site s = new Site(name, parent, this);
         this.bigraph.bigSites().add(s);
         assertConsistency();
         return s;
     }
 
-    public Node addNode(String ctrlName, Parent parent, List<Handle> handles) {
+    public Node addNode(String name, String ctrlName, Parent parent, List<Handle> handles) {
         if (ctrlName == null)
             throw new IllegalArgumentException("Control name can not be null.");
         if (parent == null)
@@ -131,14 +134,14 @@ public class BigraphBuilder implements BigraphHandler {
             if (hi != null && hi.hasNext()) {
                 h = hi.next();
             }
-            if (h == null) {
-                Edge e = new Edge();
-                bigraph.onEdgeAdded(e);
-                h = e;
-            }
+//            if (h == null) {
+//                Edge e = new Edge();
+//                bigraph.onEdgeAdded(e);
+//                h = e;
+//            }
             hs.add(h);
         }
-        Node n = new Node(c, parent, hs);
+        Node n = new Node(name, c, parent, hs);
         this.bigraph.onNodeAdded(n);
         assertConsistency();
         return n;
@@ -206,7 +209,7 @@ public class BigraphBuilder implements BigraphHandler {
         for (int i = 0; i < points.length; i++) {
             Handle old = points[i].getHandle();
             points[i].setHandle(handle);
-            if (old.isEdge() && old.getPoints().isEmpty()) {
+            if (old != null && old.isEdge() && old.getPoints().isEmpty()) {
                 bigraph.onEdgeRemoved((Edge) old);
             }
         }
@@ -239,17 +242,51 @@ public class BigraphBuilder implements BigraphHandler {
         }
     }
 
+    public void setBigraph(Bigraph big) {
+        this.bigraph = big;
+    }
+
     private void dfsTerm(Term term, Parent parent) {
         if (term.termType() == TermType.TPAR()) {
+            Parent finalParent = parent;
             ((Paraller) term).getChildren().foreach(child -> {
-                DebugPrinter.print(logger, "parallel child is: " + child);
-                dfsTerm(child, parent);
+                dfsTerm(child, finalParent);
                 return true;
             });
         } else if (term.termType() == TermType.THOLE()) {
-            addSite(parent);
+            addSite(term.toString(), parent);
         } else if (term.termType() == TermType.TPREF()) {
-
+            Prefix pref = (Prefix) term;
+            org.bigraph.bigsim.model.Node node = pref.node();
+            List<Handle> hs = new ArrayList<>(node.ctrl().arity());
+            node.ports().foreach(port -> {
+                String handleName = port.name(), nameType = port.nameType();
+                if (nameType.equals("outername")) {
+                    OuterName outerName = bigraph.bigOuter().get(handleName);
+                    assert outerName != null;
+                    hs.add(outerName);
+                } else if (nameType.equals("edge")) {
+                    Collection<Edge> edges = bigraph.edgesProxy().get();
+                    boolean finded = false;
+                    for (Edge edge : edges) {
+                        if (edge.getName().equals(handleName)) {
+                            hs.add(edge);
+                            finded = true;
+                            break;
+                        }
+                    }
+                    if (!finded) {
+                        Edge e = new Edge(handleName);
+                        hs.add(e);
+                        bigraph.onEdgeAdded(e);
+                    }
+                } else if (nameType.equals("idle")) {
+                    hs.add(null);
+                }
+                return true;
+            });
+            parent = addNode(node.name(), node.ctrl().name(), parent, hs);
+            dfsTerm(pref.suffix(), parent);
         }
     }
 

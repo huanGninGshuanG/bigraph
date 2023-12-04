@@ -186,7 +186,7 @@ class Name(n: String, nt: String, nl: List[String]) { //即port
   var nameType = nt; //edge        这里的nameType 的添加，好像是在刘若愚学长论文中
   var innerNameList = nl; //  add by kgq 20220311 如果当前你是一条边，那么记录这条边连接的内部名列表
 
-  override def toString = "Name:(" + name + "," + id + "," + nameType + getInnerNames + ")"; //打印ports
+  override def toString = "Name:(" + name + "," + id + "," + nameType + "," + getInnerNames + ")"; //打印ports
 
   def getInnerNames: String = { // add by kgq 20220311
     var ret = ""
@@ -770,7 +770,7 @@ class Bigraph(roots: Int = 1) extends BigraphHandler {
     s
   }
 
-  private var edgesProxy: CachingProxy[util.Collection[Edge]] = new CachingProxy[util.Collection[Edge]](
+  var edgesProxy: CachingProxy[util.Collection[Edge]] = new CachingProxy[util.Collection[Edge]](
     () => provideEdges
   )
 
@@ -821,7 +821,7 @@ class Bigraph(roots: Int = 1) extends BigraphHandler {
 
 
   // bigraph的所有nodes，通过softReference缓存
-  private var nodesProxy: CachingProxy[util.Collection[component.Node]] = new CachingProxy[util.Collection[component.Node]](
+  var nodesProxy: CachingProxy[util.Collection[component.Node]] = new CachingProxy[util.Collection[component.Node]](
     () => provideNodes
   )
 
@@ -904,17 +904,17 @@ class Bigraph(roots: Int = 1) extends BigraphHandler {
           for (port <- node.getPorts) {
             val handle = port.getHandle
             // 空悬的port
-            if (handle == null) {
-              DebugPrinter.err(logger, "INCOSISTENCY: broken or foreign handle")
-              return false
-            }
+            //            if (handle == null) {
+            //              DebugPrinter.err(logger, "INCOSISTENCY: broken or foreign handle")
+            //              return false
+            //            }
             // handle没有对应该port
-            if (!handle.getPoints.contains(port)) {
+            if (handle != null && !handle.getPoints.contains(port)) {
               DebugPrinter.err(logger, "INCOSISTENCY: handle/point mismatch")
               return false
             }
             seenPoint.add(port)
-            seenHandles.add(handle)
+            if (handle != null) seenHandles.add(handle)
           }
         } else if (c.isSite) {
           val site = c.asInstanceOf[Site]
@@ -940,21 +940,31 @@ class Bigraph(roots: Int = 1) extends BigraphHandler {
       for (point <- handle.getPoints) {
         // node看见的所有point与handle看见的point不对应（handle看见得更多）
         if (!seenPoint.remove(point)) {
-          DebugPrinter.err(logger, "INCOSISTENCY: foreign point")
+          DebugPrinter.err(logger, "INCOSISTENCY: foreign point: " + point)
           return false
         }
       }
     }
     // node看见的所有point与handle看见的point不对应（node看见得更多）
-    if (seenPoint.size() > 0) {
-      DebugPrinter.err(logger, "INCOSISTENCY: handle chain broken")
-      return false
-    }
+    //    if (seenPoint.size() > 0) {
+    //      DebugPrinter.err(logger, "INCOSISTENCY: handle chain broken " + seenPoint)
+    //      return false
+    //    }
     if (unseenSites.size() > 0) {
       DebugPrinter.err(logger, "INCOSISTENCY: unreachable site")
       return false
     }
     true
+  }
+
+  def print(): Unit = {
+    DebugPrinter.print(logger, "Bigraph Info:")
+    for (inner <- bigInner) DebugPrinter.print(logger, "Inner: " + inner)
+    for (outer <- bigOuter) DebugPrinter.print(logger, "Outer: " + outer)
+    for (site <- bigSites) DebugPrinter.print(logger, "Site: " + site)
+    for (root <- bigRoots) DebugPrinter.print(logger, "Root: " + root)
+    for (node <- nodesProxy.get()) DebugPrinter.print(logger, "Node: " + node)
+    for (edge <- edgesProxy.get()) DebugPrinter.print(logger, "Edge: " + edge)
   }
 }
 
@@ -975,7 +985,7 @@ object testBigraph {
     // testApplyMatch
     val p = BGMParser.parse(new File("Examples/Airport_513/models/Smart.bgm"));
     println(p)
-    val b: Bigraph = BGMTerm.toBigraph(p);
+    val b: Bigraph = BGMTerm.toBigraph(p)._2;
     println(b);
     //    var mm:Set[Match]=b.findMatches();
     /**

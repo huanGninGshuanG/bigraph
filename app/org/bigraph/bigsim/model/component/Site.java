@@ -11,10 +11,10 @@ public class Site implements Child {
     private BigraphHandler owner;
     private String name;
 
-    public Site(Parent parent, BigraphHandler owner) {
-        this.parent = parent;
+    public Site(String name, Parent parent, BigraphHandler owner) {
         this.owner = owner;
-        this.name = "S_" + NameGenerator.DEFAULT.generate();
+        this.name = name;
+        setParent(parent);
     }
 
     @Override

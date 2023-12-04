@@ -329,7 +329,7 @@ object testValue {
     println("********* Bigraph.modelNames is: " )
     println(Bigraph.modelNames)
     println("********* The End ****************")
-    val sim: Simulator = new EnumSimulator(b)
+    val sim: Simulator = new EnumSimulator(b._2)
     sim.simulate
 
 //    val matches: Set[Match] = b.findMatches           // 查找匹配

@@ -15,7 +15,6 @@ public class Control {
         this.arity = arity;
     }
 
-
     public String getName() {
         return name;
     }

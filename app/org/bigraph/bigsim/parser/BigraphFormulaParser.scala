@@ -20,6 +20,7 @@ class BgFormula {
 
 class BgAgent(n: String) extends BgFormula {
   val name = n
+
   override def toString = "(Agent:" + name + ")"
 }
 
@@ -27,7 +28,7 @@ class BgCompose(l: BgFormula, r: BgFormula) extends BgFormula {
   val leftBigraph = l
   val rightBigraph = r
 
-  override def toString = "(Compose:" + l + "○" + r +")"
+  override def toString = "(Compose:" + l + "○" + r + ")"
 }
 
 class BgParallel(l: BgFormula, r: BgFormula) extends BgFormula {
@@ -44,7 +45,7 @@ class BgMerge(l: BgFormula, r: BgFormula) extends BgFormula {
   override def toString = "(Merge:" + l + "|" + r + ")"
 }
 
-class BgJuxtapose(l: BgFormula, r: BgFormula) extends BgFormula{
+class BgJuxtapose(l: BgFormula, r: BgFormula) extends BgFormula {
   val leftBigraph = l
   val rightBigraph = r
 
@@ -61,7 +62,7 @@ object BigraphFormulaParser extends StandardTokenParsers {
 
   // delimiters： 分隔符
   lexical.delimiters ++= List("(", ")", "||", "|", "○", "⊗", ".")
-  lazy val baseAgent: Parser[Term] = ident ^^ { s => BigraphOperation.getOpBigraph(s)}
+  lazy val baseAgent: Parser[Term] = ident ^^ { s => BigraphOperation.getOpBigraph(s) }
 
   lazy val factor: Parser[Term] = baseAgent | ("(" ~> bgformula <~ ")")
 
@@ -71,7 +72,7 @@ object BigraphFormulaParser extends StandardTokenParsers {
     case l ~ r => {
       val opres = BigraphOperation.compose(l, r)
       if (!opres._2) {
-        if (DEBUG){
+        if (DEBUG) {
           println(opres._3)
         }
       }
@@ -88,7 +89,7 @@ object BigraphFormulaParser extends StandardTokenParsers {
   }
 
   lazy val juxtapose: Parser[Term] = (factor ~ ("⊗" ~> bgformula)) ^^ {
-    case l ~ r =>BigraphOperation.juxtapose(l, r)._1
+    case l ~ r => BigraphOperation.juxtapose(l, r)._1
   }
 
   lazy val nesting: Parser[Term] = (factor ~ ("." ~> bgformula)) ^^ {
@@ -100,6 +101,7 @@ object BigraphFormulaParser extends StandardTokenParsers {
     val tokens = new lexical.Scanner(s)
     phrase(bgformula)(tokens)
   }
+
   def apply(s: String): Term = {
     parse(s) match {
       case Success(tree, _) => tree;
@@ -121,7 +123,7 @@ object testBigraphFormulaParser {
       case TermType.THOLE => "Hole";
       case TermType.TNIL => "Nil";
       case TermType.TREGION => "Regions";
-      case TermType.TNUM  => "Num";
+      case TermType.TNUM => "Num";
       case _ => "Undefined TermType";
     }
   }
@@ -241,10 +243,10 @@ object testBigraphFormulaParser {
         |
         |# Go!
         |%check;
-        |""".stripMargin      //测试用例
+        |""".stripMargin //测试用例
 
-    val t = BGMParser.parseFromString(exam3)    // 解析
-    val b = BGMTerm.toBigraph(t)                      // 构造
+    val t = BGMParser.parseFromString(exam3) // 解析
+    val b = BGMTerm.toBigraph(t)._2 // 构造
     println(b.root)
     val simulator = new EnumSimulator(b)
     simulator.simulate

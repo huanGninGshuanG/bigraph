@@ -329,7 +329,7 @@ object testCTLSimulatorOntTheFly {
 
   val t = BGMParser.parseFromString(bankV3.normal)
 
-  val b = BGMTerm.toBigraph(t)
+  val b = BGMTerm.toBigraph(t)._2
   def main(args: Array[String]): Unit = {
     val startTime=System.currentTimeMillis()
     val simulator = new CTLSimulatorOnTheFly(b)

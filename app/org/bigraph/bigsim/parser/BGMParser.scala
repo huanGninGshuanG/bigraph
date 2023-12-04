@@ -107,10 +107,10 @@ object BGMTerm {
   def ToBigraph(t: List[BGMTerm]): Bigraph = {
     var bgmTerm = BGMParser.parseFromString(bgm)
     var bigraph = BGMTerm.toBigraph(bgmTerm)
-    bigraph
+    bigraph._1
   }
 
-  def toBigraph(t: List[BGMTerm]): Bigraph = {
+  def toBigraph(t: List[BGMTerm]): Pair[Bigraph, Bigraph] = {
     val b: Bigraph = new Bigraph(1);
 
     // BGMControl
@@ -125,7 +125,6 @@ object BGMTerm {
       Bigraph.addControl(x.n, x.arity, x.active, x.binding)
     })
     val builder: BigraphBuilder = new BigraphBuilder(new Signature(ctrls))
-
     // BGMName
     t.filter(_ match {
       case BGMName(_, _) => true
@@ -311,7 +310,6 @@ object BGMTerm {
     // 目前bigMC中没有声明的name全默认为inner name,只有%outer 说明的才是outer name，这里作一次修正
     Bigraph.nameMap.values.toList.map(x => b.inner.add(x));
     b.inner = b.inner.diff(b.outer)
-    DebugPrinter.print(logger, "HNS inner name is: " + b.inner)
 
     //BGMProp %property
     t.filter(_ match {
@@ -492,7 +490,7 @@ object BGMTerm {
       });
       GlobalCfg.needCtlCheck = true; // 包含LTL公式，所以把CTL检测的功能打开。
     }
-    b
+    (b, builder.getBigraph)
   }
 }
 
@@ -722,7 +720,7 @@ object testBGMParser {
         |
         |
         |# Model
-        |%agent  a:CriticalSection[idle] | b:Process[idle] | c:Process[idle] || d:CriticalSection[a:outername].$0 | e:Process[idle];
+        |%agent  a:CriticalSection[h:edge] | b:Process[h:edge] | c:Process[idle] || d:CriticalSection[a:outername].$0 | e:Process[idle];
         |
         |
         |
@@ -740,9 +738,8 @@ object testBGMParser {
 
     def logger = LoggerFactory.getLogger(this.getClass)
 
-    val b: Bigraph = BGMTerm.toBigraph(p);
-    DebugPrinter.print(logger, "bigraph is: " + b.root)
-    DebugPrinter.print(logger, "all names: " + b.root.getAllNames)
+    val b: Bigraph = BGMTerm.toBigraph(p)._2;
+    b.print()
     //    var simulator = new StochasticSimulator(b)
     //    simulator.simulate
     // val p: List[BGMTerm] = BGMParser.parse(new File(fileName));

@@ -248,7 +248,7 @@ object testLTLSimulator {
 
 
   val t = BGMParser.parseFromString(example3)
-  val b = BGMTerm.toBigraph(t)
+  val b = BGMTerm.toBigraph(t)._2
 
   def logger: Logger = LoggerFactory.getLogger(this.getClass)
 
