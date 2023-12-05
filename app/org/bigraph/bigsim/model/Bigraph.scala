@@ -3,7 +3,7 @@ package org.bigraph.bigsim.model
 import java.io.File
 import java.util
 
-import org.bigraph.bigsim.BRS.{Match, Matcher, WideMatch}
+import org.bigraph.bigsim.BRS.{CSPMatch, CSPMatcher, Match, Matcher, WideMatch}
 import org.bigraph.bigsim.data.DataModel
 import org.bigraph.bigsim.model.component._
 import org.bigraph.bigsim.parser.{BGMParser, BGMTerm}
@@ -781,7 +781,7 @@ class Bigraph(roots: Int = 1) extends BigraphHandler {
       val ports = n.getPorts
       for (port <- ports) {
         val handle = port.getHandle
-        if (handle.isEdge) s.add(handle.asInstanceOf[Edge])
+        if (handle!=null && handle.isEdge) s.add(handle.asInstanceOf[Edge])
       }
     }
     for ((_, v) <- bigInner) {
@@ -955,6 +955,18 @@ class Bigraph(roots: Int = 1) extends BigraphHandler {
       return false
     }
     true
+  }
+
+  def matchRule(r: ReactionRule): Unit = {
+    val builder: BigraphBuilder = new BigraphBuilder(bigSignature)
+    builder.parseTerm(r.redex)
+    val redex: Bigraph = builder.getBigraph
+    redex.print()
+    val matcher: CSPMatcher = new CSPMatcher()
+    val iter = matcher.`match`(this, redex).iterator()
+    while(iter.hasNext) {
+      iter.next()
+    }
   }
 
   def print(): Unit = {

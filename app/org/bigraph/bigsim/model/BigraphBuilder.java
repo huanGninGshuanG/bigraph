@@ -262,9 +262,10 @@ public class BigraphBuilder implements BigraphHandler {
             node.ports().foreach(port -> {
                 String handleName = port.name(), nameType = port.nameType();
                 if (nameType.equals("outername")) {
-                    OuterName outerName = bigraph.bigOuter().get(handleName);
-                    assert outerName != null;
-                    hs.add(outerName);
+                    OuterName outerName = null;
+                    if (bigraph.bigOuter().containsKey(handleName)) outerName = bigraph.bigOuter().get(handleName);
+                    else outerName = addOuterName(handleName);
+                    if (outerName != null) hs.add(outerName);
                 } else if (nameType.equals("edge")) {
                     Collection<Edge> edges = bigraph.edgesProxy().get();
                     boolean finded = false;
@@ -300,6 +301,10 @@ public class BigraphBuilder implements BigraphHandler {
                 dfsTerm(child, parent);
                 return true;
             });
+        } else {
+            DebugPrinter.print(logger, "region child is: " + term);
+            Parent parent = addRoot();
+            dfsTerm(term, parent);
         }
     }
 }

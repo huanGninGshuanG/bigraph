@@ -132,12 +132,8 @@ object BGMTerm {
     }).map(x => {
       val xo: BGMName = x.asInstanceOf[BGMName];
       if (xo.isouter) {
-        DebugPrinter.print(logger, "HNS add OuterName: " + xo)
-        builder.addOuterName(xo.n)
         b.addOuterName(new Name(xo.n, "outername"))
       } else {
-        DebugPrinter.print(logger, "HNS add InnerName: " + xo)
-        builder.addInnerName(xo.n)
         b.addInnerName(new Name(xo.n, "innername"))
       }
 
@@ -230,8 +226,6 @@ object BGMTerm {
       val reactum = TermParser.apply(rrp.reactum)
       b.rex.add(reactum)
       b.rules.add(new ReactionRule(rrp.n, redex, reactum, rrp.exp)); //toBigraph时把反应规则解析到Bigraph
-      //println("rrp.exp: " + rrp.exp)
-
     })
 
     // BGMProperty
@@ -720,7 +714,7 @@ object testBGMParser {
         |
         |
         |# Model
-        |%agent  a:CriticalSection[h:edge] | b:Process[h:edge] | c:Process[idle] || d:CriticalSection[a:outername].$0 | e:Process[idle];
+        |%agent  a:CriticalSection[idle] | b:Process[idle] | c:Process[idle];
         |
         |
         |
@@ -738,8 +732,12 @@ object testBGMParser {
 
     def logger = LoggerFactory.getLogger(this.getClass)
 
-    val b: Bigraph = BGMTerm.toBigraph(p)._2;
-    b.print()
+    val b: (Bigraph, Bigraph) = BGMTerm.toBigraph(p);
+    b._2.print()
+    b._1.rules.foreach(x => {
+      DebugPrinter.print(logger, "rule: " + x)
+      b._2.matchRule(x)
+    })
     //    var simulator = new StochasticSimulator(b)
     //    simulator.simulate
     // val p: List[BGMTerm] = BGMParser.parse(new File(fileName));
