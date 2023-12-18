@@ -1,5 +1,7 @@
 package org.bigraph.bigsim.model;
 
+import org.bigraph.bigsim.exceptions.IncompatibleInterfaceException;
+import org.bigraph.bigsim.exceptions.IncompatibleSignatureException;
 import org.bigraph.bigsim.model.component.Control;
 import org.bigraph.bigsim.model.component.Node;
 import org.bigraph.bigsim.model.component.*;
@@ -7,10 +9,7 @@ import org.bigraph.bigsim.utils.DebugPrinter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author huangningshuang
@@ -24,6 +23,111 @@ public class BigraphBuilder implements BigraphHandler {
     public BigraphBuilder(Signature signature) {
         bigraph = new Bigraph();
         bigraph.setSignature(signature);
+    }
+
+    public Bigraph makeBigraph(boolean close) {
+        assertOpen();
+        assertConsistency();
+        Bigraph res;
+        if (close) {
+            closed = true;
+            res = this.bigraph;
+        } else {
+            res = this.bigraph.clone();
+        }
+        return res;
+    }
+
+    /// 并置操作 graph /otimes this.bigraph
+    public void leftJuxtapose(Bigraph graph) {
+        assertOpen();
+        Bigraph right = this.bigraph;
+        if (graph == right)
+            throw new IllegalArgumentException("a bigraph can not be juxtaposed with itself.");
+        if (!graph.bigSignature().equals(right.bigSignature())) {
+            throw new IncompatibleSignatureException(graph.getSignature(), right.getSignature());
+        }
+        if (!Collections.disjoint(graph.bigInner().keySet(), right.bigInner().keySet())) {
+            throw new IncompatibleInterfaceException(new UnsupportedOperationException("joint inner name juxtapose: " + graph.bigInner().keySet() + " and " + right.bigInner().keySet()));
+        }
+        if (!Collections.disjoint(graph.bigOuter().keySet(), right.bigOuter().keySet())) {
+            throw new IncompatibleInterfaceException(new UnsupportedOperationException("joint outer name juxtapose: " + graph.bigOuter().keySet() + " and " + right.bigOuter().keySet()));
+
+        }
+        Bigraph left = graph.clone();
+        Collection<Edge> es = left.getEdges();
+        right.onEdgeAdded(es);
+        right.onNodeAdded(left.getNodes());
+        right.onEdgeSetChanged();
+        right.onNodeSetChanged();
+
+        right.bigRoots().addAll(0, left.bigRoots());
+        right.bigSites().addAll(0, left.bigSites());
+        right.bigOuter().putAll(left.bigOuter());
+        right.bigInner().putAll(left.bigInner());
+        assertConsistency();
+    }
+
+    /// 组合操作 graph /compose this.bigraph
+    public void compose(Bigraph graph) {
+        assertOpen();
+        Bigraph in = this.bigraph, out = graph;
+        if (in == out)
+            throw new IllegalArgumentException("a bigraph can not compose with itself.");
+        if (!out.bigSignature().equals(in.bigSignature())) {
+            throw new IncompatibleSignatureException(out.bigSignature(), in.bigSignature());
+        }
+        Set<String> uniqueIn = new HashSet<>(in.bigOuter().keySet());
+        Set<String> uniqueOut = new HashSet<>(out.bigInner().keySet());
+        Set<String> tmp = new HashSet<>(uniqueOut);
+        for (String name : tmp) {
+            if (!uniqueIn.contains(name)) {
+                tmp.remove(name);
+            }
+        }
+        uniqueIn.removeAll(tmp);
+        uniqueOut.removeAll(tmp);
+        if (!uniqueIn.isEmpty() || !uniqueOut.isEmpty() || in.bigRoots().size() != out.bigSites().size()) {
+            throw new IncompatibleInterfaceException("The interface must match");
+        }
+        Bigraph a = out.clone(), b = in;
+        // b的roots依次对应a的sites
+        List<Root> inRoots = b.bigRoots();
+        List<Site> outSites = a.bigSites();
+        for (int i = 0; i < inRoots.size(); i++) {
+            Root r = inRoots.get(i);
+            Site s = outSites.get(i);
+            Parent parent = s.getParent();
+            parent.removeChild(s);
+            for (Child c : new HashSet<>(r.getChildren())) {
+                c.setParent(parent);
+            }
+        }
+        // b的outerName对应a的InnerName
+        Map<String, Handle> aHandle = new HashMap<>(a.bigInner().size());
+        for (InnerName i : a.bigInner().values()) {
+            Handle handle = i.getHandle();
+            aHandle.put(i.getName(), handle);
+            i.setHandle(null); // handle删掉对这个innerName的连接
+        }
+        for (OuterName o : b.bigOuter().values()) {
+            Handle handle = aHandle.get(o.getName());
+            for (Point p : new HashSet<>(o.getPoints())) {
+                p.setHandle(handle);
+            }
+        }
+        // b重置所有外部接口为a的
+        b.bigOuter().clear();
+        b.bigRoots().clear();
+        b.bigOuter().putAll(a.bigOuter());
+        b.bigRoots().addAll(a.bigRoots());
+
+        b.onNodeSetChanged();
+        b.onNodeAdded(a.getNodes());
+        b.onEdgeAdded(a.getEdges());
+        DebugPrinter.print(logger, "outercompose");
+        this.bigraph.print();
+        assertConsistency();
     }
 
     private void assertOpen() {
@@ -117,6 +221,16 @@ public class BigraphBuilder implements BigraphHandler {
         return s;
     }
 
+    public Site addSite(Parent parent) {
+        if (parent == null)
+            throw new IllegalArgumentException("Argument can not be null.");
+        assertOpen();
+        Site s = new Site(parent, this);
+        this.bigraph.bigSites().add(s);
+        assertConsistency();
+        return s;
+    }
+
     public Node addNode(String name, String ctrlName, Parent parent, List<Handle> handles) {
         if (ctrlName == null)
             throw new IllegalArgumentException("Control name can not be null.");
@@ -134,11 +248,11 @@ public class BigraphBuilder implements BigraphHandler {
             if (hi != null && hi.hasNext()) {
                 h = hi.next();
             }
-//            if (h == null) {
-//                Edge e = new Edge();
-//                bigraph.onEdgeAdded(e);
-//                h = e;
-//            }
+            if (h == null) {
+                Edge e = new Edge();
+                bigraph.onEdgeAdded(e);
+                h = e;
+            }
             hs.add(h);
         }
         Node n = new Node(name, c, parent, hs);
@@ -282,7 +396,7 @@ public class BigraphBuilder implements BigraphHandler {
                         bigraph.onEdgeAdded(e);
                     }
                 } else if (nameType.equals("idle")) {
-                    hs.add(null);
+                    hs.add(new Edge());
                 }
                 return true;
             });

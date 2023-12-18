@@ -10,7 +10,7 @@ import java.util.IdentityHashMap;
  * @author huangningshuang
  * @date 2023/11/30
  */
-public class Edge implements Handle {
+public class Edge implements Handle, Replicable {
     private Collection<Point> points = Collections.newSetFromMap(new IdentityHashMap<>());
     private final Collection<? extends Point> roPoints = Collections.unmodifiableCollection(this.points);
     private String name;
@@ -29,7 +29,7 @@ public class Edge implements Handle {
 
     @Override
     public String toString() {
-        return this.name;
+        return "[Edge]" + this.name;
     }
 
     @Override
@@ -89,6 +89,11 @@ public class Edge implements Handle {
 
     @Override
     public boolean isEdge() {
-        return false;
+        return true;
+    }
+
+    @Override
+    public Edge replicate() {
+        return new Edge(this.getName());
     }
 }

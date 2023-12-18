@@ -2,9 +2,11 @@ package org.bigraph.bigsim.model
 
 import java.io.File
 import java.util
+import java.util.Collections
 
-import org.bigraph.bigsim.BRS.{CSPMatch, CSPMatcher, Match, Matcher, WideMatch}
+import org.bigraph.bigsim.BRS.{CSPMatch, CSPMatcher, InstantiationMap, Match, Matcher, Rewrite, WideMatch}
 import org.bigraph.bigsim.data.DataModel
+import org.bigraph.bigsim.exceptions.{IncompatibleInterfaceException, IncompatibleSignatureException, NameClashException}
 import org.bigraph.bigsim.model.component._
 import org.bigraph.bigsim.parser.{BGMParser, BGMTerm}
 import org.bigraph.bigsim.simulator.Simulator
@@ -207,6 +209,8 @@ class Name(n: String, nt: String, nl: List[String]) { //即port
 
 // Bigraph is (V,E,ctrl,prnt,link) : <n,K> -> <m,L>
 object Bigraph {
+  def logger: Logger = LoggerFactory.getLogger(this.getClass)
+
   var nameMap: Map[Pair[String, String], Name] = Map();
   var nodeMap: Map[String, Node] = Map();
   var controlMap: Map[String, Control] = Map();
@@ -304,6 +308,47 @@ object Bigraph {
     true;
   }
 
+  def makeId(signature: Signature, width: Integer, names: util.ArrayList[String]): Bigraph = {
+    val builder: BigraphBuilder = new BigraphBuilder(signature)
+    for (_ <- 1 until width) {
+      builder.addSite(builder.addRoot());
+    }
+    for (name <- names) {
+      builder.addInnerName(name, builder.addOuterName(name))
+    }
+    builder.getBigraph
+  }
+
+  def makeEmpty(signature: Signature): Bigraph = {
+    val bigraph = new Bigraph()
+    bigraph.setSignature(signature)
+    bigraph
+  }
+
+  def juxtapose(lhs: Bigraph, rhs: Bigraph): Bigraph = {
+    if (lhs == rhs)
+      throw new IllegalArgumentException("A bigraph can not juxtapose with itself.")
+    if (!(lhs.bigSignature == rhs.bigSignature)) throw new IncompatibleSignatureException(lhs.bigSignature, rhs.bigSignature)
+    if (!Collections.disjoint(lhs.bigInner.keySet, rhs.bigInner.keySet))
+      throw new IncompatibleInterfaceException(new UnsupportedOperationException("joint name juxtapose: " + lhs.bigInner.keySet() + " and " + rhs.bigInner.keySet()))
+    if (!Collections.disjoint(lhs.bigOuter.keySet, rhs.bigOuter.keySet))
+      throw new IncompatibleInterfaceException(new UnsupportedOperationException("joint name juxtapose: " + lhs.bigOuter.keySet() + " and " + rhs.bigOuter.keySet()))
+    val l: Bigraph = lhs.clone()
+    val r: Bigraph = rhs.clone()
+    val edges = r.getEdges
+    l.onEdgeAdded(edges)
+    l.onNodeAdded(r.getNodes)
+    r.onEdgeSetChanged()
+    r.onNodeSetChanged()
+    l.bigRoots.addAll(r.bigRoots)
+    l.bigSites.addAll(r.bigSites)
+    l.bigOuter.putAll(r.bigOuter)
+    l.bigInner.putAll(r.bigInner)
+    if (!l.isConsistent) {
+      throw new RuntimeException("Inconsistent bigraph")
+    }
+    l
+  }
 }
 
 class Bigraph(roots: Int = 1) extends BigraphHandler {
@@ -727,6 +772,10 @@ class Bigraph(roots: Int = 1) extends BigraphHandler {
     bigSignature = signature
   }
 
+  def getSignature(): Signature = {
+    bigSignature
+  }
+
   override def isEmpty: Boolean = {
     bigRoots.isEmpty && bigSites.isEmpty && bigOuter.isEmpty && bigInner.isEmpty
   }
@@ -776,17 +825,17 @@ class Bigraph(roots: Int = 1) extends BigraphHandler {
 
   def provideEdges: util.Collection[Edge] = {
     val nodes = getNodes
-    var s: util.Set[Edge] = new util.HashSet[Edge]()
+    val s: util.Set[Edge] = new util.HashSet[Edge]()
     for (n <- nodes) {
       val ports = n.getPorts
       for (port <- ports) {
         val handle = port.getHandle
-        if (handle!=null && handle.isEdge) s.add(handle.asInstanceOf[Edge])
+        if (handle != null && handle.isEdge) s.add(handle.asInstanceOf[Edge])
       }
     }
     for ((_, v) <- bigInner) {
       val handle = v.getHandle
-      if (handle.isEdge) s.add(handle.asInstanceOf[Edge])
+      if (handle!=null && handle.isEdge) s.add(handle.asInstanceOf[Edge])
     }
     s
   }
@@ -815,17 +864,16 @@ class Bigraph(roots: Int = 1) extends BigraphHandler {
     nodesProxy.invalidate()
   }
 
-  override def getEdges: util.Collection[_ <: Edge] = {
+  override def getEdges: util.Collection[Edge] = {
     edgesProxy.get()
   }
-
 
   // bigraph的所有nodes，通过softReference缓存
   var nodesProxy: CachingProxy[util.Collection[component.Node]] = new CachingProxy[util.Collection[component.Node]](
     () => provideNodes
   )
 
-  override def getNodes: util.Collection[_ <: component.Node] = {
+  override def getNodes: util.Collection[component.Node] = {
     nodesProxy.get()
   }
 
@@ -855,6 +903,11 @@ class Bigraph(roots: Int = 1) extends BigraphHandler {
   def onNodeAdded(nodes: util.Collection[component.Node]): Unit = {
     val ns = nodesProxy.softGet()
     if (ns != null) ns.addAll(nodes)
+  }
+
+  def onNodeSetChanged(): Unit = {
+    this.nodesProxy.invalidate()
+    this.ancestors.clear()
   }
 
   def onNodeRemoved(node: component.Node): Unit = {
@@ -904,10 +957,10 @@ class Bigraph(roots: Int = 1) extends BigraphHandler {
           for (port <- node.getPorts) {
             val handle = port.getHandle
             // 空悬的port
-            //            if (handle == null) {
-            //              DebugPrinter.err(logger, "INCOSISTENCY: broken or foreign handle")
-            //              return false
-            //            }
+            if (handle == null) {
+              DebugPrinter.err(logger, "INCOSISTENCY: broken or foreign handle")
+              return false
+            }
             // handle没有对应该port
             if (handle != null && !handle.getPoints.contains(port)) {
               DebugPrinter.err(logger, "INCOSISTENCY: handle/point mismatch")
@@ -957,15 +1010,87 @@ class Bigraph(roots: Int = 1) extends BigraphHandler {
     true
   }
 
+  @Override
+  override def clone(): Bigraph = {
+    var big: Bigraph = new Bigraph()
+    big.setSignature(this.bigSignature)
+    val hndDict: util.Map[Handle, Handle] = new util.HashMap[Handle, Handle]()
+    for ((k, ori) <- bigOuter) {
+      val copy = ori.replicate()
+      big.bigOuter.put(k, copy)
+      hndDict.put(ori, copy)
+    }
+    for ((k, ori) <- bigInner) {
+      val copy = ori.replicate()
+      big.bigInner.put(k, copy)
+      val h0 = ori.getHandle
+      var h1 = hndDict.get(h0)
+      if (h1 == null) {
+        h1 = h0.replicate()
+        hndDict.put(h0, h1)
+      }
+      copy.setHandle(h1)
+    }
+    var q: util.Queue[(Parent, Child)] = new util.LinkedList[(Parent, Child)]()
+    for (r <- bigRoots) {
+      val copy = r.replicate()
+      big.bigRoots.add(copy)
+      for (c <- r.getChildren) {
+        q.add(new Tuple2[Parent, Child](copy, c))
+      }
+    }
+    val sites: util.List[Site] = new util.ArrayList[Site]()
+    for (_ <- 0 until this.bigSites.size()) {
+      sites.add(new Site())
+    }
+    while (!q.isEmpty) {
+      val t = q.poll()
+      if (t._2.isNode) {
+        val n1: component.Node = t._2.asInstanceOf[component.Node]
+        val n2: component.Node = n1.replicate
+        n2.setParent(t._1)
+        // node每个端口的拷贝
+        for (i <- 0 until n1.getPorts.size()) {
+          val p1 = n1.getPort(i)
+          val h1 = p1.getHandle
+          var h2 = hndDict.get(h1)
+          if (h2 == null) {
+            h2 = h1.replicate()
+            hndDict.put(h1, h2)
+          }
+          n2.getPort(i).setHandle(h2)
+        }
+        // node每个孩子节点入队
+        for (c <- n1.getChildren) {
+          q.add((n2, c))
+        }
+      } else {
+        val s1: Site = t._2.asInstanceOf[Site]
+        val s2: Site = s1.replicate()
+        s2.setParent(t._1)
+        sites.set(this.bigSites.indexOf(s1), s2)
+      }
+    }
+    big.bigSites.addAll(sites)
+    big
+  }
+
   def matchRule(r: ReactionRule): Unit = {
     val builder: BigraphBuilder = new BigraphBuilder(bigSignature)
     builder.parseTerm(r.redex)
     val redex: Bigraph = builder.getBigraph
-    redex.print()
+    val bb = new BigraphBuilder(bigSignature)
+    bb.parseTerm(r.reactum)
+    val reactum: Bigraph = bb.getBigraph
+    DebugPrinter.print(logger, "- REACTUM -----------------------------")
+    reactum.print()
     val matcher: CSPMatcher = new CSPMatcher()
     val iter = matcher.`match`(this, redex).iterator()
-    while(iter.hasNext) {
-      iter.next()
+    while (iter.hasNext) {
+      val pMatch: CSPMatch = iter.next()
+      val nb = Rewrite.rewrite(pMatch, redex, reactum, InstantiationMap.getIdMap(reactum.bigOuter.size()))
+      DebugPrinter.print(logger, "new bigraph::")
+      nb.print()
     }
   }
 

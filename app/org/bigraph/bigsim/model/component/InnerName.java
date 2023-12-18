@@ -4,7 +4,7 @@ package org.bigraph.bigsim.model.component;
  * @author huangningshuang
  * @date 2023/12/1
  */
-public class InnerName implements Point {
+public class InnerName implements Point, Replicable {
     private Handle handle;
     private String name;
 
@@ -12,9 +12,17 @@ public class InnerName implements Point {
         this.name = name;
     }
 
+    public InnerName(Handle handle) {
+        setHandle(handle);
+    }
+
+    public InnerName() {
+
+    }
+
     @Override
     public String toString() {
-        return name;
+        return name + "->" + handle;
     }
 
     @Override
@@ -59,6 +67,11 @@ public class InnerName implements Point {
     @Override
     public boolean isEdge() {
         return false;
+    }
+
+    @Override
+    public InnerName replicate() {
+        return new InnerName(this.getName());
     }
 
     public String getName() {

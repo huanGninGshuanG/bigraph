@@ -1,5 +1,9 @@
 package org.bigraph.bigsim.model.component;
 
+import org.bigraph.bigsim.utils.DebugPrinter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.HashMap;
@@ -12,6 +16,7 @@ import java.util.Map;
  */
 public class Signature implements Iterable<Control> {
     final private Map<String, Control> ctrls = new HashMap<>();
+    private static final Logger logger = LoggerFactory.getLogger(Signature.class);
 
     public Signature(Iterable<Control> controls) {
         for (Control c : controls) {

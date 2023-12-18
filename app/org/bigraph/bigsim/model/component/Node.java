@@ -8,7 +8,7 @@ import java.util.*;
  * @author huangningshuang
  * @date 2023/11/30
  */
-public class Node implements Parent, Child {
+public class Node implements Parent, Child, Replicable {
 
     private Control control;
     private final List<Port> ports;
@@ -18,6 +18,10 @@ public class Node implements Parent, Child {
 
     private final List<? extends Port> roPorts; // read only ports
     private final Collection<? extends Child> roChildren; // read only children
+
+    public Node(Control control, String name) {
+        this(name, control, null);
+    }
 
     public Node(String name, Control control, Parent parent) {
         this.name = name;
@@ -42,7 +46,7 @@ public class Node implements Parent, Child {
 
     @Override
     public String toString() {
-        return this.name + ':' + this.control.getName();
+        return this.name + ':' + this.control.getName() + "->" + parent + "::" + ports;
     }
 
     @Override
@@ -143,6 +147,11 @@ public class Node implements Parent, Child {
         return this.ports.get(index);
     }
 
+    @Override
+    public Node replicate() {
+        return new Node(this.control, this.name);
+    }
+
     public class Port implements Point {
         private final int index; // 该port是node的第几个port
         private Handle handle;
@@ -161,7 +170,7 @@ public class Node implements Parent, Child {
 
         @Override
         public String toString() {
-            return index + "@" + Node.this;
+            return index + "@" + Node.this.name + "->" + handle;
         }
 
         @Override

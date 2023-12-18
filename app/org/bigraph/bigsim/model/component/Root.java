@@ -22,6 +22,10 @@ public class Root implements Parent {
         this.name = "R_" + NameGenerator.DEFAULT.generate();
     }
 
+    public Root() {
+        this(null);
+    }
+
     @Override
     public String toString() {
         if (owner != null) {
@@ -56,6 +60,11 @@ public class Root implements Parent {
     @Override
     public Root getRoot() {
         return this;
+    }
+
+    @Override
+    public Root replicate() {
+        return new Root();
     }
 
     @Override

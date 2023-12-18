@@ -8,7 +8,7 @@ import java.util.IdentityHashMap;
  * @author huangningshuang
  * @date 2023/12/1
  */
-public class OuterName implements Handle {
+public class OuterName implements Handle, Replicable {
     private Collection<Point> points = Collections
             .newSetFromMap(new IdentityHashMap<>());
     private final Collection<? extends Point> roPoints = Collections
@@ -25,7 +25,7 @@ public class OuterName implements Handle {
 
     @Override
     public String toString() {
-        return name;
+        return "[OuterName]" + name;
     }
 
     @Override
@@ -78,5 +78,10 @@ public class OuterName implements Handle {
     @Override
     public boolean isEdge() {
         return false;
+    }
+
+    @Override
+    public OuterName replicate() {
+        return new OuterName(this.getName());
     }
 }

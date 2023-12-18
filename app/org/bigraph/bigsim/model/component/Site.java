@@ -17,13 +17,25 @@ public class Site implements Child {
         setParent(parent);
     }
 
+    public Site(Parent parent, BigraphHandler owner) {
+        this(NameGenerator.DEFAULT.generate(), parent, owner);
+    }
+
+    public Site(Parent parent) {
+        this(NameGenerator.DEFAULT.generate(), parent, null);
+    }
+
+    public Site() {
+        this(NameGenerator.DEFAULT.generate(), null, null);
+    }
+
     @Override
     public String toString() {
         if (owner != null) {
             int i = owner.getSites().indexOf(this);
             if (i >= 0) return i + ":s";
         }
-        return this.name;
+        return this.name + "->" + parent;
     }
 
     @Override
@@ -39,6 +51,11 @@ public class Site implements Child {
             if (old != null) old.removeChild(this);
             if (this.parent != null) this.parent.addChild(this);
         }
+    }
+
+    @Override
+    public Site replicate() {
+        return new Site();
     }
 
     @Override

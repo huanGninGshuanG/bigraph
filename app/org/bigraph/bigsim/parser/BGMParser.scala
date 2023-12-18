@@ -690,31 +690,31 @@ object testBGMParser {
         |%active Process : 1;
         |
         |# Names
-        |%outername a;
+        |%outername x;
         |
         |# Rules
-        |%rule r_0 a:CriticalSection[a:outername].$0 | b:Process[a:outername] -> a:CriticalSection[a:outername].($0 | b:Process[a:outername]){};
+        |%rule r_0 a:CriticalSection[x:outername].$0 | b:Process[x:outername] -> a:CriticalSection[x:outername].($0 | b:Process[x:outername]){};
         |
-        |%rule r_1 a:CriticalSection[a:outername].(b:Process[a:outername] | $0) -> a:CriticalSection[a:outername].$0 | b:Process[idle]{};
+        |%rule r_1 a:CriticalSection[x:outername].(b:Process[x:outername] | $0) -> a:CriticalSection[x:outername].$0 | b:Process[idle]{};
         |
-        |%rule r_2 a:CriticalSection[a:outername].$0 | b:Process[idle] -> a:CriticalSection[a:outername].$0 | b:Process[a:outername]{};
+        |%rule r_2 a:CriticalSection[x:outername].$0 | b:Process[idle] -> a:CriticalSection[x:outername].$0 | b:Process[x:outername]{};
         |
-        |%rule r_3 a:CriticalSection[a:outername].$0 | c:Process[a:outername] -> a:CriticalSection[a:outername].($0 | c:Process[a:outername]){};
+        |%rule r_3 a:CriticalSection[x:outername].$0 | c:Process[x:outername] -> a:CriticalSection[x:outername].($0 | c:Process[x:outername]){};
         |
-        |%rule r_4 a:CriticalSection[a:outername].(c:Process[a:outername] | $0) -> a:CriticalSection[a:outername].$0 | c:Process[idle]{};
+        |%rule r_4 a:CriticalSection[x:outername].(c:Process[x:outername] | $0) -> a:CriticalSection[x:outername].$0 | c:Process[idle]{};
         |
-        |%rule r_5 a:CriticalSection[a:outername].$0 | c:Process[idle] -> a:CriticalSection[a:outername].$0 | c:Process[a:outername]{};
+        |%rule r_5 a:CriticalSection[x:outername].$0 | c:Process[idle] -> a:CriticalSection[x:outername].$0 | c:Process[x:outername]{};
         |
-        |%rule r_6 a:CriticalSection[idle] | b:Process[idle] -> a:CriticalSection[a:edge] | b:Process[a:edge]{};
+        |%rule r_6 a:CriticalSection[idle] | b:Process[idle] -> a:CriticalSection[x:edge] | b:Process[x:edge]{};
         |
-        |%rule r_7 a:CriticalSection[idle] | c:Process[idle] -> a:CriticalSection[a:edge] | c:Process[a:edge]{};
+        |%rule r_7 a:CriticalSection[idle] | c:Process[idle] -> a:CriticalSection[x:edge] | c:Process[x:edge]{};
         |
         |# prop
-        |%prop p  a:CriticalSection[a:edge].(b:Process[a:edge] | $0){};
+        |%prop p  a:CriticalSection[x:edge].(b:Process[x:edge] | $0){};
         |
         |
         |# Model
-        |%agent  a:CriticalSection[idle] | b:Process[idle] | c:Process[idle];
+        |%agent  a:CriticalSection[x:edge] | b:Process[x:edge] | c:Process[idle];
         |
         |
         |
