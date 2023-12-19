@@ -32,12 +32,13 @@ class LTLSimulator
   var recordMap: Map[State, State] = Map()
 
   def simulate: Unit = {
+    b.root = b.structToTerm()
     if (b == null || b.root == null) {
       println("LTL simulator::simulate(): null");
       return;
     } else {
       val buildKripke = new BuildKripkeStructure(transition)
-      val kripke = buildKripke.buildKripke
+      val kripke = buildKripke.buildKripke(b.bigSignature)
       val ltlModelChecker = new LTLModelChecker(kripke)
       this.checkRes = ltlModelChecker.satisfies(ltlParser.getLTLFormula())
       logger.debug("LTL check res: " + checkRes)
@@ -223,16 +224,12 @@ object testLTLSimulator {
       |
       |%rule r_5 a:CriticalSection[a:outername].$0 | c:Process[idle] -> a:CriticalSection[a:outername].$0 | c:Process[a:outername]{};
       |
-      |%rule r_6 a:CriticalSection[idle] | b:Process[idle] -> a:CriticalSection[a:edge] | b:Process[a:edge]{};
-      |
-      |%rule r_7 a:CriticalSection[idle] | c:Process[idle] -> a:CriticalSection[a:edge] | c:Process[a:edge]{};
-      |
       |# prop
       |%prop p  a:CriticalSection[a:edge].(b:Process[a:edge] | $0){};
       |
       |
       |# Model
-      |%agent  a:CriticalSection[idle] | b:Process[idle] | c:Process[idle];
+      |%agent  a:CriticalSection[idle].nil|b:Process[idle].nil|c:Process[idle].nil;
       |
       |
       |
@@ -248,7 +245,7 @@ object testLTLSimulator {
 
 
   val t = BGMParser.parseFromString(example3)
-  val b = BGMTerm.toBigraph(t)._2
+  val b = BGMTerm.toBigraph(t)
 
   def logger: Logger = LoggerFactory.getLogger(this.getClass)
 

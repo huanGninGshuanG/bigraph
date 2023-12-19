@@ -16,6 +16,7 @@ public class OuterName implements Handle, Replicable {
     private String name;
 
     public OuterName(String name) {
+        if (name == null) throw new RuntimeException("bad");
         this.name = name;
     }
 

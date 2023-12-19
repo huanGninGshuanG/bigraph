@@ -27,6 +27,10 @@ public class Edge implements Handle, Replicable {
         return name;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
     @Override
     public String toString() {
         return "[Edge]" + this.name;

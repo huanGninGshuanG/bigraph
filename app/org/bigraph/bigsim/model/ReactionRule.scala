@@ -10,28 +10,42 @@ import cern.jet.random.Poisson
 import cern.jet.random.engine.RandomEngine
 import cern.jet.random.Exponential
 import org.bigraph.bigsim.BRS.Match
+import org.bigraph.bigsim.model.component.Signature
 
 import scala.collection.mutable.Queue
 import scala.collection.mutable.ListBuffer
 
 /**
  * @author zhaoxin
- * version 0.1
- *
+ *         version 0.1
  * @author liangwei
- * version 0.2
- *
+ *         version 0.2
  * @author kongguanqiao
- * version 0.3
+ *         version 0.3
  */
 
 //class ReactionRule(n: String, m: String, red: Term, react: Term, exp: String) {
-class ReactionRule(n: String, red: Term, react: Term, exp: String) {
+class ReactionRule(n: String, red: Term, react: Term, exp: String, signature: Signature) {
+
+  def this(n: String, red: Term, react: Term, exp: String) = this(n, red, react, exp, null)
+
   /** Basic element of RR */
   var name: String = n
   //var pName: String = m 
   var redex: Term = red
   var reactum: Term = react
+  var sig: Signature = signature
+  val redexBig: Bigraph = {
+    val bb = new BigraphBuilder(sig)
+    bb.parseTerm(redex)
+    bb.makeBigraph(true)
+  }
+  val reactumBig: Bigraph = {
+    val bb = new BigraphBuilder(sig)
+    bb.parseTerm(reactum)
+    bb.makeBigraph(true)
+  }
+
   var express: String = exp;
 
   var timeDistribution: String = ""
@@ -40,7 +54,6 @@ class ReactionRule(n: String, red: Term, react: Term, exp: String) {
   var hmms: Set[String] = Set()
   var reverse: Boolean = false
   var reactNodes: Set[String] = Set() //放React:Passenger,Airplane 的集合
-
 
 
   // xin
@@ -58,7 +71,7 @@ class ReactionRule(n: String, red: Term, react: Term, exp: String) {
     s.append(express);
     s.toString().hashCode();
   }
- 
+
 
   /** If a reaction rule contains data model, calculate it and split it */
   DataSpliter.preOrderData(redex, "root", this)
@@ -80,22 +93,22 @@ class ReactionRule(n: String, red: Term, react: Term, exp: String) {
   var random: Boolean = false
 
   /** 条件表达式，赋值表达式  add by kgq   */
-  var conditions: Set[Cond] = Set()                                   // 存放构造好的条件
+  var conditions: Set[Cond] = Set() // 存放构造好的条件
   var nameToTerm: Map[String, Term] = Map()
-  var assignments: List[Tuple2[String, Arith]] = List();              // kgq 存放赋值关系
+  var assignments: List[Tuple2[String, Arith]] = List(); // kgq 存放赋值关系
 
-  override def clone(): ReactionRule ={
-    var rr=new ReactionRule(this.n,this.red,this.react,this.exp)
-    rr.name=n
-    rr.redex=redex.clone
-    rr.reactum=reactum.clone
-    rr.express=express
-    rr.reactNodes=reactNodes
-    rr.hash=hash
-    rr.nodeMap=nodeMap
-    rr.data=data
-    rr.causation=causation
-    rr.dataCalcs=dataCalcs
+  override def clone(): ReactionRule = {
+    var rr = new ReactionRule(this.n, this.red, this.react, this.exp)
+    rr.name = n
+    rr.redex = redex.clone
+    rr.reactum = reactum.clone
+    rr.express = express
+    rr.reactNodes = reactNodes
+    rr.hash = hash
+    rr.nodeMap = nodeMap
+    rr.data = data
+    rr.causation = causation
+    rr.dataCalcs = dataCalcs
     return rr
   }
 
@@ -117,9 +130,9 @@ class ReactionRule(n: String, red: Term, react: Term, exp: String) {
       //println("f: "  + f)
       if (f.startsWith(GlobalCfg.sysClkPrefStr)) {
         sysClkIncr = f.substring(GlobalCfg.sysClkPrefStr.length).trim.toInt
-      } else if (f.startsWith(GlobalCfg.condPrefStr)) {   // Cond:
+      } else if (f.startsWith(GlobalCfg.condPrefStr)) { // Cond:
         f.substring(GlobalCfg.condPrefStr.length).split(",").foreach(c => conds += c)
-      } else if (f.startsWith(GlobalCfg.exprPrefStr)) {     // Expr:
+      } else if (f.startsWith(GlobalCfg.exprPrefStr)) { // Expr:
         f.substring(GlobalCfg.exprPrefStr.length).split(",").foreach(e => {
           val kv = e.split("=")
           if (kv.length == 2)
@@ -131,38 +144,38 @@ class ReactionRule(n: String, red: Term, react: Term, exp: String) {
         f.substring(GlobalCfg.hmmPrefStr.length).split(",").foreach(h => {
           hmms += h
         })
-      } else if (f.startsWith(GlobalCfg.ratePrefStr)) {     // Rate:
+      } else if (f.startsWith(GlobalCfg.ratePrefStr)) { // Rate:
         rate = f.substring(GlobalCfg.ratePrefStr.length).toDouble
       } else if (f.startsWith(GlobalCfg.probabilityPrefStr)) { //lbj，可以为0  Probability:
         hasProbability = true
         probability = f.substring(GlobalCfg.probabilityPrefStr.length).toDouble
-      } else if (f.startsWith(GlobalCfg.reversePrefStr)) {    // Reverse:
+      } else if (f.startsWith(GlobalCfg.reversePrefStr)) { // Reverse:
         reverse = f.substring(GlobalCfg.reversePrefStr.length).toBoolean
-      } else if (f.startsWith(GlobalCfg.reactPrefStr)) {     // React:
+      } else if (f.startsWith(GlobalCfg.reactPrefStr)) { // React:
         f.substring(GlobalCfg.reactPrefStr.length).split(",").foreach(reactNodes.add(_))
       }
 
       // lixin 20190914
-      else if (f.startsWith(GlobalCfg.hmmStatePrefStr)) {     // HmmState
+      else if (f.startsWith(GlobalCfg.hmmStatePrefStr)) { // HmmState
         hmmState = Integer.parseInt(f.substring(GlobalCfg.hmmStatePrefStr.length))
-      }else if (f.startsWith(GlobalCfg.hmmRandomPrefStr)) {
+      } else if (f.startsWith(GlobalCfg.hmmRandomPrefStr)) {
         hmmRandom = f.substring(GlobalCfg.hmmRandomPrefStr.length).toBoolean
       }
 
-      else if(f.startsWith(GlobalCfg.timeDistributionPreStr)) {
+      else if (f.startsWith(GlobalCfg.timeDistributionPreStr)) {
         timeDistribution = f.substring(GlobalCfg.timeDistributionPreStr.length + 1)
       }
 
       // kgq 20220225
-      else if (f.startsWith(GlobalCfg.conditionPrefStr)) {        // 将每个字符串形式的条件表达式放入到
-//        println("解析 条件：" + name + " 中 的条件表达式")
+      else if (f.startsWith(GlobalCfg.conditionPrefStr)) { // 将每个字符串形式的条件表达式放入到
+        //        println("解析 条件：" + name + " 中 的条件表达式")
         f.substring(GlobalCfg.conditionPrefStr.length).split(',').foreach(c => {
           val tmpC = ConditionExprParser.parse(c)
           conditions += tmpC
-//          println("[from}: " + c + " [to] " + tmpC)
+          //          println("[from}: " + c + " [to] " + tmpC)
         })
       }
-      else if (f.startsWith(GlobalCfg.assignmentPrefStr)) {       // 将每个被赋值的变量和赋值的表达式进行映射
+      else if (f.startsWith(GlobalCfg.assignmentPrefStr)) { // 将每个被赋值的变量和赋值的表达式进行映射
         f.substring(GlobalCfg.assignmentPrefStr.length).split(',').foreach(c => {
           val tmp = c.split('=')
           assignments = assignments.:+(Tuple2(tmp(0), ArithmeticExprParser.apply(tmp(1))))
@@ -217,6 +230,7 @@ class ReactionRule(n: String, red: Term, react: Term, exp: String) {
   /**
    * Check if there is any condition not meet
    * Also Check HMM
+   *
    * @return true/false
    */
   def check: Boolean = {
@@ -242,6 +256,7 @@ class ReactionRule(n: String, red: Term, react: Term, exp: String) {
    * reactNodes and match.
    *
    * Also Check HMM
+   *
    * @return true/false
    */
   def check(m: Match): Boolean = {
@@ -261,10 +276,10 @@ class ReactionRule(n: String, red: Term, react: Term, exp: String) {
         val q = BooleanExprParser.parse(cond)
         //println("cond: "+cond)
         if (GlobalCfg.DEBUG)
-          //println("check:" + cond + "\tresult:" + q.check)
-        if (!q.check()) {
-          return false
-        }
+        //println("check:" + cond + "\tresult:" + q.check)
+          if (!q.check()) {
+            return false
+          }
       })
     }
 
@@ -325,9 +340,9 @@ class ReactionRule(n: String, red: Term, react: Term, exp: String) {
       var rightTerm = ""
       //      var rightTerm = dc._2  //不管右边是什么，直接设置为初值
       if (Data.bdInitData.contains(leftTerm)) {
-        println("Data.bdInitData(leftTerm).value: "+Data.bdInitData(leftTerm).value)
-        if(Data.bdInitData(leftTerm).dataType.equals("String"))
-        rightTerm = "'"+Data.bdInitData(leftTerm).value+"'"
+        println("Data.bdInitData(leftTerm).value: " + Data.bdInitData(leftTerm).value)
+        if (Data.bdInitData(leftTerm).dataType.equals("String"))
+          rightTerm = "'" + Data.bdInitData(leftTerm).value + "'"
         else rightTerm = Data.bdInitData(leftTerm).value
       }
 
@@ -341,7 +356,7 @@ class ReactionRule(n: String, red: Term, react: Term, exp: String) {
       })
       //这句只能update表达式中已经是node的数据，比如taxi.businessfee，就是不牵扯要把Passenger映射为David的这种表达式
       Data.update(leftTerm, rightTerm)
-      println(leftTerm+": "+Data.data(leftTerm).value)
+      println(leftTerm + ": " + Data.data(leftTerm).value)
     });
   }
 
@@ -377,7 +392,9 @@ class ReactionRule(n: String, red: Term, react: Term, exp: String) {
    * Get HMM    @weixin
    */
   def getHMM: String = {
-    hmms.map(h => { h + "=" + (HMM.hmms(h).getObsProbability * 100).formatted("%.2f") + "%" }).toList.mkString(",")
+    hmms.map(h => {
+      h + "=" + (HMM.hmms(h).getObsProbability * 100).formatted("%.2f") + "%"
+    }).toList.mkString(",")
   }
 
   /**
@@ -395,6 +412,7 @@ class ReactionRule(n: String, red: Term, react: Term, exp: String) {
   //def this(red: Term, react: Term) = this(null, null, red, react, "")
   //def this(n: String, m: String, red: Term, react: Term) = this(n, m, red, react, "")
   def this(red: Term, react: Term) = this(null, red, react, "")
+
   def this(n: String, red: Term, react: Term) = this(n, red, react, "")
 
   override def toString = {
@@ -411,12 +429,12 @@ class ReactionRule(n: String, red: Term, react: Term, exp: String) {
   }
 
   def calcNodeMap: Map[Node, Node] = {
-//    println("[kgq] reactionrule: " + name + " calcNodeMap: ")
+    //    println("[kgq] reactionrule: " + name + " calcNodeMap: ")
     var res: Map[Node, Node] = Map();
     var redexNodes = getTermNodes(redex);
     var reactumNodes = getTermNodes(reactum);
-//    println("\t[kgq]redexNodes is: " + redexNodes)
-//    println("\t[kgq]reactumNodes is: " + reactumNodes)
+    //    println("\t[kgq]redexNodes is: " + redexNodes)
+    //    println("\t[kgq]reactumNodes is: " + reactumNodes)
 
     // redex、reactum中Node/Control数量不一致修正
     /**
@@ -424,8 +442,8 @@ class ReactionRule(n: String, red: Term, react: Term, exp: String) {
      */
     var redexNodesName = redexNodes.map((_.name));
     var reactumNodesName = reactumNodes.map(_.name);
-//    println("\t\t[kgq]redexNodesName is: " + redexNodesName)
-//    println("\t\t[kgq]reactumNodesName is: " + reactumNodesName)
+    //    println("\t\t[kgq]redexNodesName is: " + redexNodesName)
+    //    println("\t\t[kgq]reactumNodesName is: " + reactumNodesName)
 
     /**
      * If the reactum creates a new node, than it maps to itself.
@@ -434,14 +452,14 @@ class ReactionRule(n: String, red: Term, react: Term, exp: String) {
      * If change link, than just do as the node name and ctrl name.
      */
     reactumNodes.map(rn => {
-      var fullMatch: Boolean = false          // [kgq] 是否是完全匹配（port列表相同）
-      var mNode: Node = null                  //kgq 记录 redex中匹配的node
-      var hasMatch: Boolean = false         //kgq  是否已经找到了redex 中匹配的node
-      var maxMatch: Int = 0                   //[kgq] 动态记录查找过程中port列表最大“相似度”
+      var fullMatch: Boolean = false // [kgq] 是否是完全匹配（port列表相同）
+      var mNode: Node = null //kgq 记录 redex中匹配的node
+      var hasMatch: Boolean = false //kgq  是否已经找到了redex 中匹配的node
+      var maxMatch: Int = 0 //[kgq] 动态记录查找过程中port列表最大“相似度”
       //println("[kgq] cur reactum node is: " + rn)
       for (i <- 0 to redexNodes.length - 1 if !fullMatch) {
         //println("\t[kgq] check redex node: " + redexNodes(i))
-        if (redexNodes(i).getNodeStr.equals(rn.getNodeStr)) {         // [kgq] getNodeStr ->  name : ctrl
+        if (redexNodes(i).getNodeStr.equals(rn.getNodeStr)) { // [kgq] getNodeStr ->  name : ctrl
           /**
            * If it is the first time match, record it and the maxMatch name list.
            * If it is not the first time match, compare the maxMatch to find more
@@ -451,9 +469,9 @@ class ReactionRule(n: String, red: Term, react: Term, exp: String) {
           if (!hasMatch) {
             hasMatch = true
             mNode = redexNodes(i)
-            maxMatch = rn.getMatchPortsCount(redexNodes(i).ports)     // [kgq] 根据getMatchPortsCount来计算“相似度” 即ports的匹配程度，
+            maxMatch = rn.getMatchPortsCount(redexNodes(i).ports) // [kgq] 根据getMatchPortsCount来计算“相似度” 即ports的匹配程度，
             //println(("\t\t\t[kgq] first match, mNode: " + mNode + " maxMatch: " + maxMatch))
-          } else if (rn.getMatchPortsCount(redexNodes(i).ports) > maxMatch) {       // [kgq] 如果找到更匹配的节点，那么
+          } else if (rn.getMatchPortsCount(redexNodes(i).ports) > maxMatch) { // [kgq] 如果找到更匹配的节点，那么
             mNode = redexNodes(i)
             maxMatch = rn.getMatchPortsCount(redexNodes(i).ports)
             //println("\t\t\t[kgq] other match mNode: " + mNode + " maxMatch: " + maxMatch)
@@ -461,7 +479,7 @@ class ReactionRule(n: String, red: Term, react: Term, exp: String) {
 
         }
         if (redexNodes(i).getNodeStr.equals(rn.getNodeStr)
-          && redexNodes(i).getNodePortsStr.equals(rn.getNodePortsStr)) {      // [kgq] 如果找到的结点port 能够完全匹配，那么终止本次在redex中的查找
+          && redexNodes(i).getNodePortsStr.equals(rn.getNodePortsStr)) { // [kgq] 如果找到的结点port 能够完全匹配，那么终止本次在redex中的查找
           //println("\t\t[kgq] fullMatch !!")
           fullMatch = true
           mNode = redexNodes(i)
@@ -470,11 +488,11 @@ class ReactionRule(n: String, red: Term, react: Term, exp: String) {
       if (hasMatch) {
         res += (rn -> mNode)
         // redexNodes.filter(_ != mNode)
-        redexNodes = redexNodes.filter(_ != mNode)      // modified by kgq 20220301 上面的语句无法成功修改redexNodes ，因为List是不可变的，所以.filter 会返回一个新的List，而不是原地修改
+        redexNodes = redexNodes.filter(_ != mNode) // modified by kgq 20220301 上面的语句无法成功修改redexNodes ，因为List是不可变的，所以.filter 会返回一个新的List，而不是原地修改
         //println("\t\t[kgq] hasMatch res: " + res + " redexNodes: " + redexNodes)
       } else {
         /**
-         *   if the node is a new node, assign the new node with new node name
+         * if the node is a new node, assign the new node with new node name
          */
         //rn.name = rn.ctrl.name.substring(0, 1) + "_" + GlobalCfg.ranNameIndex.toString
 
@@ -528,7 +546,9 @@ class ReactionRule(n: String, red: Term, react: Term, exp: String) {
       nodes = getTermNodes(reg.leftTerm) ::: nodes;
       nodes = getTermNodes(reg.rightTerm) ::: nodes;
     }
-    nodes = nodes.sortWith((n1: Node, n2: Node) => { n1.name < n2.name });
+    nodes = nodes.sortWith((n1: Node, n2: Node) => {
+      n1.name < n2.name
+    });
     nodes;
   }
 

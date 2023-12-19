@@ -28,11 +28,6 @@ public class Root implements Parent {
 
     @Override
     public String toString() {
-        if (owner != null) {
-            int i = owner.getRoots().indexOf(this);
-            if (i >= 0)
-                return i + ":r";
-        }
         return this.name;
     }
 

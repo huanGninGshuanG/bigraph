@@ -15,7 +15,7 @@ case class Person(var name: String)
 class HelloTests extends FunSuite {
   test("CTLModelChecking") {
     val t = BGMParser.parseFromString(OS.rw2Process)
-    val b = BGMTerm.toBigraph(t)._2
+    val b = BGMTerm.toBigraph(t)
     val startTime=System.currentTimeMillis()
     val simulator = new CTLSimulator(b)
     simulator.simulate

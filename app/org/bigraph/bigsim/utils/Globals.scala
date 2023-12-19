@@ -31,9 +31,9 @@ object GlobalCfg {
   val reactPrefStr: String = prop.getProperty("reactPrefStr")
   val minProbability: Double = prop.getProperty("minProbability").toDouble
 
-  val conditionPrefStr: String = prop.getProperty("conditionPrefStr")  // add by kgq
-  val assignmentPrefStr: String = prop.getProperty("assignmentPrefStr")  // add by kgq 20220225
-  val ctlPropPreStr: String = prop.getProperty("ctlPropPrefStr")    // add by kgq 20220304
+  val conditionPrefStr: String = prop.getProperty("conditionPrefStr") // add by kgq
+  val assignmentPrefStr: String = prop.getProperty("assignmentPrefStr") // add by kgq 20220225
+  val ctlPropPreStr: String = prop.getProperty("ctlPropPrefStr") // add by kgq 20220304
   val valueOperation: Boolean = prop.getProperty("valueOperation").toBoolean // add by kgq 20220318
 
   val SimulatorClass: String = prop.getProperty("SimulatorClass")
@@ -47,7 +47,7 @@ object GlobalCfg {
   var ranNameIndex: Int = prop.getProperty("ranNameIndex").toInt
 
   /**
-   *  set inputs: models, data, hmm
+   * set inputs: models, data, hmm
    */
   var fileSeparator: String = prop.getProperty("fileSeparator")
   var inputPath: String = "" //prop.getProperty("inputPath")
@@ -56,28 +56,28 @@ object GlobalCfg {
   // whether check data
   var checkData: Boolean = prop.getProperty("checkData").toBoolean
   var dataInput: String = "C:\\Users\\jay\\Desktop\\模拟系统测试\\Chemistry\\data\\chemistry.data"
-//  {
-//    if (checkData) inputPath + fileSeparator + "data" + fileSeparator + modelName + ".data"
-//    else ""
-//  }
+  //  {
+  //    if (checkData) inputPath + fileSeparator + "data" + fileSeparator + modelName + ".data"
+  //    else ""
+  //  }
 
   var bdDataInput: String = ""
-//  {//add by lbj back derivation init
-//    inputPath + fileSeparator + "data" + fileSeparator + modelName + ".bd"
-//  }
+  //  {//add by lbj back derivation init
+  //    inputPath + fileSeparator + "data" + fileSeparator + modelName + ".bd"
+  //  }
   // whether check HMM
   var checkHMM: Boolean = prop.getProperty("checkHMM").toBoolean
   var hmmInput: String = ""
-//  {
-//    if (checkHMM) inputPath + fileSeparator + "hmm" + fileSeparator + modelName + ".hmm"
-//    else ""
-//  }
-//  // whether check sorting
-//  var checkSorting: Boolean = prop.getProperty("checkSorting").toBoolean
-//  var sortingInput: String = {
-//    if (checkSorting) inputPath + fileSeparator + "sortings" + fileSeparator + modelName + ".xml"
-//    else ""
-//  }
+  //  {
+  //    if (checkHMM) inputPath + fileSeparator + "hmm" + fileSeparator + modelName + ".hmm"
+  //    else ""
+  //  }
+  //  // whether check sorting
+  //  var checkSorting: Boolean = prop.getProperty("checkSorting").toBoolean
+  //  var sortingInput: String = {
+  //    if (checkSorting) inputPath + fileSeparator + "sortings" + fileSeparator + modelName + ".xml"
+  //    else ""
+  //  }
 
   // hmm, lixin
   val hmmStatePrefStr: String = prop.getProperty("hmmStatePrefStr")
@@ -86,32 +86,31 @@ object GlobalCfg {
   var timeDistributionPreStr: String = "timeDistribution"
 
 
-
   // whether check interest pattern
   var checkInterestPattern: Boolean = prop.getProperty("checkInterestPattern").toBoolean
   var interestPatternInput: String = ""
-//  {
-//    if (checkInterestPattern) inputPath + fileSeparator + "patterns" + fileSeparator + modelName + ".xml"
-//    else ""
-//  }
+  //  {
+  //    if (checkInterestPattern) inputPath + fileSeparator + "patterns" + fileSeparator + modelName + ".xml"
+  //    else ""
+  //  }
 
   /**
    * set outputs: paths, results
    */
-//  var outputPath: Boolean = prop.getProperty("outputPath").toBoolean
+  //  var outputPath: Boolean = prop.getProperty("outputPath").toBoolean
   var outputPath: Boolean = true //path文件默认都输出
   var pathOutput: String = ""
-//  {
-//    if (outputPath) inputPath + fileSeparator + "paths" + fileSeparator + modelName + ".path"
-//    else ""
-//  }
-//  var outputGraph: Boolean = prop.getProperty("outputGraph").toBoolean
+  //  {
+  //    if (outputPath) inputPath + fileSeparator + "paths" + fileSeparator + modelName + ".path"
+  //    else ""
+  //  }
+  //  var outputGraph: Boolean = prop.getProperty("outputGraph").toBoolean
   var outputGraph: Boolean = true //dot文件默认都输出
   var graphOutput: String = "output.dot"
-//  {
-//    if (outputGraph) inputPath + fileSeparator + "results" + fileSeparator + modelName + ".dot"
-//    else ""
-//  }
+  //  {
+  //    if (outputGraph) inputPath + fileSeparator + "results" + fileSeparator + modelName + ".dot"
+  //    else ""
+  //  }
   var outputData: Boolean = checkData && prop.getProperty("outputData").toBoolean
   var dataOutput: String = {
     if (outputData) inputPath + fileSeparator + "paths" + fileSeparator + modelName + ".data"
@@ -125,23 +124,23 @@ object GlobalCfg {
   }
 
   // add by lbj hmm文件也这样处理，其他两个文件默认都输出  SysClk这种是否考虑在模拟器中设置Globals的全局变量  
-//  var checkData : Boolean = false
-  var dataFileLocation : String = inputPath + fileSeparator + "paths" + fileSeparator + modelName + ".data"
-  val dataFile : File = new File(dataFileLocation)
-  if(dataFile.exists())
+  //  var checkData : Boolean = false
+  var dataFileLocation: String = inputPath + fileSeparator + "paths" + fileSeparator + modelName + ".data"
+  val dataFile: File = new File(dataFileLocation)
+  if (dataFile.exists())
     checkData = true
 
-    // add by lbj
-    var checkTime : Boolean = false;//后面用程序设置要不要考虑时间
-    var checkStochastic : Boolean = false;//考虑Rate
-    var checkTracking : Boolean = false;//默认不打开Tracking检测
-    var checkBinding : Boolean = false;//默认不打开Binding检测
-    var checkPattern : Boolean = false;//默认不打开Pattern检测
-    var checkSorting : Boolean = false;//默认不打开Sorting检测
-    var violateExceptionTracking : Boolean = false;
-    var violateBinding : Boolean = false;
-    var violateSorting : Boolean = false;
-    var isBackDerivation : Boolean = false;//是否正在进行回溯
+  // add by lbj
+  var checkTime: Boolean = false; //后面用程序设置要不要考虑时间
+  var checkStochastic: Boolean = false; //考虑Rate
+  var checkTracking: Boolean = false; //默认不打开Tracking检测
+  var checkBinding: Boolean = false; //默认不打开Binding检测
+  var checkPattern: Boolean = false; //默认不打开Pattern检测
+  var checkSorting: Boolean = false; //默认不打开Sorting检测
+  var violateExceptionTracking: Boolean = false;
+  var violateBinding: Boolean = false;
+  var violateSorting: Boolean = false;
+  var isBackDerivation: Boolean = false; //是否正在进行回溯
 
 
   // system clock init
@@ -178,23 +177,23 @@ object GlobalCfg {
   var localCheck: Boolean = false
   var reportFrequency: Int = 500
   var stochastic: Boolean = false
-  var IsFromNetWork:Boolean = prop.getProperty("isFromNetWork").toBoolean
-  var bgmContent:String = ""    // ?
-  var dotContent:String = ""
+  var IsFromNetWork: Boolean = prop.getProperty("isFromNetWork").toBoolean
+  var bgmContent: String = "" // ?
+  var dotContent: String = ""
   var needCtlCheck: Boolean = false; // 默认关闭CTL检测功能  add by kgq
   var needLTLCheck: Boolean = false; // 默认关闭CTL检测功能
-//  var formulas: util.List[Formula] = List()
-//  var needCtlCheck: Boolean = false;
-//  var ctlModelChecker: CTLModelChecker = new CTLModelChecker(new KripkeStructure)
+  //  var formulas: util.List[Formula] = List()
+  //  var needCtlCheck: Boolean = false;
+  //  var ctlModelChecker: CTLModelChecker = new CTLModelChecker(new KripkeStructure)
   var maxRunTime = 30.0
   var globalCreditTime = 3.0
   var buyerNum = 10
   var maliciousNodeNum = 9
-  var buyerPrefix =     "buyer"
-  var HonestBuyer =     "honestbuyer"
-  var SlanderBuyer =    "slanderbuyer"
+  var buyerPrefix = "buyer"
+  var HonestBuyer = "honestbuyer"
+  var SlanderBuyer = "slanderbuyer"
   var ExaggerateBuyer = "exaggeratebuyer"
-  var sellerPrefix =    "seller"
+  var sellerPrefix = "seller"
   // 该配置可修改
   var minMoney = 0
   var maxMoney = 0
@@ -214,7 +213,14 @@ object GlobalCfg {
   /**
    * @author kongguanqiao
    */
-  var batchCreate = false   // 默认不打开节点批量展开功能
+  var batchCreate = false // 默认不打开节点批量展开功能
   var kgqbankmc = false // 测试用开关
   var debugident = 0 // 打印日志缩进
+
+  /**
+   * @author huangningshuang
+   */
+  var useCSP = true // 是否使用csp匹配
+  var debugSwitch = true
+  var anonymousNode = true // 是否开启匿名节点功能(偶图匹配时忽略名字)
 }

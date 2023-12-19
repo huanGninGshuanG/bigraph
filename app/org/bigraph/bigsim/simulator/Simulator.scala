@@ -193,7 +193,7 @@ class SimulatorFactory {
 
     //    for (i <- 1 to GlobalCfg.simLoop) {//每次loop都new了一个新的simulator
 
-    val b: Bigraph = BGMTerm.toBigraph(t)._2; //每次loop从bgm文件构建一个偶图
+    val b: Bigraph = BGMTerm.toBigraph(t); //每次loop从bgm文件构建一个偶图
     println(b);
 
 
@@ -448,7 +448,7 @@ object quickTest {
         |""".stripMargin
     val t = BGMParser.parseFromString(inputModel2)
     val b = BGMTerm.toBigraph(t)
-    val sim: Simulator = new EnumSimulator(b._2)
+    val sim: Simulator = new EnumSimulator(b)
     sim.simulate
 
 

@@ -13,6 +13,8 @@ public interface Handle extends LinkEntity, Replicable {
 
     void unlinkPoint(Point point);
 
+    String getName();
+
     @Override
     Handle replicate();
 }

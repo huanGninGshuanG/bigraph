@@ -286,14 +286,6 @@ public class BigraphBuilder implements BigraphHandler {
         return addInnerName(new InnerName(name), handle);
     }
 
-    public InnerName addInnerName(String name) {
-        if (name == null || name.length() == 0)
-            throw new IllegalArgumentException("Name can not be null.");
-        Edge e = new Edge();
-        bigraph.onEdgeAdded(e);
-        return addInnerName(name, e);
-    }
-
     private InnerName addInnerName(InnerName n, Handle h) {
         assertOpen();
         if (bigraph.bigInner().containsKey(n.getName())) {
@@ -408,6 +400,7 @@ public class BigraphBuilder implements BigraphHandler {
     public void parseTerm(Term term) {
 //        DebugPrinter.print(logger, "all names: " + bigraph.root().getAllNames());
         Term p = term.next();
+        DebugPrinter.print(logger, "test2222: " + term + " " + term.remaining().size());
         if (p.termType() == TermType.TREGION()) {
             ((Regions) p).getChildren().foreach(child -> {
                 Parent parent = addRoot();

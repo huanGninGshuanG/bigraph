@@ -1,5 +1,7 @@
 package org.bigraph.bigsim.model.component;
 
+import org.bigraph.bigsim.utils.NameGenerator;
+
 /**
  * @author huangningshuang
  * @date 2023/12/1
@@ -13,11 +15,12 @@ public class InnerName implements Point, Replicable {
     }
 
     public InnerName(Handle handle) {
+        this(NameGenerator.DEFAULT.generate());
         setHandle(handle);
     }
 
     public InnerName() {
-
+        this(NameGenerator.DEFAULT.generate());
     }
 
     @Override

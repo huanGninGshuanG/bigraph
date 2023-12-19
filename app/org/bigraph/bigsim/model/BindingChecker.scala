@@ -385,7 +385,7 @@ object TestBindingChecker {
     val p: List[BGMTerm] = BGMParser.parseFromString(sc_model2);
 //    val p: List[BGMTerm] = BGMParser.parseFromString(s2);
     println(p)
-    val b: Bigraph = BGMTerm.toBigraph(p)._2;
+    val b: Bigraph = BGMTerm.toBigraph(p);
     println(b)
     var bindingChecker = new BindingChecker();
     bindingChecker.bindcheck(b.root);

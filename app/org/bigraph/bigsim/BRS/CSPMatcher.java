@@ -4,6 +4,7 @@ import org.bigraph.bigsim.model.Bigraph;
 import org.bigraph.bigsim.model.component.*;
 import org.bigraph.bigsim.utils.BidMap;
 import org.bigraph.bigsim.utils.DebugPrinter;
+import org.bigraph.bigsim.utils.GlobalCfg;
 import org.chocosolver.solver.Model;
 import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.variables.IntVar;
@@ -257,6 +258,10 @@ public class CSPMatcher {
                         Map<PlaceEntity, IntVar> f_row = p_vars.get(f);
                         for (Child j : redex_nodes) {
                             Parent g = j.getParent();
+                            /// todo: 匿名节点匹配配置项
+                            if (GlobalCfg.anonymousNode() && !i.getName().equals(((Node) j).getName())) {
+                                model.arithm(i_row.get(j), "=", 0).post();
+                            }
                             /// constraint(26) nodes-nodes部分：父节点匹配该节点才可能匹配
                             model.arithm(i_row.get(j), "<=", f_row.get(g)).post();
                         }

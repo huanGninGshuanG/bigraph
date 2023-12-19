@@ -2,15 +2,15 @@ package org.bigraph.bigsim.model
 
 import java.io.File
 import java.util
-import java.util.Collections
+import java.util.{Collections, Comparator}
 
-import org.bigraph.bigsim.BRS.{CSPMatch, CSPMatcher, InstantiationMap, Match, Matcher, Rewrite, WideMatch}
+import org.bigraph.bigsim.BRS._
 import org.bigraph.bigsim.data.DataModel
-import org.bigraph.bigsim.exceptions.{IncompatibleInterfaceException, IncompatibleSignatureException, NameClashException}
+import org.bigraph.bigsim.exceptions.{IncompatibleInterfaceException, IncompatibleSignatureException}
 import org.bigraph.bigsim.model.component._
 import org.bigraph.bigsim.parser.{BGMParser, BGMTerm}
 import org.bigraph.bigsim.simulator.Simulator
-import org.bigraph.bigsim.utils.{CachingProxy, DebugPrinter, GlobalCfg, Provider}
+import org.bigraph.bigsim.utils.{BigraphToTerm, CachingProxy, DebugPrinter, GlobalCfg}
 import org.bigraph.bigsim.value.ValueOpCtrl
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -24,6 +24,30 @@ object Node {
   def idIncrement: Int = {
     id += 1
     id
+  }
+
+  /// dirty code todo: 删去对Node的依赖
+  def nodeAdapter(p: component.Node): Node = {
+    val ctrl = new Control(p.getControl.getName, p.getControl.getArity)
+    val ports = p.getPorts
+    var ss: List[Name] = List()
+    for (port <- ports) {
+      val handle = port.getHandle
+      var nameType = ""
+      var handleName = ""
+      var innerNames: List[String] = List()
+      if (handle == null) nameType = "idle"
+      else {
+        handleName = handle.getName
+        for (point <- handle.getPoints) {
+          if (point.isInnerName) innerNames = innerNames :+ point.asInstanceOf[InnerName].getName
+        }
+        if (handle.isOuterName) nameType = "outername"
+        else if (handle.isEdge) nameType = "edge"
+      }
+      ss = ss :+ (new Name(handleName, nameType, innerNames))
+    }
+    new Node(p.getName, p.getControl.isActive, ss, ctrl)
   }
 }
 
@@ -835,7 +859,7 @@ class Bigraph(roots: Int = 1) extends BigraphHandler {
     }
     for ((_, v) <- bigInner) {
       val handle = v.getHandle
-      if (handle!=null && handle.isEdge) s.add(handle.asInstanceOf[Edge])
+      if (handle != null && handle.isEdge) s.add(handle.asInstanceOf[Edge])
     }
     s
   }
@@ -920,6 +944,36 @@ class Bigraph(roots: Int = 1) extends BigraphHandler {
     ancestors.clear() //conservative
     val ns = nodesProxy.softGet()
     if (ns != null) ns.removeAll(nodes)
+  }
+
+  /// 按照名字排序所有内部名，外部名，节点，最后重命名所有边。主要用于hash计算，比较两个偶图是否相等
+  def trimBigraph(): Unit = {
+    val nodes = new util.ArrayList[component.Node](nodesProxy.get())
+    Collections.sort(nodes, nodeComparator)
+    val edges = new util.HashSet[Handle]()
+    var i: Integer = 0
+    for (node <- nodes) {
+      for (port <- node.getPorts) {
+        val handle = port.getHandle
+        if (handle != null && handle.isEdge && !edges.contains(handle)) {
+          edges.add(handle)
+          handle.asInstanceOf[Edge].setName("E_" + i)
+          i = i + 1
+        }
+      }
+    }
+  }
+
+  private val nodeComparator = new Comparator[component.Node] {
+    override def compare(o1: component.Node, o2: component.Node): Int = o1.getName.compareTo(o2.getName)
+  }
+
+  private val innerComparator = new Comparator[InnerName] {
+    override def compare(o1: InnerName, o2: InnerName): Int = o1.getName.compareTo(o2.getName)
+  }
+
+  private val outerComparator = new Comparator[OuterName] {
+    override def compare(o1: OuterName, o2: OuterName): Int = o1.getName.compareTo(o2.getName)
   }
 
   /// check whether the bigraph is consistent
@@ -1075,23 +1129,35 @@ class Bigraph(roots: Int = 1) extends BigraphHandler {
     big
   }
 
-  def matchRule(r: ReactionRule): Unit = {
-    val builder: BigraphBuilder = new BigraphBuilder(bigSignature)
-    builder.parseTerm(r.redex)
-    val redex: Bigraph = builder.getBigraph
-    val bb = new BigraphBuilder(bigSignature)
-    bb.parseTerm(r.reactum)
-    val reactum: Bigraph = bb.getBigraph
+  def structToTerm(): Term = {
+    root = BigraphToTerm.toTerm(this)
+    root
+  }
+
+  def findAllMatchByCSP(): util.Set[(Bigraph, ReactionRule)] = {
+    val result = new util.HashSet[(Bigraph, ReactionRule)]()
+    for (r <- rules) {
+      result.addAll(this.matchRule(r))
+    }
+    result
+  }
+
+  def matchRule(r: ReactionRule): util.Set[(Bigraph, ReactionRule)] = {
+    val redex: Bigraph = r.redexBig
+    val reactum: Bigraph = r.reactumBig
     DebugPrinter.print(logger, "- REACTUM -----------------------------")
     reactum.print()
     val matcher: CSPMatcher = new CSPMatcher()
     val iter = matcher.`match`(this, redex).iterator()
+    val result = new util.HashSet[(Bigraph, ReactionRule)]()
     while (iter.hasNext) {
       val pMatch: CSPMatch = iter.next()
       val nb = Rewrite.rewrite(pMatch, redex, reactum, InstantiationMap.getIdMap(reactum.bigOuter.size()))
+      nb.rules = rules
       DebugPrinter.print(logger, "new bigraph::")
-      nb.print()
+      result.add((nb, r))
     }
+    result
   }
 
   def print(): Unit = {
@@ -1122,7 +1188,7 @@ object testBigraph {
     // testApplyMatch
     val p = BGMParser.parse(new File("Examples/Airport_513/models/Smart.bgm"));
     println(p)
-    val b: Bigraph = BGMTerm.toBigraph(p)._2;
+    val b: Bigraph = BGMTerm.toBigraph(p);
     println(b);
     //    var mm:Set[Match]=b.findMatches();
     /**

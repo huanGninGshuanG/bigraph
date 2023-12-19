@@ -534,7 +534,7 @@ object testValOpCtrl {
     val t = BGMParser.parseFromString(test1)
     val b = BGMTerm.toBigraph(t)
 
-    val sim: EnumSimulator = new EnumSimulator(b._2)
+    val sim: EnumSimulator = new EnumSimulator(b)
     sim.setDebug()
     sim.simulate
 

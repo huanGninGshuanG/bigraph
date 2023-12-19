@@ -246,7 +246,7 @@ object testBigraphFormulaParser {
         |""".stripMargin //测试用例
 
     val t = BGMParser.parseFromString(exam3) // 解析
-    val b = BGMTerm.toBigraph(t)._2 // 构造
+    val b = BGMTerm.toBigraph(t) // 构造
     println(b.root)
     val simulator = new EnumSimulator(b)
     simulator.simulate

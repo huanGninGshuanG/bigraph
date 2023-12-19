@@ -45,7 +45,7 @@ class LTLShortestSimulator
       return;
     } else {
       val buildKripke = new BuildKripkeStructure(transition)
-      val kripke = buildKripke.buildKripke
+      val kripke = buildKripke.buildKripke(b.bigSignature)
       val ltlModelChecker = new LTLModelChecker(kripke)
       this.checkRes = ltlModelChecker.satisfies(ltlParser.getLTLFormula())
       if (ltlModelChecker.recordPath != null) {
@@ -148,7 +148,7 @@ object testLTLShortestSimulator {
 
 
   val t = BGMParser.parseFromString(example1)
-  val b = BGMTerm.toBigraph(t)._2
+  val b = BGMTerm.toBigraph(t)
 
   def main(args: Array[String]): Unit = {
     val simulator = new LTLSimulator(b)

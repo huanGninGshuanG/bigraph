@@ -107,10 +107,10 @@ object BGMTerm {
   def ToBigraph(t: List[BGMTerm]): Bigraph = {
     var bgmTerm = BGMParser.parseFromString(bgm)
     var bigraph = BGMTerm.toBigraph(bgmTerm)
-    bigraph._1
+    bigraph
   }
 
-  def toBigraph(t: List[BGMTerm]): Pair[Bigraph, Bigraph] = {
+  def toBigraph(t: List[BGMTerm]): Bigraph = {
     val b: Bigraph = new Bigraph(1);
 
     // BGMControl
@@ -124,6 +124,7 @@ object BGMTerm {
       DebugPrinter.print(logger, "HNS add control: " + ctrls.get(ctrls.size() - 1))
       Bigraph.addControl(x.n, x.arity, x.active, x.binding)
     })
+    b.bigSignature = new Signature(ctrls)
     val builder: BigraphBuilder = new BigraphBuilder(new Signature(ctrls))
     // BGMName
     t.filter(_ match {
@@ -176,7 +177,6 @@ object BGMTerm {
     if (agentList.size > 0) {
       val agent = agentList.head.asInstanceOf[BGMAgent]
       b.root = TermParser.apply(agent.n)
-      builder.parseTerm(TermParser.apply(agent.n))
     }
 
     // add by kgq 20220312 增加偶图操作功能
@@ -225,7 +225,8 @@ object BGMTerm {
       //println("resolve bgm rule to term reactum: " + rrp.reactum)
       val reactum = TermParser.apply(rrp.reactum)
       b.rex.add(reactum)
-      b.rules.add(new ReactionRule(rrp.n, redex, reactum, rrp.exp)); //toBigraph时把反应规则解析到Bigraph
+      val rule = new ReactionRule(rrp.n, redex, reactum, rrp.exp, b.bigSignature)
+      b.rules.add(rule); //toBigraph时把反应规则解析到Bigraph
     })
 
     // BGMProperty
@@ -484,7 +485,9 @@ object BGMTerm {
       });
       GlobalCfg.needCtlCheck = true; // 包含LTL公式，所以把CTL检测的功能打开。
     }
-    (b, builder.getBigraph)
+    builder.setBigraph(b)
+    builder.parseTerm(b.root)
+    builder.makeBigraph(true)
   }
 }
 
@@ -732,11 +735,11 @@ object testBGMParser {
 
     def logger = LoggerFactory.getLogger(this.getClass)
 
-    val b: (Bigraph, Bigraph) = BGMTerm.toBigraph(p);
-    b._2.print()
-    b._1.rules.foreach(x => {
+    val b = BGMTerm.toBigraph(p);
+    b.print()
+    b.rules.foreach(x => {
       DebugPrinter.print(logger, "rule: " + x)
-      b._2.matchRule(x)
+      b.matchRule(x)
     })
     //    var simulator = new StochasticSimulator(b)
     //    simulator.simulate

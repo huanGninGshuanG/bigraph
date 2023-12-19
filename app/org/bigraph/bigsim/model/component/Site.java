@@ -31,10 +31,6 @@ public class Site implements Child {
 
     @Override
     public String toString() {
-        if (owner != null) {
-            int i = owner.getSites().indexOf(this);
-            if (i >= 0) return i + ":s";
-        }
         return this.name + "->" + parent;
     }
 
