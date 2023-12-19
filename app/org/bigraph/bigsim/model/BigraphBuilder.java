@@ -399,8 +399,12 @@ public class BigraphBuilder implements BigraphHandler {
 
     public void parseTerm(Term term) {
 //        DebugPrinter.print(logger, "all names: " + bigraph.root().getAllNames());
+        if (term == null || term.termType()==TermType.TNIL()) return;
         Term p = term.next();
-        DebugPrinter.print(logger, "test2222: " + term + " " + term.remaining().size());
+        if (p == null) {
+            DebugPrinter.print(logger, "null term: " + term + " " + term.remaining().size());
+            throw new RuntimeException("term.next is null");
+        }
         if (p.termType() == TermType.TREGION()) {
             ((Regions) p).getChildren().foreach(child -> {
                 Parent parent = addRoot();

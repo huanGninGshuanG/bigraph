@@ -1130,7 +1130,7 @@ class Bigraph(roots: Int = 1) extends BigraphHandler {
   }
 
   def structToTerm(): Term = {
-    root = BigraphToTerm.toTerm(this)
+    if(root==null || root.toString.contains("idle")) root = BigraphToTerm.toTerm(this)
     root
   }
 

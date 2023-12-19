@@ -121,7 +121,6 @@ object BGMTerm {
     val ctrls: util.List[component.Control] = new util.ArrayList[component.Control]()
     controlList.map(x => {
       ctrls.add(new component.Control(x.n, x.active, x.arity))
-      DebugPrinter.print(logger, "HNS add control: " + ctrls.get(ctrls.size() - 1))
       Bigraph.addControl(x.n, x.arity, x.active, x.binding)
     })
     b.bigSignature = new Signature(ctrls)

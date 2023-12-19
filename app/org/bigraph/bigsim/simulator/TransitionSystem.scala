@@ -1,6 +1,6 @@
 package org.bigraph.bigsim.simulator
 
-import org.bigraph.bigsim.BRS.{Graph, Match, Matcher, Vertex}
+import org.bigraph.bigsim.BRS.{CSPMatcher, Graph, Match, Matcher, Vertex}
 import org.bigraph.bigsim.model.{Bigraph, BindingChecker, Nil, ReactionRule}
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -190,6 +190,7 @@ class TransitionSystem(b: Bigraph) {
 
 // 从 TransitionSystem 构建一个 KripkeStructure
 class BuildKripkeStructure(trans: TransitionSystem) {
+  def logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   var bigToState: Map[Int, State] = Map()
 
@@ -303,7 +304,9 @@ class BuildKripkeStructure(trans: TransitionSystem) {
             retList.append(name)
         }
       } else {
-        retList.append(name)
+        val matcher: CSPMatcher = new CSPMatcher()
+        val iter = matcher.`match`(b, rr.redexBig).iterator()
+        if (iter.hasNext) retList.append(name)
       }
     }
     if (DEBUG)

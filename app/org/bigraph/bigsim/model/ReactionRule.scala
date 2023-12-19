@@ -3,7 +3,7 @@ package org.bigraph.bigsim.model
 import org.bigraph.bigsim.data.Data
 import org.bigraph.bigsim.data.DataSpliter
 import org.bigraph.bigsim.parser.{Arith, ArithmeticExprParser, BooleanExprParser, Cond, ConditionExprParser, HMM, TermParser}
-import org.bigraph.bigsim.utils.GlobalCfg
+import org.bigraph.bigsim.utils.{DebugPrinter, GlobalCfg}
 
 import scala.collection.mutable.Set
 import cern.jet.random.Poisson
@@ -11,6 +11,7 @@ import cern.jet.random.engine.RandomEngine
 import cern.jet.random.Exponential
 import org.bigraph.bigsim.BRS.Match
 import org.bigraph.bigsim.model.component.Signature
+import org.slf4j.{Logger, LoggerFactory}
 
 import scala.collection.mutable.Queue
 import scala.collection.mutable.ListBuffer
@@ -27,6 +28,8 @@ import scala.collection.mutable.ListBuffer
 //class ReactionRule(n: String, m: String, red: Term, react: Term, exp: String) {
 class ReactionRule(n: String, red: Term, react: Term, exp: String, signature: Signature) {
 
+  var logger: Logger = LoggerFactory.getLogger(this.getClass)
+
   def this(n: String, red: Term, react: Term, exp: String) = this(n, red, react, exp, null)
 
   /** Basic element of RR */
@@ -37,11 +40,13 @@ class ReactionRule(n: String, red: Term, react: Term, exp: String, signature: Si
   var sig: Signature = signature
   val redexBig: Bigraph = {
     val bb = new BigraphBuilder(sig)
+    DebugPrinter.print(logger, "parse redex:" + redex)
     bb.parseTerm(redex)
     bb.makeBigraph(true)
   }
   val reactumBig: Bigraph = {
     val bb = new BigraphBuilder(sig)
+    DebugPrinter.print(logger, "parse reactum:" + reactum)
     bb.parseTerm(reactum)
     bb.makeBigraph(true)
   }

@@ -277,7 +277,50 @@ object testCTLSimulator {
       |# Go!
       |%check;
       |""".stripMargin
-
+  val testcase =
+    """
+      |# Controls
+      |%active CriticalSection : 1;
+      |%active Process : 1;
+      |
+      |# Names
+      |%outername a;
+      |
+      |# Rules
+      |%rule r_0 a:CriticalSection[a:outername].$0 | b:Process[a:outername] -> a:CriticalSection[a:outername].($0 | b:Process[a:outername]){};
+      |
+      |%rule r_1 a:CriticalSection[a:outername].(b:Process[a:outername] | $0) -> a:CriticalSection[a:outername].$0 | b:Process[idle]{};
+      |
+      |%rule r_2 a:CriticalSection[a:outername].$0 | b:Process[idle] -> a:CriticalSection[a:outername].$0 | b:Process[a:outername]{};
+      |
+      |%rule r_3 a:CriticalSection[a:outername].$0 | c:Process[a:outername] -> a:CriticalSection[a:outername].($0 | c:Process[a:outername]){};
+      |
+      |%rule r_4 a:CriticalSection[a:outername].(c:Process[a:outername] | $0) -> a:CriticalSection[a:outername].$0 | c:Process[idle]{};
+      |
+      |%rule r_5 a:CriticalSection[a:outername].$0 | c:Process[idle] -> a:CriticalSection[a:outername].$0 | c:Process[a:outername]{};
+      |
+      |
+      |
+      |# prop
+      |%prop p  a:CriticalSection[a:edge].(b:Process[a:edge] | c:Process[a:edge]){};
+      |
+      |
+      |# Model
+      |%agent  a:CriticalSection[idle] | b:Process[idle] | c:Process[idle];
+      |
+      |
+      |
+      |# CTL_Formula
+      |%ctlSpec AG(!p);
+      |
+      |
+      |#SortingLogic
+      |
+      |
+      |# Go!
+      |%check;
+      |
+      |""".stripMargin
 
   //val t = BGMParser.parseFromString(kgqbankattack)
   //  val t = BGMParser.parseFromString(s)
@@ -285,7 +328,7 @@ object testCTLSimulator {
 
   val test = "# Controls\n%active Greater : 2;\n%active Less : 2;\n%active GreaterOrEqual : 2;\n%active LessOrEqual : 2;\n%active Equal : 2;\n%active NotEqual : 2;\n%active Exist : 1;\n%active InstanceOf : 2;\n%active Plus : 3;\n%active Minus : 3;\n%active Multiply : 3;\n%active Division : 3;\n%active Opposite : 2;\n%active Abs : 2;\n%active User : 2;\n%active File : 2;\n%active Permission : 2;\n%active Root : 0;\n%active Command : 2;\n%active Parameter : 0;\n%binding Bind;\n%active String : 2;\n%active OwnerGroup : 2;\n%active Group : 0;\n\n# Rules\n%rule r_0 file:File[idle,idle] | u1:User[idle,idle] | $0 -> file:File[idle,idle].(rwx:Permission[idle,idle].owner:User[idle,idle] | r:Permission[idle,idle].a:OwnerGroup[idle,idle]) | u1:User[idle,idle].(name1:String[idle,idle] | A:Group) | $0{};\n\n%rule r_1 file:File[idle,idle] | u2:User[idle,idle] | $0 -> file:File[idle,idle].rwx:Permission[idle,idle] | u2:User[idle,idle].(name2:String[idle,idle] | A:Group) | $0{};\n\n\n\n\n# Model\n%agent  file:File[idle,idle] | u1:User[idle,idle] | u2:User[idle,idle] | u3:User[idle,idle] | u4:User[idle,idle];\n\n\n\n\n\n\n\n\n#SortingLogic\n\n\n# Go!\n%check;"
   //  val t = BGMParser.parseFromString(OS.rwWithEFP)
-  val t = BGMParser.parseFromString(bigraphExam)
+  val t = BGMParser.parseFromString(testcase)
   val b = BGMTerm.toBigraph(t)
 
   def main(args: Array[String]): Unit = {
