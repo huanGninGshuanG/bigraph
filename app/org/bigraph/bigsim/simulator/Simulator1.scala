@@ -53,7 +53,7 @@ class Simulator1 {
 
     for (i <- 1 to GlobalCfg.simLoop) {
 
-      val b: Bigraph = BGMTerm.toBigraph(t);
+      val b: Bigraph = BGMTerm.toBigraph(t)
 
       // init variables for each loop simulation
       GlobalCfg.SysClk = 0

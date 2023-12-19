@@ -8,7 +8,7 @@ import org.slf4j.{Logger, LoggerFactory}
 
 import scala.collection.immutable.List
 import scala.collection.mutable.{Queue, Set}
-import org.bigraph.bigsim.utils.GlobalCfg
+import org.bigraph.bigsim.utils.{DebugPrinter, GlobalCfg}
 
 import scala.collection.mutable
 
@@ -108,11 +108,16 @@ class Term {
       }
       case TermType.TPAR => {
         val tp: Paraller = t.asInstanceOf[Paraller];
-        tp.getChildren.map(remaining.enqueue(_));
+        tp.getChildren.foreach(x => {
+          remaining.enqueue(x)
+        });
       }
       case TermType.TREGION => {
         val tr: Regions = t.asInstanceOf[Regions];
-        tr.getChildren.map(remaining.enqueue(_));
+        tr.getChildren.foreach(x => {
+          remaining.enqueue(x)
+          DebugPrinter.print(logger, "hns child: " + x)
+        });
       }
       case TermType.THOLE => {};
       case TermType.TNIL => {};

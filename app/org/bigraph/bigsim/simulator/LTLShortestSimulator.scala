@@ -45,7 +45,7 @@ class LTLShortestSimulator
       return;
     } else {
       val buildKripke = new BuildKripkeStructure(transition)
-      val kripke = buildKripke.buildKripke
+      val kripke = buildKripke.buildKripke(b.bigSignature)
       val ltlModelChecker = new LTLModelChecker(kripke)
       this.checkRes = ltlModelChecker.satisfies(ltlParser.getLTLFormula())
       if (ltlModelChecker.recordPath != null) {

@@ -29,7 +29,7 @@ object ReachChecker {
 
 class ReachChecker(bgm: String) {
   val p = BGMParser.parseFromString(bgm)
-  val b: Bigraph = BGMTerm.toBigraph(p);
+  val b: Bigraph = BGMTerm.toBigraph(p)
   var v: Vertex = new Vertex(b, null, null);
   var g: Graph = new Graph(v);
   var workQueue: Queue[Vertex] = Queue();

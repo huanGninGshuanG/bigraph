@@ -92,7 +92,7 @@ object TermString {
           nameList = nameList.:+(x.name + x.id);
         else {
           if (GlobalCfg.node) {
-            nameList = nameList.:+(x.name + ":" + x.id + x.nameType + getInnerName(x))
+            nameList = nameList.:+(x.name + ":" + x.nameType + getInnerName(x))
             // nameList = nameList.:+(x.id + "-" + x.name + ":" + x.nameType + getInnerName(x))
           };
           // for xuxu

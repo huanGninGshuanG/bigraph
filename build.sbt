@@ -11,6 +11,7 @@ libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "4.0.2
 
 libraryDependencies ++= Seq(
   jdbc,
+  "org.choco-solver" % "choco-solver" % "4.10.2",
   "org.playframework.anorm" %% "anorm" % "2.6.2",
   "org.hibernate" % "hibernate-entitymanager" % "5.0.12.Final",
   "org.playframework.anorm" %% "anorm" % "2.6.2",

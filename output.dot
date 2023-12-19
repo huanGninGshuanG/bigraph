@@ -3,21 +3,9 @@ digraph reaction_graph {
    Node [shape = circle];
    BigSim_Report [shape = parallelogram color = aliceblue style=filled label="BigSim
 Report"];
-BigSim_Report -> N_A[color = aliceblue label = "SysClk=0.0"];
+BigSim_Report -> N_A[color = aliceblue label = "wExpr==0.0
+"];
  N_A
  [shape=circle, color=lightblue2, style=filled];
-N_B[ shape = doublecircle, color=lightblue2, style=filled, label="N_B
-SysClk=0.0"];
-N_C[ shape = doublecircle, color=lightblue2, style=filled, label="N_C
-SysClk=0.0"];
-N_D[ label="N_D
-SysClk=0.0"];
- N_D -> N_B[color = purple  label = "r_0
-System Clock: 0.0"];
-N_A[ shape = doublecircle, color=lightblue2, style=filled, label="N_A
-SysClk=0.0"];
- N_A -> N_C[color = purple  label = "r_2
-System Clock: 0.0"];
- N_A -> N_D[color = purple  label = "r_1
-System Clock: 0.0"];
+N_A[ label="N_A"];
 }
