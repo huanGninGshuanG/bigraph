@@ -243,8 +243,43 @@ object testLTLSimulator {
       |%check;
       |""".stripMargin
 
+  var example4 =
+    """
+      |# Controls
+      |%active Building : 0;
+      |%active Laptop : 0;
+      |%active FolderA : 1;
+      |%active FolderB : 2;
+      |%active Data : 0;
+      |
+      |# Names
+      |%outername x;
+      |%outername y;
+      |
+      |# Rules
+      |%rule r_0 l2:Laptop.($0 | f3:FolderA[y:outername].$1) | l3:Laptop.($2 | f4:FolderA[y:outername].$4) -> l2:Laptop.($0 | f3:FolderA[y:outername].$1) | l3:Laptop.($2 | f3:FolderA[y:outername].$4){};
+      |
+      |# prop
+      |%prop p  l2:Laptop.($0 | f3:FolderA[y:outername].$1) | l3:Laptop.($2 | f3:FolderA[y:outername].$4){};
+      |
+      |
+      |# Model
+      |%agent a:Building.(l1:Laptop.(f1:FolderA[E_1:edge].d1:Data.nil)) | b:Building.(l2:Laptop.(f2:FolderB[E_1:edge,E_1:edge].d2:Data.nil | f3:FolderA[x:outername].d3:Data.nil) | l3:Laptop.(f4:FolderA[x:outername].d4:Data.nil));
+      |
+      |
+      |
+      |# LTL_Formula
+      |%ltlSpec G!(p);
+      |
+      |#SortingLogic
+      |
+      |
+      |# Go!
+      |%check;
+      |""".stripMargin
 
-  val t = BGMParser.parseFromString(example3)
+
+  val t = BGMParser.parseFromString(example4)
   val b = BGMTerm.toBigraph(t)
 
   def logger: Logger = LoggerFactory.getLogger(this.getClass)

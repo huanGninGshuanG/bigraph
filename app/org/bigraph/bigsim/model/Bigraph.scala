@@ -1152,7 +1152,7 @@ class Bigraph(roots: Int = 1) extends BigraphHandler {
     val result = new util.HashSet[(Bigraph, ReactionRule)]()
     while (iter.hasNext) {
       val pMatch: CSPMatch = iter.next()
-      val nb = Rewrite.rewrite(pMatch, redex, reactum, InstantiationMap.getIdMap(reactum.bigOuter.size()))
+      val nb = Rewrite.rewrite(pMatch, redex, reactum, InstantiationMap.getIdMap(reactum.bigSites.size()))
       nb.rules = rules
       DebugPrinter.print(logger, "new bigraph::")
       result.add((nb, r))

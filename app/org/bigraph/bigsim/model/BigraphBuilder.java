@@ -65,6 +65,9 @@ public class BigraphBuilder implements BigraphHandler {
         right.bigSites().addAll(0, left.bigSites());
         right.bigOuter().putAll(left.bigOuter());
         right.bigInner().putAll(left.bigInner());
+
+        DebugPrinter.print(logger, "left juxtaposition: ");
+        this.bigraph.print();
         assertConsistency();
     }
 

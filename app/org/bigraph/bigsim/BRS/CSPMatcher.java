@@ -907,8 +907,7 @@ public class CSPMatcher {
                             q.add(new VState(ctx, p2, c1));
                         }
                     } else if (v.b == rdx) {
-                        // the entity visited is the image of something in the
-                        // redex
+                        // the entity visited is the image of something in the redex
                         if (v.i.isNode()) {
                             Node n0 = (Node) v.i;
                             Node n1 = (Node) v.c;
@@ -927,8 +926,7 @@ public class CSPMatcher {
                                 }
                                 n2.getPort(i).setHandle(h2);
                             }
-                            Collection<Child> cs1 = new HashSet<>(
-                                    n1.getChildren());
+                            Collection<Child> cs1 = new HashSet<>(n1.getChildren());
                             for (Child c0 : n0.getChildren()) {
                                 Iterator<Child> ic = cs1.iterator();
                                 boolean notMatched = true;
@@ -980,10 +978,8 @@ public class CSPMatcher {
                             Node.Port p2 = n2.getPort(i);
 
                             Handle h2 = null;
-                            Map<Handle, Handle> hnd_dic = prms_hnd_dic
-                                    .get(v.b);
-                            Map<LinkEntity, IntVar> row = e_vars
-                                    .get(p1);
+                            Map<Handle, Handle> hnd_dic = prms_hnd_dic.get(v.b);
+                            Map<LinkEntity, IntVar> row = e_vars.get(p1);
                             Handle h1 = p1.getHandle();
 
                             IntVar var_tmp = findVariable(row.get(h1).getName(), model.getVars()).asIntVar();
@@ -1015,8 +1011,7 @@ public class CSPMatcher {
                                             // add it also to id
                                             OuterName o5 = new OuterName(name);
                                             id.bigOuter().put(name, o5);
-                                            InnerName i5 = new InnerName(
-                                                    name);
+                                            InnerName i5 = new InnerName(name);
                                             i5.setHandle(o5);
                                             id.bigInner().put(name, i5);
                                             // and finally to lambda
@@ -1025,9 +1020,7 @@ public class CSPMatcher {
                                             h3 = o3;
                                         } else {
                                             /*
-                                             * this handle is not required by
-                                             * the context, use an edge to
-                                             * reduce the interface of id
+                                             * 上下文中没有对应的映射，lmb要完成闭包closure操作
                                              */
                                             h3 = new Edge();
                                         }
