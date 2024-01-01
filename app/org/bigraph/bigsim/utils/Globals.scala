@@ -222,5 +222,8 @@ object GlobalCfg {
    */
   var useCSP = true // 是否使用csp匹配
   var debugSwitch = true
-  var anonymousNode = true // 是否开启匿名节点功能(偶图匹配时忽略名字)
+  var anonymousNode = false // 是否开启匿名节点功能(偶图匹配时忽略名字)
+  // 测试模块配置项
+  var testLevel = 1 // 0,1分别对应小、高两个等级的测试规模
+  var testRootLevel = 0 // 0,1分别对应小、高两个数量级的PEP个数
 }

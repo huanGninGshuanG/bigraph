@@ -26,29 +26,50 @@ import scala.collection.mutable.ListBuffer
  */
 
 //class ReactionRule(n: String, m: String, red: Term, react: Term, exp: String) {
-class ReactionRule(n: String, red: Term, react: Term, exp: String, signature: Signature) {
+class ReactionRule(n: String, red: Term, react: Term, exp: String, redBig: Bigraph, reactBig: Bigraph, signature: Signature) {
 
   var logger: Logger = LoggerFactory.getLogger(this.getClass)
 
+  def this(n: String, red: Term, react: Term, exp: String, signature: Signature)
+  = this(n: String, red: Term, react: Term, exp: String, null, null, signature: Signature)
+
   def this(n: String, red: Term, react: Term, exp: String) = this(n, red, react, exp, null)
+
+  def this(n: String, red: Bigraph, react: Bigraph) = this(n, null, null, null, red, react, red.getSignature())
 
   /** Basic element of RR */
   var name: String = n
   //var pName: String = m 
-  var redex: Term = red
-  var reactum: Term = react
+  var redex: Term = {
+    if (red == null)
+      redBig.structToTerm()
+    else
+      red
+  }
+  var reactum: Term = {
+    if (react == null)
+      reactBig.structToTerm()
+    else
+      react
+  }
   var sig: Signature = signature
   val redexBig: Bigraph = {
-    val bb = new BigraphBuilder(sig)
-    DebugPrinter.print(logger, "parse redex:" + redex)
-    bb.parseTerm(redex)
-    bb.makeBigraph(true)
+    if (redBig == null) {
+      val bb = new BigraphBuilder(sig)
+      DebugPrinter.print(logger, "parse redex:" + redex)
+      bb.parseTerm(redex)
+      bb.makeBigraph(true)
+    } else
+      redBig
   }
   val reactumBig: Bigraph = {
-    val bb = new BigraphBuilder(sig)
-    DebugPrinter.print(logger, "parse reactum:" + reactum)
-    bb.parseTerm(reactum)
-    bb.makeBigraph(true)
+    if (reactBig == null) {
+      val bb = new BigraphBuilder(sig)
+      DebugPrinter.print(logger, "parse reactum:" + reactum)
+      bb.parseTerm(reactum)
+      bb.makeBigraph(true)
+    } else
+      reactBig
   }
 
   var express: String = exp;
@@ -130,6 +151,7 @@ class ReactionRule(n: String, red: Term, react: Term, exp: String, signature: Si
 
   /** init data calculate exprs and conds in a RR */
   def initExprs {
+    if (exp == null) return
     //println("exp: " + exp)
     exp.split("\t").foreach(f => {
       //println("f: "  + f)

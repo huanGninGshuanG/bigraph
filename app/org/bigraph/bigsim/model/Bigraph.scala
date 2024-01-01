@@ -423,6 +423,10 @@ class Bigraph(roots: Int = 1) extends BigraphHandler {
 
   def this() = this(1);
 
+  def addLTLSpec(spec: String): Unit = {
+    ltlSpec = ltlSpec.:+(spec)
+  }
+
   def addOuterName(n: Name) = {
     outer.add(n);
     Bigraph.nameMap(new Pair(n.name, n.nameType)) = n;
@@ -1011,10 +1015,10 @@ class Bigraph(roots: Int = 1) extends BigraphHandler {
           for (port <- node.getPorts) {
             val handle = port.getHandle
             // 空悬的port
-            if (handle == null) {
-              DebugPrinter.err(logger, "INCOSISTENCY: broken or foreign handle")
-              return false
-            }
+            //            if (handle == null) {
+            //              DebugPrinter.err(logger, "INCOSISTENCY: broken or foreign handle")
+            //              return false
+            //            }
             // handle没有对应该port
             if (handle != null && !handle.getPoints.contains(port)) {
               DebugPrinter.err(logger, "INCOSISTENCY: handle/point mismatch")
@@ -1130,7 +1134,7 @@ class Bigraph(roots: Int = 1) extends BigraphHandler {
   }
 
   def structToTerm(): Term = {
-    if(root==null || root.toString.contains("idle")) root = BigraphToTerm.toTerm(this)
+    if (root == null || root.toString.contains("idle")) root = BigraphToTerm.toTerm(this)
     root
   }
 
@@ -1156,6 +1160,24 @@ class Bigraph(roots: Int = 1) extends BigraphHandler {
       nb.rules = rules
       DebugPrinter.print(logger, "new bigraph::")
       result.add((nb, r))
+    }
+    result
+  }
+
+  def matchAndRewrite(redex: Bigraph, reactum: Bigraph): util.Set[Bigraph] = {
+    DebugPrinter.print(logger, "- REDEX -----------------------------")
+    redex.print()
+    DebugPrinter.print(logger, "- REACTUM -----------------------------")
+    reactum.print()
+    val matcher: CSPMatcher = new CSPMatcher()
+    val iter = matcher.`match`(this, redex).iterator()
+    val result = new util.HashSet[Bigraph]()
+    while (iter.hasNext) {
+      val pMatch: CSPMatch = iter.next()
+      val nb = Rewrite.rewrite(pMatch, redex, reactum, InstantiationMap.getIdMap(reactum.bigSites.size()))
+      nb.rules = rules
+      DebugPrinter.print(logger, "new bigraph::")
+      result.add(nb)
     }
     result
   }
