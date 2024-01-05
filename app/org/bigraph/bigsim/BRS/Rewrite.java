@@ -29,7 +29,7 @@ public class Rewrite {
                 i.setHandle(null);
             }
         }
-        // redex sites数量更多，lmb要删掉一部分site+root(lmb的位置图为id)
+        //  lmb要删掉一部分site+root(lmb的位置图为id)
         for (int i = lmb.bigSites().size() - bb.getRoots().size(); i > 0; i--) {
             lmb.bigRoots().remove(lmb.bigRoots().size() - 1);
             lmb.bigSites().remove(lmb.bigSites().size() - 1);
@@ -52,6 +52,8 @@ public class Rewrite {
         if (!result.isConsistent()) {
             throw new RuntimeException("Inconsistent bigraph");
         }
+        DebugPrinter.print(logger, "rewrite ans: ");
+        result.print();
         return result;
     }
 }

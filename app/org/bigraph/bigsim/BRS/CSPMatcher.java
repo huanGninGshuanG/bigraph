@@ -259,7 +259,7 @@ public class CSPMatcher {
                         for (Child j : redex_nodes) {
                             Parent g = j.getParent();
                             /// todo: 匿名节点匹配配置项
-                            if (GlobalCfg.anonymousNode() && !i.getName().equals(((Node) j).getName())) {
+                            if (!GlobalCfg.anonymousNode() && !i.getName().equals(((Node) j).getName())) {
                                 model.arithm(i_row.get(j), "=", 0).post();
                             }
                             /// constraint(26) nodes-nodes部分：父节点匹配该节点才可能匹配
@@ -745,8 +745,7 @@ public class CSPMatcher {
 
                 class VState {
                     final PlaceEntity c; // the agent root/node to be visited
-                    final PlaceEntity i; // if present, is the image of c in the
-                    // redex
+                    final PlaceEntity i; // if present, is the image of c in the redex
                     final Parent p; // the replicated parent
                     final Bigraph b;
 
@@ -770,15 +769,15 @@ public class CSPMatcher {
                     ctx_hnd_dic.put(o1, o2);
                 }
                 for (OuterName o0 : redex.bigOuter().values()) {
-                    // replicate the handle
+                    // 反应物拷贝redex的外部名
                     String name = o0.getName();
                     OuterName o2 = new OuterName(name);
                     rdx.bigOuter().put(name, o2);
                     rdx_hnd_dic.put(o0, o2);
-                    // update ctx inner face
+                    // 上下文ctx的内部名
                     InnerName i1 = new InnerName(name);
                     ctx.bigInner().put(name, i1);
-                    // find the handle for i1
+                    // 找到i1的柄
                     Handle h1 = handle_img.get(o0);
                     if (h1 == null) {
                         // cache miss
@@ -805,9 +804,8 @@ public class CSPMatcher {
                 for (InnerName i0 : redex.bigInner().values()) {
                     String name = i0.getName();
                     InnerName i2 = new InnerName(name);
-                    // set replicated handle for i2
+                    // 找到i2的handle
                     Handle h0 = i0.getHandle();
-                    // looks for an existing replica
                     Handle h2 = rdx_hnd_dic.get(h0);
                     if (h2 == null) {
                         Handle h1 = handle_img.get(h0);
@@ -842,19 +840,17 @@ public class CSPMatcher {
                 while (!q.isEmpty()) {
                     VState v = q.poll();
                     if (v.b == ctx) {
-                        // the entity visited belongs to the context
+                        // 元素属于上下文ctx
                         Parent p1 = (Parent) v.c;
                         Parent p2 = p1.replicate();
                         if (p1.isRoot()) {
-                            // ordering is ensured by the queue
                             Root r2 = (Root) p2;
                             ctx.bigRoots().add(r2);
                         } else { // isNode()
                             Node n1 = (Node) p1;
-                            // unseen_agt_nodes.remove(n1);
                             Node n2 = (Node) p2;
                             n2.setParent(v.p);
-                            // replicate links from node ports
+                            // 拷贝端口的每个handle
                             for (int i = n1.getControl().getArity() - 1; -1 < i; i--) {
                                 Node.Port o = n1.getPort(i);
                                 Handle h1 = o.getHandle();
@@ -867,7 +863,7 @@ public class CSPMatcher {
                                 n2.getPort(i).setHandle(h2);
                             }
                         }
-                        // enqueue children, if necessary
+                        // enqueue children
                         Collection<Child> rcs = new HashSet<>(p1.getChildren());
                         Map<PlaceEntity, IntVar> p_row = p_vars.get(p1);
                         Iterator<Root> ir = unseen_rdx_roots.iterator();
@@ -876,7 +872,6 @@ public class CSPMatcher {
                             IntVar var = findVariable(p_row.get(r0).getName(), model.getVars()).asIntVar();
                             // make a site for each root whose image is p1
                             if (var.getValue() == 1) {
-                                // root_img.put(r0, p1);
                                 ir.remove();
                                 int k = redex_roots.indexOf(r0);
                                 Site s = new Site();
@@ -907,8 +902,7 @@ public class CSPMatcher {
                             q.add(new VState(ctx, p2, c1));
                         }
                     } else if (v.b == rdx) {
-                        // the entity visited is the image of something in the
-                        // redex
+                        // 放入上下文拷贝rdx中
                         if (v.i.isNode()) {
                             Node n0 = (Node) v.i;
                             Node n1 = (Node) v.c;
@@ -927,8 +921,7 @@ public class CSPMatcher {
                                 }
                                 n2.getPort(i).setHandle(h2);
                             }
-                            Collection<Child> cs1 = new HashSet<>(
-                                    n1.getChildren());
+                            Collection<Child> cs1 = new HashSet<>(n1.getChildren());
                             for (Child c0 : n0.getChildren()) {
                                 Iterator<Child> ic = cs1.iterator();
                                 boolean notMatched = true;
@@ -980,10 +973,8 @@ public class CSPMatcher {
                             Node.Port p2 = n2.getPort(i);
 
                             Handle h2 = null;
-                            Map<Handle, Handle> hnd_dic = prms_hnd_dic
-                                    .get(v.b);
-                            Map<LinkEntity, IntVar> row = e_vars
-                                    .get(p1);
+                            Map<Handle, Handle> hnd_dic = prms_hnd_dic.get(v.b);
+                            Map<LinkEntity, IntVar> row = e_vars.get(p1);
                             Handle h1 = p1.getHandle();
 
                             IntVar var_tmp = findVariable(row.get(h1).getName(), model.getVars()).asIntVar();
@@ -1015,8 +1006,7 @@ public class CSPMatcher {
                                             // add it also to id
                                             OuterName o5 = new OuterName(name);
                                             id.bigOuter().put(name, o5);
-                                            InnerName i5 = new InnerName(
-                                                    name);
+                                            InnerName i5 = new InnerName(name);
                                             i5.setHandle(o5);
                                             id.bigInner().put(name, i5);
                                             // and finally to lambda
@@ -1025,9 +1015,7 @@ public class CSPMatcher {
                                             h3 = o3;
                                         } else {
                                             /*
-                                             * this handle is not required by
-                                             * the context, use an edge to
-                                             * reduce the interface of id
+                                             * 上下文中没有对应的映射，lmb要完成闭包closure操作
                                              */
                                             h3 = new Edge();
                                         }

@@ -200,4 +200,5 @@ public class ENFVisitor implements FormulaVisitor {
     public void visit(Or f) {
         throw new UnsupportedOperationException("Or shouldn't occur in ENF");
     }
+
 }

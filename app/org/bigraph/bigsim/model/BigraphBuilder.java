@@ -65,6 +65,7 @@ public class BigraphBuilder implements BigraphHandler {
         right.bigSites().addAll(0, left.bigSites());
         right.bigOuter().putAll(left.bigOuter());
         right.bigInner().putAll(left.bigInner());
+
         assertConsistency();
     }
 
@@ -80,7 +81,7 @@ public class BigraphBuilder implements BigraphHandler {
         Set<String> uniqueIn = new HashSet<>(in.bigOuter().keySet());
         Set<String> uniqueOut = new HashSet<>(out.bigInner().keySet());
         Set<String> tmp = new HashSet<>(uniqueOut);
-        for (String name : tmp) {
+        for (String name : uniqueOut) {
             if (!uniqueIn.contains(name)) {
                 tmp.remove(name);
             }
@@ -125,8 +126,6 @@ public class BigraphBuilder implements BigraphHandler {
         b.onNodeSetChanged();
         b.onNodeAdded(a.getNodes());
         b.onEdgeAdded(a.getEdges());
-        DebugPrinter.print(logger, "outercompose");
-        this.bigraph.print();
         assertConsistency();
     }
 
@@ -229,6 +228,11 @@ public class BigraphBuilder implements BigraphHandler {
         this.bigraph.bigSites().add(s);
         assertConsistency();
         return s;
+    }
+
+    // testsuite use only
+    public void addNode(Node node) {
+        this.bigraph.onNodeAdded(node);
     }
 
     public Node addNode(String name, String ctrlName, Parent parent, List<Handle> handles) {
@@ -399,7 +403,7 @@ public class BigraphBuilder implements BigraphHandler {
 
     public void parseTerm(Term term) {
 //        DebugPrinter.print(logger, "all names: " + bigraph.root().getAllNames());
-        if (term == null || term.termType()==TermType.TNIL()) return;
+        if (term == null || term.termType() == TermType.TNIL()) return;
         Term p = term.next();
         if (p == null) {
             DebugPrinter.print(logger, "null term: " + term + " " + term.remaining().size());
