@@ -3,7 +3,7 @@ package org.bigraph.bigsim.testsuite.ztrules;
 import org.bigraph.bigsim.BRS.InstantiationMap;
 import org.bigraph.bigsim.model.Bigraph;
 import org.bigraph.bigsim.model.BigraphBuilder;
-import org.bigraph.bigsim.model.component.Edge;
+import org.bigraph.bigsim.model.component.InnerName;
 import org.bigraph.bigsim.model.component.Node;
 import org.bigraph.bigsim.model.component.OuterName;
 import org.bigraph.bigsim.model.component.Root;
@@ -24,14 +24,14 @@ import java.util.List;
  * 零信任偶图衍化规则2：PEP将Staging模块中的信息交由PDP处理
  * 如果某个信息内的userInfo和DeviceInfo在PDP的auth列表中 -> 对应的Info放入activeZone
  */
-public class ZTRuleConnection {
-    private static final Logger logger = LoggerFactory.getLogger(ZTRuleConnection.class);
+public class ZTRuleConnectionRem {
+    private static final Logger logger = LoggerFactory.getLogger(ZTRuleConnectionRem.class);
     private Bigraph[] redex;
     private Bigraph[] reactum;
     private InstantiationMap[] eta;
     private List<Node> conns = new ArrayList<>();
 
-    public ZTRuleConnection(RandBigraphGenerator gen, ZTRuleSendRequest sendRule) {
+    public ZTRuleConnectionRem(RandBigraphGenerator gen, ZTRuleSendRequest sendRule) {
         List<Node> reqs = sendRule.getRequests();
         int num = reqs.size();
         redex = new Bigraph[num];
@@ -63,11 +63,11 @@ public class ZTRuleConnection {
           xx:PEP[o1:outername, xx:outername, o2:outername].
             (xx:Staging.(xx:Request.(xx:UserInfo || xx:DeviceInfo || xx:DataTag) || $0) || xx:ActiveZone.$1) ||
           xx:PDP[xx:outername].($2 || xx:AuthUser.($3 || xx:UserInfo) || xx:AuthDevice.($4 || xx:DeviceInfo)) ||
-          xx:Data[o2:outername]->
+          xx:Data[o4:outername] || (i1:innername连接o4:outername)->
           xx:PEP[o1:outername, xx:outername, o2:outername].
-            (xx:Staging.$0 || xx:ActiveZone.(Connection[o4:edge].(xx:UserInfo || xx:DeviceInfo || xx:DataTag) || $1)) ||
+            (xx:Staging.$0 || xx:ActiveZone.(Connection[o4:outername].(xx:UserInfo || xx:DeviceInfo || xx:DataTag) || $1)) ||
           xx:PDP[xx:outername].($2 || xx:AuthUser.($3 || xx:UserInfo) || xx:AuthDevice.($4 || xx:DeviceInfo)) ||
-          xx:Data[o4:edge]
+          xx:Data[o4:outername] || (i1:innername连接o4:outername)
          */
     private void init(RandBigraphGenerator gen, Node req, int idx) {
         Node uInfo = ZTSignature.findChildWithCtrl(req, ZTSignature.UserInfo);
@@ -87,6 +87,8 @@ public class ZTRuleConnection {
         OuterName o1 = bb.addOuterName("outername_" + NameGenerator.DEFAULT.generate());
         OuterName o2 = bb.addOuterName("outername_" + NameGenerator.DEFAULT.generate());
         OuterName o3 = bb.addOuterName("outername_" + NameGenerator.DEFAULT.generate());
+        OuterName o4 = bb.addOuterName("outername_" + NameGenerator.DEFAULT.generate());
+        InnerName i1 = bb.addInnerName(NameGenerator.DEFAULT.generate(), o4);
 
         // 处理pep
         Node pepCopy = pep.replicate();
@@ -120,7 +122,7 @@ public class ZTRuleConnection {
 
         // 处理data
         Node dataCopy = data.replicate();
-        dataCopy.getPort(0).setHandle(o3);
+        dataCopy.getPort(0).setHandle(o4); // data可能连接PEP第三个端口，也可能已经连接了Connection节点
         dataCopy.setParent(root);
         redex[idx] = bb.makeBigraph(true);
         DebugPrinter.print(logger, "---------------conn redex--------------");
@@ -138,6 +140,8 @@ public class ZTRuleConnection {
         OuterName o11 = bb1.addOuterName(o1.getName());
         OuterName o21 = bb1.addOuterName(o2.getName());
         OuterName o31 = bb1.addOuterName(o3.getName());
+        OuterName o41 = bb1.addOuterName(o4.getName());
+        InnerName i11 = bb1.addInnerName(i1.getName(), o41);
         // 处理pep
         Node pepReact = pep.replicate();
         pepReact.setParent(root1);
@@ -160,8 +164,7 @@ public class ZTRuleConnection {
         uInfoReact.setParent(conn);
         dInfoReact.setParent(conn);
         tagReact.setParent(conn);
-        Edge edge = new Edge();
-        conn.getPort(0).setHandle(edge);
+        conn.getPort(0).setHandle(o41);
         conns.add(conn);
 
         // 处理pdp
@@ -181,7 +184,7 @@ public class ZTRuleConnection {
         pdpReact.getPort(0).setHandle(o21);
 
         Node dataReact = data.replicate();
-        dataReact.getPort(0).setHandle(edge);
+        dataReact.getPort(0).setHandle(o41);
         dataReact.setParent(root1);
 
         reactum[idx] = bb1.makeBigraph(true);

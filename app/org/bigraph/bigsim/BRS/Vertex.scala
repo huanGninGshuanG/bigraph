@@ -32,9 +32,12 @@ class Vertex(b: Bigraph, v: Vertex, rr: ReactionRule) {
   var variables: String = Data.getValues(",") //初始化，为输入data文件中的所有初始数据，组装成=的形式：Tim.hasChecked=false,james.hasShoppingin=false,james.hasChecked=false...
   var bigraph: Bigraph = b
   var hash: Int = {//根据当前偶图的root生成唯一的hashCode
+    bigraph.structToTerm()
     if (bigraph.root != null)
       bigraph.root.toString.hashCode();
-    else "".hashCode();
+    else {
+      throw new RuntimeException("null term")
+    }
   }
 
   var parents: scala.collection.immutable.Set[Vertex] = scala.collection.immutable.Set(v)  // 新建的时候就把v放进来了

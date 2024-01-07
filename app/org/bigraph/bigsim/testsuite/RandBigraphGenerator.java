@@ -81,7 +81,7 @@ public class RandBigraphGenerator {
         if (level == 0) {
             randNum = (int) (1 + Math.random() * 10);
         } else {
-            randNum = (int) (1 + Math.random() * (200 - 100 + 1));
+            randNum = (int) 6;
         }
         DebugPrinter.print(logger, "rand num is: " + randNum);
         // 连接device和PEP

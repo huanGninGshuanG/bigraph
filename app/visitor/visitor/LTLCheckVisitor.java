@@ -61,7 +61,7 @@ public class LTLCheckVisitor implements LTLFormulaVisitor {
     @Override
     public void visit(LTLTrue f) {
         ks.getAllStates().forEach(state -> merge(state, f));
-        DebugPrinter.print(logger, "end check True:" + label);
+//        DebugPrinter.print(logger, "end check True:" + label);
     }
 
     @Override

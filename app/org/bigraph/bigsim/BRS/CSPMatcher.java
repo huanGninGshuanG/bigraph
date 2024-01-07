@@ -714,7 +714,7 @@ public class CSPMatcher {
                     noMoreSolution();
                     return;
                 }
-                printCSPSolution();
+//                printCSPSolution();
 
                 // context
                 Bigraph ctx = new Bigraph();

@@ -3,10 +3,7 @@ package org.bigraph.bigsim.testsuite.ztrules;
 import org.bigraph.bigsim.BRS.InstantiationMap;
 import org.bigraph.bigsim.model.Bigraph;
 import org.bigraph.bigsim.model.BigraphBuilder;
-import org.bigraph.bigsim.model.component.Edge;
-import org.bigraph.bigsim.model.component.Node;
-import org.bigraph.bigsim.model.component.OuterName;
-import org.bigraph.bigsim.model.component.Root;
+import org.bigraph.bigsim.model.component.*;
 import org.bigraph.bigsim.testsuite.NodeGenerator;
 import org.bigraph.bigsim.testsuite.RandBigraphGenerator;
 import org.bigraph.bigsim.testsuite.ZTSignature;
@@ -23,13 +20,13 @@ import java.util.List;
  * 零信任偶图衍化规则3：销毁连接
  * 需要将ActiveZone中Connection与Data的连接断开，删掉Connection，重新连接PEP和Data
  */
-public class ZTRuleFinish {
-    private static final Logger logger = LoggerFactory.getLogger(ZTRuleFinish.class);
+public class ZTRuleFinishRem {
+    private static final Logger logger = LoggerFactory.getLogger(ZTRuleFinishRem.class);
     private Bigraph[] redex;
     private Bigraph[] reactum;
     private InstantiationMap[] eta;
 
-    public ZTRuleFinish(RandBigraphGenerator gen, ZTRuleConnection conn) {
+    public ZTRuleFinishRem(RandBigraphGenerator gen, ZTRuleConnection conn) {
         List<Node> conns = conn.getConns();
         int num = conns.size();
         redex = new Bigraph[num];
@@ -55,13 +52,13 @@ public class ZTRuleFinish {
 
     /*
         xx:Device[o1:outername] ||xx:PEP[o1:outername, xx:outername, o2:outername].
-            ($0 || xx:ActiveZone.(Connection[o4:edge].(xx:UserInfo || xx:DeviceInfo || xx:DataTag) || $1)) ||
+            ($0 || xx:ActiveZone.(Connection[o4:outername].(xx:UserInfo || xx:DeviceInfo || xx:DataTag) || $1)) ||
         xx:PDP[xx:outername].($2 || xx:AuthUser.($3 || xx:UserInfo) || xx:AuthDevice.($4 || xx:DeviceInfo)) ||
-        xx:Data[o4:edge] ->
+        xx:Data[o4:outername] || (i1:innername连接o4) ->
         xx:Device[o1:outername].(xx:UserInfo || xx:DeviceInfo) ||
         xx:PEP[o1:outername, xx:outername, o2:outername].($0 || xx:ActiveZone.($1)) ||
         xx:PDP[xx:outername].($2 || xx:AuthUser.($3 || xx:UserInfo) || xx:AuthDevice.($4 || xx:DeviceInfo)) ||
-        xx:Data[o2:outername]
+        xx:Data[o4:outername] || (i1:innername连接o4)
     */
     private void init(RandBigraphGenerator gen, Node conn, int idx) {
         Node pep = gen.getPEP();
@@ -81,6 +78,9 @@ public class ZTRuleFinish {
         OuterName o1 = bb.addOuterName(NameGenerator.DEFAULT.generate());
         OuterName o2 = bb.addOuterName(NameGenerator.DEFAULT.generate());
         OuterName o3 = bb.addOuterName(NameGenerator.DEFAULT.generate());
+        OuterName o4 = bb.addOuterName(NameGenerator.DEFAULT.generate());
+        InnerName i1 = bb.addInnerName(NameGenerator.DEFAULT.generate(), o4);
+
         // 处理pep
         Node pepRedex = pep.replicate();
         pepRedex.setParent(root);
@@ -93,8 +93,7 @@ public class ZTRuleFinish {
         activeRedex.setParent(pepRedex);
         Node connRedex = NodeGenerator.cloneNodeWithoutSite(conn, activeRedex);
         bb.addSite(activeRedex);
-        Edge edge = new Edge();
-        connRedex.getPort(0).setHandle(edge);
+        connRedex.getPort(0).setHandle(o4);
 
         // 处理pdp
         Node pdpRedex = pdp.replicate();
@@ -117,7 +116,7 @@ public class ZTRuleFinish {
         // 处理data
         Node dataRedex = data.replicate();
         dataRedex.setParent(root);
-        dataRedex.getPort(0).setHandle(edge);
+        dataRedex.getPort(0).setHandle(o4);
 
         // 处理Device
         Node deviceRedex = device.replicate();
@@ -130,15 +129,18 @@ public class ZTRuleFinish {
 
         // 处理reactum
         /*
-        * xx:PEP[o1:outername, xx:outername, o2:outername].($0 || xx:ActiveZone.($1)) ||
-          xx:PDP[xx:outername].($2 || xx:AuthUser.($3 || xx:UserInfo) || xx:AuthDevice.($4 || xx:DeviceInfo)) ||
-          xx:Data[o2:outername]
+        *   xx:Device[o1:outername].(xx:UserInfo || xx:DeviceInfo) ||
+            xx:PEP[o1:outername, xx:outername, o2:outername].($0 || xx:ActiveZone.($1)) ||
+            xx:PDP[xx:outername].($2 || xx:AuthUser.($3 || xx:UserInfo) || xx:AuthDevice.($4 || xx:DeviceInfo)) ||
+            xx:Data[o4:outername] || (i1:innername连接o4)
         * */
         BigraphBuilder bb1 = new BigraphBuilder(ZTSignature.ztSig);
         Root root1 = bb1.addRoot();
         OuterName o11 = bb1.addOuterName(o1.getName());
         OuterName o21 = bb1.addOuterName(o2.getName());
         OuterName o31 = bb1.addOuterName(o3.getName());
+        OuterName o41 = bb1.addOuterName(o4.getName());
+        InnerName i11 = bb1.addInnerName(i1.getName(), o41);
 
         // 处理pep
         Node pepReact = pep.replicate();
@@ -172,7 +174,7 @@ public class ZTRuleFinish {
         // 处理data
         Node dataReact = data.replicate();
         dataReact.setParent(root1);
-        dataReact.getPort(0).setHandle(o31);
+        dataReact.getPort(0).setHandle(o41);
 
         // 处理device
         Node deviceReact = NodeGenerator.cloneNodeWithoutSite(device, root1);

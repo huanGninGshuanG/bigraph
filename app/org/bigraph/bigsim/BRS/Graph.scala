@@ -9,7 +9,7 @@ import org.bigraph.bigsim.data.Data
 import org.bigraph.bigsim.model.ReactionRule
 import org.bigraph.bigsim.strategy.{ParseRules, ParseXML, PatternFlow}
 import org.bigraph.bigsim.transitionsystem.State
-import org.bigraph.bigsim.utils.{GlobalCfg, Graphviz}
+import org.bigraph.bigsim.utils.{DebugPrinter, GlobalCfg, Graphviz}
 import org.slf4j.{Logger, LoggerFactory}
 import utils.BigSimThreadFactory
 
@@ -350,17 +350,19 @@ class Graph(init: Vertex) {
   var charIndex = 0;
 
   def formatHash(hash: Int): String = { //格式化生成的hashCode，若小于零则返回 "_hashcode绝对值"
-    var str = "";
-    if (hash < 0) str = "" + hash.abs;
-    else str = hash.toString;
+        var str = "";
+        if (hash < 0) str = "" + hash.abs;
+        else str = hash.toString;
 
-    if (!concurrent.containsKey(str)) {
-      //      concurrent.put(str, ((charIndex + 'A').toChar).toString)
-      concurrent.put(str, getStrValue(charIndex))
-      charIndex = charIndex + 1
-    }
+        if (!concurrent.containsKey(str)) {
+          //      concurrent.put(str, ((charIndex + 'A').toChar).toString)
+          concurrent.put(str, getStrValue(charIndex))
+          charIndex = charIndex + 1
+        }
 
-    concurrent.get(str)
+        concurrent.get(str)
+    // 上面的方法在节点数目很大的情况下生成的str冲突
+//    "" + hash
   }
 
   def getStrValue(index: Int) = {
