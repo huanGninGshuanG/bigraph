@@ -7,15 +7,15 @@ import org.bigraph.bigsim.model.Bigraph;
 import org.bigraph.bigsim.model.ReactionRule;
 import org.bigraph.bigsim.model.Term;
 import org.bigraph.bigsim.simulator.LTLSimulator;
-import org.bigraph.bigsim.testsuite.ztrules.Rule;
-import org.bigraph.bigsim.testsuite.ztrules.ZTRuleConnection;
-import org.bigraph.bigsim.testsuite.ztrules.ZTRuleFinish;
-import org.bigraph.bigsim.testsuite.ztrules.ZTRuleSendRequest;
+import org.bigraph.bigsim.testsuite.ztrules.*;
 import org.bigraph.bigsim.utils.BigraphToTerm;
 import org.bigraph.bigsim.utils.DebugPrinter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -35,6 +35,8 @@ public class TestBigraphReact {
         ZTRuleSendRequest send = new ZTRuleSendRequest(gen);
         ZTRuleConnection conn = new ZTRuleConnection(gen, send);
         ZTRuleFinish finish = new ZTRuleFinish(gen, conn);
+        ZTRuleConnectionRem rem = new ZTRuleConnectionRem(gen, send);
+        ZTRuleFinishRem fRem = new ZTRuleFinishRem(gen, conn);
         for (int i = 0; i < send.getRedex().length; i++) {
             agent.rules().add(new ReactionRule("send_" + i, send.getRedex()[i], send.getReactum()[i]));
             rules.add(new Rule(send.getRedex()[i], send.getReactum()[i], send.getEta()[i]));
@@ -43,9 +45,17 @@ public class TestBigraphReact {
             agent.rules().add(new ReactionRule("conn_" + i, conn.getRedex()[i], conn.getReactum()[i]));
             rules.add(new Rule(conn.getRedex()[i], conn.getReactum()[i], conn.getEta()[i]));
         }
+        for (int i = 0; i < rem.getRedex().length; i++) {
+            agent.rules().add(new ReactionRule("rem_" + i, rem.getRedex()[i], rem.getReactum()[i]));
+            rules.add(new Rule(rem.getRedex()[i], rem.getReactum()[i], rem.getEta()[i]));
+        }
         for (int i = 0; i < finish.getRedex().length; i++) {
             agent.rules().add(new ReactionRule("finish_" + i, finish.getRedex()[i], finish.getReactum()[i]));
             rules.add(new Rule(finish.getRedex()[i], finish.getReactum()[i], finish.getEta()[i]));
+        }
+        for (int i = 0; i < fRem.getRedex().length; i++) {
+            agent.rules().add(new ReactionRule("fRem_" + i, fRem.getRedex()[i], fRem.getReactum()[i]));
+            rules.add(new Rule(fRem.getRedex()[i], fRem.getReactum()[i], fRem.getEta()[i]));
         }
         agent.addLTLSpec("true");
     }
@@ -92,8 +102,13 @@ public class TestBigraphReact {
         String str = simulator.dumpDotForward("");
         long finish = System.currentTimeMillis();
         long timeElapsed = finish - start;
-        DebugPrinter.print(logger, "time spent: " + (double) timeElapsed / 1000);
-        DebugPrinter.print(logger, "result str");
-        DebugPrinter.print(logger, str);
+        DebugPrinter.printInfo(logger, "time spent: " + (double) timeElapsed / 1000);
+//        try {
+//            BufferedWriter out = new BufferedWriter(new FileWriter("str.txt"));
+//            out.write(str);
+//            out.close();
+//            DebugPrinter.print(logger, "写入成功");
+//        } catch (IOException e) {
+//        }
     }
 }

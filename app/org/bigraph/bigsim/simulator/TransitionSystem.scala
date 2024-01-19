@@ -143,9 +143,6 @@ class TransitionSystem(b: Bigraph) {
           nv = g.lut(nv.hash)
           nv.addParents(v)
         } else {
-          DebugPrinter.print(logger, "new bigraph:::" + rr)
-          b.print()
-          nv.bigraph.print()
           workQueue.enqueue(nv)
           g.add(nv)
         }

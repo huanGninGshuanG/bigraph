@@ -40,6 +40,12 @@ public class NodeGenerator {
         return bb.addNode(name, ctrlName, prnt, null);
     }
 
+    // connection是匿名节点
+    public static Node newConn(BigraphBuilder bb, Parent prnt) {
+        String name = ZTSignature.Connection;
+        return bb.addNode(name, ZTSignature.Connection, prnt, null);
+    }
+
     public static Node newNodeWithName(BigraphBuilder bb, Parent prnt, String ctrlName, String name) {
         return bb.addNode(name, ctrlName, prnt, null);
     }
@@ -76,8 +82,8 @@ public class NodeGenerator {
         return newNode(bb, prnt, ZTSignature.Request);
     }
 
-    // 拷贝位置图，handle没有进行拷贝
-    public static Node cloneNode(Node p, BigraphBuilder bb, Parent prnt) {
+    // 拷贝node层次，handle和site没有进行拷贝
+    public static Node cloneNodeWithoutSite(Node p, Parent prnt) {
         Node res = p.replicate();
         res.setParent(prnt);
         class VState {
@@ -102,8 +108,6 @@ public class NodeGenerator {
                 for (Child c : ori.getChildren()) {
                     q.offer(new VState(copy, c));
                 }
-            } else if (state.cur.isSite()) {
-                bb.addSite(state.p);
             }
         }
         return res;

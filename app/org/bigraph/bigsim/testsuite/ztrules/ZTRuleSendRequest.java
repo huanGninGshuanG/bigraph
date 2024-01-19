@@ -92,7 +92,7 @@ public class ZTRuleSendRequest {
         copyPEP.getPort(PEPPDPPort).setHandle(o1);
         copyPEP.getPort(PEPDataPort).setHandle(o2);
         // 完成Device拷贝
-        Node copyDevice = NodeGenerator.cloneNode(device, bb, root);
+        Node copyDevice = NodeGenerator.cloneNodeWithoutSite(device, root);
         // Device和PEP连接
         OuterName o3 = bb.addOuterName("outername_" + NameGenerator.DEFAULT.generate());
         copyPEP.getPort(PEPDevicePort).setHandle(o3);
