@@ -79,7 +79,7 @@ public class RandBigraphGenerator {
         // 根据配置项，生成不同数量级节点
         int level = GlobalCfg.testLevel();
         if (level == 0) {
-            randNum = (int) (1 + Math.random() * 10);
+            randNum = (int) 4;
         } else {
             randNum = (int) (1 + Math.random() * (200 - 100 + 1));
         }

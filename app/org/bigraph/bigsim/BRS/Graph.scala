@@ -290,7 +290,6 @@ class Graph(init: Vertex) {
                   ite.pop
                 }
                 out += "}" + ruleCoverage + "\n"
-                logger.debug("pathNum: " + pathNum.get())
               }
             } catch {
               case e: Exception => {
