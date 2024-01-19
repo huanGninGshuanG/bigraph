@@ -224,6 +224,6 @@ object GlobalCfg {
   var debugSwitch = true
   var anonymousNode = false // 是否开启匿名节点功能(偶图匹配时忽略名字)
   // 测试模块配置项
-  var testLevel = 1 // 0,1分别对应小、高两个等级的测试规模
+  var testLevel = 0 // 0,1分别对应小、高两个等级的测试规模
   var testRootLevel = 0 // 0,1分别对应小、高两个数量级的PEP个数
 }
