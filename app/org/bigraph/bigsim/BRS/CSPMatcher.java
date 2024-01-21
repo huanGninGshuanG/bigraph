@@ -281,7 +281,6 @@ public class CSPMatcher {
                             model.arithm(i_row.get(j), "<=", f_row.get(g)).post();
                         }
                     }
-                    // todo: roots-roots部分是否漏掉了
                 }
 
                 {
@@ -311,6 +310,7 @@ public class CSPMatcher {
                         Child i = qp.poll();
                         Map<PlaceEntity, IntVar> row = p_vars.get(i);
                         for (Root j : redex_roots) {
+                            // constraint(25) passive节点不能参与匹配
                             model.arithm(row.get(j), "=", 0).post();
                         }
                         if (i.isNode()) {
@@ -378,7 +378,7 @@ public class CSPMatcher {
                             t1 = t1.add(v).intVar();
                         }
                         t1 = t1.add(c).intVar();
-                        // constraint(29) agent中的每个nodes最多和redex中的一个nodes/sites匹配
+                        // constraint(29) agent中的nodes不能同时和redex中的nodes/sites以及root匹配
                         model.arithm(t1, "<=", rrs).post();
                     }
                 }
@@ -432,7 +432,7 @@ public class CSPMatcher {
                 {
                     for (Node i : agent_nodes) {
                         Collection<Parent> ancs = agent.getAncestors(i);
-                        IntVar[] vars = new IntVar[(ancs.size()) * rss];
+                        IntVar[] vars = new IntVar[(ancs.size() + 1) * rss];
                         int k = 0;
                         for (Parent f : ancs) {
                             if (f.isNode()) {
@@ -442,14 +442,17 @@ public class CSPMatcher {
                                 }
                             }
                         }
+                        Map<PlaceEntity, IntVar> i_row = p_vars.get(i);
+                        for (Site g : redex_sites) {
+                            vars[k++] = i_row.get(g);
+                        }
 
                         IntVar sum = model.intVar(0);
                         for (IntVar v : vars) {
                             sum = sum.add(v).intVar();
                         }
-                        Map<PlaceEntity, IntVar> i_row = p_vars.get(i);
                         for (Root j : redex_roots) {
-                            // constraint(32) agent nodes和redex root匹配，那么该node的ancestor就不能和redex sites匹配
+                            // constraint(32) agent nodes在redex的sites中，就不能与redex中的nodes和roots匹配
                             model.arithm(sum.add(i_row.get(j)).intVar(), "<=", 1).post();
                         }
                     }

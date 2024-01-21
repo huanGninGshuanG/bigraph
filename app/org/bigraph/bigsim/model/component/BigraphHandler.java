@@ -16,4 +16,5 @@ public interface BigraphHandler {
     Collection<? extends InnerName> getInnerNames();
     Collection<? extends Node> getNodes();
     Collection<? extends Edge> getEdges();
+    boolean isConsistent();
 }

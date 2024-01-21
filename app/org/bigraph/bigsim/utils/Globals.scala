@@ -226,4 +226,8 @@ object GlobalCfg {
   // 测试模块配置项
   var testLevel = 0 // 0,1分别对应小、高两个等级的测试规模
   var testRootLevel = 0 // 0,1分别对应小、高两个数量级的PEP个数
+
+  // 共享偶图
+  var shareModeStr = "ShareMode"
+  var sharedMode = false
 }

@@ -207,12 +207,13 @@ object testLTLSimulator {
       |# Controls
       |%active CriticalSection : 1;
       |%active Process : 1;
+      |%active Data : 0;
       |
       |# Names
       |%outername a;
       |
       |# Rules
-      |%rule r_0 a:CriticalSection[a:outername].$0 | b:Process[a:outername] -> a:CriticalSection[a:outername].($0 | b:Process[a:outername]){};
+      |%rule r_0 a:CriticalSection[a:outername].$0 | b:Process[a:outername] -> a:CriticalSection[a:outername].($0 | b:Process[a:outername]){0->0};
       |
       |%rule r_1 a:CriticalSection[a:outername].(b:Process[a:outername] | $0) -> a:CriticalSection[a:outername].$0 | b:Process[idle]{};
       |
@@ -229,9 +230,9 @@ object testLTLSimulator {
       |
       |
       |# Model
-      |%agent  a:CriticalSection[idle].nil|b:Process[idle].nil|c:Process[idle].nil;
+      |%agent  a:CriticalSection[idle].nil|b:Process[idle].nil|c:Process[idle].nil{};
       |
-      |
+      |# %mode ShareMode
       |
       |# LTL_Formula
       |%ltlSpec G!(p);
@@ -279,7 +280,7 @@ object testLTLSimulator {
       |""".stripMargin
 
 
-  val t = BGMParser.parseFromString(example4)
+  val t = BGMParser.parseFromString(example3)
   val b = BGMTerm.toBigraph(t)
 
   def logger: Logger = LoggerFactory.getLogger(this.getClass)

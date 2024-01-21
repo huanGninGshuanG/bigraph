@@ -5,7 +5,12 @@ import org.bigraph.bigsim.exceptions.IncompatibleSignatureException;
 import org.bigraph.bigsim.model.component.Control;
 import org.bigraph.bigsim.model.component.Node;
 import org.bigraph.bigsim.model.component.*;
+import org.bigraph.bigsim.model.component.shared.SharedNode;
+import org.bigraph.bigsim.model.component.shared.SharedParent;
+import org.bigraph.bigsim.model.component.shared.SharedRoot;
+import org.bigraph.bigsim.model.component.shared.SharedSite;
 import org.bigraph.bigsim.utils.DebugPrinter;
+import org.bigraph.bigsim.utils.GlobalCfg;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,6 +28,14 @@ public class BigraphBuilder implements BigraphHandler {
     public BigraphBuilder(Signature signature) {
         bigraph = new Bigraph();
         bigraph.setSignature(signature);
+    }
+
+    public BigraphBuilder(Signature signature, boolean shared) {
+        if (shared) bigraph = new SharedBigraph(signature);
+        else {
+            bigraph = new Bigraph();
+            bigraph.setSignature(signature);
+        }
     }
 
     public Bigraph makeBigraph(boolean close) {
@@ -192,6 +205,11 @@ public class BigraphBuilder implements BigraphHandler {
         return this.bigraph.getEdges();
     }
 
+    @Override
+    public boolean isConsistent() {
+        return this.bigraph.isConsistent();
+    }
+
     public boolean containsOuterName(String name) {
         assertOpen();
         return this.bigraph.bigOuter().containsKey(name);
@@ -210,6 +228,14 @@ public class BigraphBuilder implements BigraphHandler {
         return r;
     }
 
+    public SharedRoot addSharedRoot() {
+        assertOpen();
+        SharedRoot sr = new SharedRoot();
+        ((SharedBigraph) this.bigraph).sharedRoots().add(sr);
+        assertConsistency();
+        return sr;
+    }
+
     public Site addSite(String name, Parent parent) {
         if (parent == null)
             throw new IllegalArgumentException("Argument can not be null.");
@@ -218,6 +244,24 @@ public class BigraphBuilder implements BigraphHandler {
         this.bigraph.bigSites().add(s);
         assertConsistency();
         return s;
+    }
+
+    public SharedSite addSharedSite(String name, SharedParent parent) {
+        if (parent == null)
+            throw new IllegalArgumentException("Argument can not be null.");
+        assertOpen();
+        SharedBigraph sBigraph = (SharedBigraph) this.bigraph;
+        Optional<SharedSite> op = sBigraph.findSharedSite(name);
+        SharedSite ss;
+        if (op.isPresent()) {
+            ss = op.get();
+            ss.addParent(parent);
+        } else {
+            ss = new SharedSite(name, parent);
+            sBigraph.sharedSites().add(ss);
+        }
+        assertConsistency();
+        return ss;
     }
 
     public Site addSite(Parent parent) {
@@ -261,6 +305,44 @@ public class BigraphBuilder implements BigraphHandler {
         }
         Node n = new Node(name, c, parent, hs);
         this.bigraph.onNodeAdded(n);
+        assertConsistency();
+        return n;
+    }
+
+    public SharedNode addSharedNode(String name, String ctrlName, SharedParent parent, List<Handle> handles) {
+        if (ctrlName == null)
+            throw new IllegalArgumentException("Control name can not be null.");
+        if (parent == null)
+            throw new IllegalArgumentException("Parent can not be null.");
+        assertOpen();
+        Control c = this.bigraph.bigSignature().getByName(ctrlName);
+        if (c == null)
+            throw new IllegalArgumentException("Control should be in the signature.");
+        int ar = c.getArity();
+        List<Handle> hs = new ArrayList<>(ar);
+        Iterator<Handle> hi = (handles == null) ? null : handles.iterator();
+        for (int i = 0; i < ar; i++) {
+            Handle h = null;
+            if (hi != null && hi.hasNext()) {
+                h = hi.next();
+            }
+            if (h == null) {
+                Edge e = new Edge();
+                bigraph.onEdgeAdded(e);
+                h = e;
+            }
+            hs.add(h);
+        }
+        SharedBigraph sBigraph = (SharedBigraph) this.bigraph;
+        Optional<SharedNode> op = sBigraph.findSharedNode(name);
+        SharedNode n = null;
+        if (op.isPresent()) {
+            n = op.get();
+            n.addParent(parent);
+        } else {
+            n = new SharedNode(name, c, parent, hs);
+            sBigraph.onSharedNodeAdded(n);
+        }
         assertConsistency();
         return n;
     }
@@ -401,14 +483,8 @@ public class BigraphBuilder implements BigraphHandler {
         }
     }
 
-    public void parseTerm(Term term) {
-//        DebugPrinter.print(logger, "all names: " + bigraph.root().getAllNames());
-        if (term == null || term.termType() == TermType.TNIL()) return;
+    private void solveNormalTerm(Term term) {
         Term p = term.next();
-        if (p == null) {
-            DebugPrinter.print(logger, "null term: " + term + " " + term.remaining().size());
-            throw new RuntimeException("term.next is null");
-        }
         if (p.termType() == TermType.TREGION()) {
             ((Regions) p).getChildren().foreach(child -> {
                 Parent parent = addRoot();
@@ -421,5 +497,77 @@ public class BigraphBuilder implements BigraphHandler {
             Parent parent = addRoot();
             dfsTerm(term, parent);
         }
+    }
+
+    private void dfsSharedTerm(SharedParent parent, Term term) {
+        if (term.termType() == TermType.TPAR()) {
+            SharedParent finalParent = parent;
+            ((Paraller) term).getChildren().foreach(child -> {
+                dfsSharedTerm(finalParent, child);
+                return true;
+            });
+        } else if (term.termType() == TermType.THOLE()) {
+            addSharedSite(term.toString(), parent);
+        } else if (term.termType() == TermType.TPREF()) {
+            Prefix pref = (Prefix) term;
+            org.bigraph.bigsim.model.Node node = pref.node();
+            List<Handle> hs = new ArrayList<>(node.ctrl().arity());
+            node.ports().foreach(port -> {
+                String handleName = port.name(), nameType = port.nameType();
+                if (nameType.equals("outername")) {
+                    OuterName outerName = null;
+                    if (bigraph.bigOuter().containsKey(handleName)) outerName = bigraph.bigOuter().get(handleName);
+                    else outerName = addOuterName(handleName);
+                    if (outerName != null) hs.add(outerName);
+                } else if (nameType.equals("edge")) {
+                    Collection<Edge> edges = bigraph.edgesProxy().get();
+                    boolean finded = false;
+                    for (Edge edge : edges) {
+                        if (edge.getName().equals(handleName)) {
+                            hs.add(edge);
+                            finded = true;
+                            break;
+                        }
+                    }
+                    if (!finded) {
+                        Edge e = new Edge(handleName);
+                        hs.add(e);
+                        bigraph.onEdgeAdded(e);
+                    }
+                } else if (nameType.equals("idle")) {
+                    hs.add(new Edge());
+                }
+                return true;
+            });
+            parent = addSharedNode(node.name(), node.ctrl().name(), parent, hs);
+            dfsSharedTerm(parent, pref.suffix());
+        }
+    }
+
+    private void solveShareTerm(Term term) {
+        Term p = term.next();
+        if (p.termType() == TermType.TREGION()) {
+            ((Regions) p).getChildren().foreach(child -> {
+                SharedRoot parent = addSharedRoot();
+                DebugPrinter.print(logger, "region child is: " + child);
+                dfsSharedTerm(parent, term);
+                return true;
+            });
+        } else {
+            SharedRoot parent = addSharedRoot();
+            dfsSharedTerm(parent, term);
+        }
+    }
+
+    public void parseTerm(Term term) {
+        if (term == null || term.termType() == TermType.TNIL()) return;
+        Term p = term.next();
+        if (p == null) {
+            DebugPrinter.print(logger, "null term: " + term + " " + term.remaining().size());
+            throw new RuntimeException("term.next is null");
+        }
+        DebugPrinter.print(logger, "shared: " + GlobalCfg.sharedMode() + " : " + term);
+        if (!GlobalCfg.sharedMode()) solveNormalTerm(term);
+        else solveShareTerm(term);
     }
 }
