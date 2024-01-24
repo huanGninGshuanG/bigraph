@@ -3,6 +3,7 @@ package org.bigraph.bigsim.parser
 import java.io.File
 import java.util
 
+import org.bigraph.bigsim.BRS.InstantiationMap
 import org.bigraph.bigsim.bigraphoperation.BigraphOperation
 import org.bigraph.bigsim.data.Data
 import org.bigraph.bigsim.model.component.{OuterName, Signature}
@@ -25,7 +26,7 @@ case class BGMNode(n: String, active: Boolean, ctrl: BGMControl) extends BGMTerm
 case class BGMName(n: String, isouter: Boolean) extends BGMTerm
 
 //case class BGMRule(n: String, m: String, redex: String, reactum: String, exp: String) extends BGMTerm  //add reactionrule belongs to which process
-case class BGMRule(n: String, redex: String, reactum: String, exp: String) extends BGMTerm
+case class BGMRule(n: String, redex: String, reactum: String, exp: String, eta: InstantiationMap = null) extends BGMTerm
 
 case class BGMAgent(n: String) extends BGMTerm
 
@@ -111,7 +112,6 @@ object BGMTerm {
   }
 
   def toBigraph(t: List[BGMTerm]): Bigraph = {
-    val b: Bigraph = new Bigraph(1);
 
     // BGMControl
     val controlList: List[BGMControl] = t.filter(_ match {
@@ -123,8 +123,10 @@ object BGMTerm {
       ctrls.add(new component.Control(x.n, x.active, x.arity))
       Bigraph.addControl(x.n, x.arity, x.active, x.binding)
     })
+    var b: Bigraph = null
+    if (!GlobalCfg.sharedMode) b = new Bigraph(1)
+    else b = new SharedBigraph(new Signature(ctrls))
     b.bigSignature = new Signature(ctrls)
-    val builder: BigraphBuilder = new BigraphBuilder(new Signature(ctrls))
     // BGMName
     t.filter(_ match {
       case BGMName(_, _) => true
@@ -213,7 +215,7 @@ object BGMTerm {
     // 处理反应规则，从列表中，依据BGMRule过滤
     t.filter(_ match {
       //case BGMRule(_,_, _, _, _) => true
-      case BGMRule(_, _, _, _) => true
+      case BGMRule(_, _, _, _, _) => true
       case _ => false
     }).map(rr => {
       val rrp = rr.asInstanceOf[BGMRule]
@@ -224,7 +226,8 @@ object BGMTerm {
       //println("resolve bgm rule to term reactum: " + rrp.reactum)
       val reactum = TermParser.apply(rrp.reactum)
       b.rex.add(reactum)
-      val rule = new ReactionRule(rrp.n, redex, reactum, rrp.exp, b.bigSignature)
+      val rule: ReactionRule = new ReactionRule(rrp.n, redex, reactum, rrp.exp, b.bigSignature)
+      if (rrp.eta != null) rule.eta = rrp.eta
       b.rules.add(rule); //toBigraph时把反应规则解析到Bigraph
     })
 
@@ -484,13 +487,18 @@ object BGMTerm {
       });
       GlobalCfg.needCtlCheck = true; // 包含LTL公式，所以把CTL检测的功能打开。
     }
+    val builder: BigraphBuilder = new BigraphBuilder(new Signature(ctrls))
     builder.setBigraph(b)
     builder.parseTerm(b.root)
-    builder.makeBigraph(true)
+    val res = builder.makeBigraph(true)
+    res.print()
+    res
   }
 }
 
 object BGMParser extends RegexParsers {
+  def logger: Logger = LoggerFactory.getLogger(this.getClass)
+
   def exp = "[^;^{^}]*".r
 
   def ident = "[^ \t\n\r;]+".r
@@ -525,30 +533,6 @@ object BGMParser extends RegexParsers {
     "%innername" ~> (ws ~> ident) ^^ { x => BGMName(x, false) } |
     "%inner" ~> (ws ~> ident) ^^ { x => BGMName(x, false) } |
     "%name" ~> (ws ~> ident) ^^ { x => BGMName(x, false) } |
-    /*"%rule" ~> ((ws ~> ident) ~ (ws ~> ident) ~ (ws ~> exp) ~ ("{" ~> exp <~ "}")) ^^ { //有约束条件的反应规则
-      case i ~ n ~ s ~ k => {
-        val bdrr = s.split("<-")
-        val rr = s.split("->")
-        if (bdrr.length > 1) { //add by lbj BackDerivation Rules
-          GlobalCfg.isBackDerivation = true
-          BGMRule(i, n, bdrr(1), bdrr(0), k)
-        } else { //非回朔规则就认为是正常规则
-          BGMRule(i, n, rr(0), rr(1), k)
-        }
-      }
-    } |
-    "%rule" ~> ((ws ~> ident) ~ (ws ~> ident) ~ (ws ~> exp)) ^^ { //没有约束条件的反应规则
-      case i ~ m ~ s => {
-        val bdrr = s.split("<-")
-        val rr = s.split("->")
-        if (bdrr.length > 1) { //add by lbj BackDerivation Rules
-          GlobalCfg.isBackDerivation = true
-          BGMRule(i, m, bdrr(1), bdrr(0), "")
-        } else { //非回朔规则就认为是正常规则
-          BGMRule(i, m, rr(0), rr(1), "")
-        }
-      }
-    }*/
     "%rule" ~> ((ws ~> ident) ~ (ws ~> exp) ~ ("{" ~> exp <~ "}")) ^^ { //有约束条件的反应规则
       case i ~ s ~ k => {
         val bdrr = s.split("<-")
@@ -557,7 +541,26 @@ object BGMParser extends RegexParsers {
           GlobalCfg.isBackDerivation = true
           BGMRule(i, bdrr(1), bdrr(0), k)
         } else { //非回朔规则就认为是正常规则
-          BGMRule(i, rr(0), rr(1), k)
+          var eta: InstantiationMap = null
+          if(k.length()>0) {
+            // 解析eta e.g. {0->1, 1->0}
+            val arr = k.split(",", 0)
+            val map: mutable.Map[Int, Int] = new mutable.HashMap[Int, Int]()
+            var cnt = 0
+            for (m <- arr) {
+              val nums = m.split("->")
+              val dom = nums(0).trim.toInt
+              val cod = nums(1).trim.toInt
+              map.+=(dom -> cod)
+              cnt = cod.max(cnt) + 1
+            }
+            val ma: Array[Int] = new Array[Int](map.size)
+            for ((key, v) <- map) {
+              ma(key) = v
+            }
+            eta = new InstantiationMap(cnt, ma)
+          }
+          BGMRule(i, rr(0), rr(1), k, eta)
         }
       }
     } |
@@ -586,6 +589,12 @@ object BGMParser extends RegexParsers {
       }
     } |
     "%agent" ~> (ws ~> exp) ^^ { x => BGMAgent(x) } | //没有expr的agent
+    "%mode" ~> (ws ~> exp) ^^ {
+      x => {
+        if (x.contains(GlobalCfg.shareModeStr)) GlobalCfg.sharedMode = true
+        BGMNil()
+      }
+    } |
     "%pattern" ~> (ws ~> exp) ^^ { x => BGMPattern(x) } | //关注子模式
     "%error" ~> (ws ~> exp) ^^ { x => BGMError(x) } | //关注子模式
     "%bindingConstraint" ~> (ws ~> exp) ^^ { x => BGMBinding(x, 0) } | //绑定结构
@@ -692,31 +701,27 @@ object testBGMParser {
         |%active Process : 1;
         |
         |# Names
-        |%outername x;
+        |%outername a;
         |
         |# Rules
-        |%rule r_0 a:CriticalSection[x:outername].$0 | b:Process[x:outername] -> a:CriticalSection[x:outername].($0 | b:Process[x:outername]){};
+        |%rule r_0 a:CriticalSection[a:outername].$0 | b:Process[a:outername] -> a:CriticalSection[a:outername].($0 | b:Process[a:outername]){};
         |
-        |%rule r_1 a:CriticalSection[x:outername].(b:Process[x:outername] | $0) -> a:CriticalSection[x:outername].$0 | b:Process[idle]{};
+        |%rule r_1 a:CriticalSection[a:outername].(b:Process[a:outername] | $0) -> a:CriticalSection[a:outername].$0 | b:Process[idle]{};
         |
-        |%rule r_2 a:CriticalSection[x:outername].$0 | b:Process[idle] -> a:CriticalSection[x:outername].$0 | b:Process[x:outername]{};
+        |%rule r_2 a:CriticalSection[a:outername].$0 | b:Process[idle] -> a:CriticalSection[a:outername].$0 | b:Process[a:outername]{};
         |
-        |%rule r_3 a:CriticalSection[x:outername].$0 | c:Process[x:outername] -> a:CriticalSection[x:outername].($0 | c:Process[x:outername]){};
+        |%rule r_3 a:CriticalSection[a:outername].$0 | c:Process[a:outername] -> a:CriticalSection[a:outername].($0 | c:Process[a:outername]){};
         |
-        |%rule r_4 a:CriticalSection[x:outername].(c:Process[x:outername] | $0) -> a:CriticalSection[x:outername].$0 | c:Process[idle]{};
+        |%rule r_4 a:CriticalSection[a:outername].(c:Process[a:outername] | $0) -> a:CriticalSection[a:outername].$0 | c:Process[idle]{};
         |
-        |%rule r_5 a:CriticalSection[x:outername].$0 | c:Process[idle] -> a:CriticalSection[x:outername].$0 | c:Process[x:outername]{};
-        |
-        |%rule r_6 a:CriticalSection[idle] | b:Process[idle] -> a:CriticalSection[x:edge] | b:Process[x:edge]{};
-        |
-        |%rule r_7 a:CriticalSection[idle] | c:Process[idle] -> a:CriticalSection[x:edge] | c:Process[x:edge]{};
+        |%rule r_5 a:CriticalSection[a:outername].$0 | c:Process[idle] -> a:CriticalSection[a:outername].$0 | c:Process[a:outername]{};
         |
         |# prop
-        |%prop p  a:CriticalSection[x:edge].(b:Process[x:edge] | $0){};
+        |%prop p  a:CriticalSection[a:edge].(b:Process[a:edge] | $0){};
         |
         |
         |# Model
-        |%agent  a:CriticalSection[x:edge] | b:Process[x:edge] | c:Process[idle];
+        |%agent  a:CriticalSection[idle].nil|b:Process[idle].nil|c:Process[idle].nil{};
         |
         |
         |
@@ -729,7 +734,37 @@ object testBGMParser {
         |# Go!
         |%check;
         |""".stripMargin
-    val p: List[BGMTerm] = BGMParser.parseFromString(s);
+
+    var shareStr = // rule包括三个测试用例
+      """
+        |# Controls
+        |%active A : 0;
+        |%active B : 0;
+        |
+        |# Rules
+        |# %rule r_0 v0:A.(v1:B.v2:A.$1|$0) -> v0:A.(v1:B.v2:A.$1|$0){};
+        |%rule r_1 v0:A.v1:B.$0 -> v0:A.v1:B.$0{};
+        |# %rule r_0 v0:A.(v1:B.v2:A.v3:B.$1|$0) -> v0:A.(v1:B.v2:A.v3:B.$1|$0){};
+        |
+        |# prop
+        |%prop p  a:CriticalSection[a:edge].(b:Process[a:edge] | $0){};
+        |
+        |
+        |# Model
+        |%agent  u0:A.(u1:B.u4:A.(u7:B)|u2:B.u5:A.(u7:B)|u3:A.u6:B){};
+        |
+        |%mode ShareMode
+        |
+        |# LTL_Formula
+        |%ltlSpec G!(p);
+        |
+        |#SortingLogic
+        |
+        |
+        |# Go!
+        |%check;
+        |""".stripMargin
+    val p: List[BGMTerm] = BGMParser.parseFromString(shareStr);
     println(p)
 
     def logger = LoggerFactory.getLogger(this.getClass)

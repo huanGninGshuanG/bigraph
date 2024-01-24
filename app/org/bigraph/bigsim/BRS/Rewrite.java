@@ -17,6 +17,8 @@ public class Rewrite {
     private static final Logger logger = LoggerFactory.getLogger(Rewrite.class);
 
     public static Bigraph rewrite(CSPMatch match, Bigraph redex, Bigraph reactum, InstantiationMap eta) {
+        if (eta.getDomain() != reactum.bigSites().size() || eta.getCodomain() != redex.bigSites().size())
+            throw new RuntimeException("instantiation map error");
         BigraphBuilder bb = new BigraphBuilder(redex.getSignature());
         for (int i = eta.getDomain() - 1; i >= 0; --i) {
             bb.leftJuxtapose(match.params.get(eta.getCod(i)));

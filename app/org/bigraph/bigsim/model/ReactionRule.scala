@@ -9,7 +9,7 @@ import scala.collection.mutable.Set
 import cern.jet.random.Poisson
 import cern.jet.random.engine.RandomEngine
 import cern.jet.random.Exponential
-import org.bigraph.bigsim.BRS.Match
+import org.bigraph.bigsim.BRS.{InstantiationMap, Match}
 import org.bigraph.bigsim.model.component.Signature
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -55,7 +55,7 @@ class ReactionRule(n: String, red: Term, react: Term, exp: String, redBig: Bigra
   var sig: Signature = signature
   val redexBig: Bigraph = {
     if (redBig == null) {
-      val bb = new BigraphBuilder(sig)
+      val bb = new BigraphBuilder(sig, GlobalCfg.sharedMode)
       DebugPrinter.print(logger, "parse redex:" + redex)
       bb.parseTerm(redex)
       bb.makeBigraph(true)
@@ -64,13 +64,15 @@ class ReactionRule(n: String, red: Term, react: Term, exp: String, redBig: Bigra
   }
   val reactumBig: Bigraph = {
     if (reactBig == null) {
-      val bb = new BigraphBuilder(sig)
+      val bb = new BigraphBuilder(sig, GlobalCfg.sharedMode)
       DebugPrinter.print(logger, "parse reactum:" + reactum)
       bb.parseTerm(reactum)
       bb.makeBigraph(true)
-    } else
+    } else {
       reactBig
+    }
   }
+  var eta: InstantiationMap = InstantiationMap.getIdMap(reactumBig.bigSites.size()) // 参数化反应规则，没有指定则默认按照site下标匹配
 
   var express: String = exp;
 

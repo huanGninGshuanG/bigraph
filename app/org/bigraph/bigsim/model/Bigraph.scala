@@ -981,7 +981,7 @@ class Bigraph(roots: Int = 1) extends BigraphHandler {
   }
 
   /// check whether the bigraph is consistent
-  def isConsistent: Boolean = {
+  override def isConsistent: Boolean = {
     val seenPoint: util.HashSet[Point] = new util.HashSet[Point]()
     val seenHandles: util.HashSet[Handle] = new util.HashSet[Handle]()
     val unseenSites: util.HashSet[Site] = new util.HashSet[Site]()
@@ -1149,14 +1149,14 @@ class Bigraph(roots: Int = 1) extends BigraphHandler {
   def matchRule(r: ReactionRule): util.Set[(Bigraph, ReactionRule)] = {
     val redex: Bigraph = r.redexBig
     val reactum: Bigraph = r.reactumBig
+    val eta: InstantiationMap = r.eta
     DebugPrinter.print(logger, "- REACTUM -----------------------------")
-    reactum.print()
     val matcher: CSPMatcher = new CSPMatcher()
     val iter = matcher.`match`(this, redex).iterator()
     val result = new util.HashSet[(Bigraph, ReactionRule)]()
     while (iter.hasNext) {
       val pMatch: CSPMatch = iter.next()
-      val nb = Rewrite.rewrite(pMatch, redex, reactum, InstantiationMap.getIdMap(reactum.bigSites.size()))
+      val nb = Rewrite.rewrite(pMatch, redex, reactum, eta)
       nb.rules = rules
       DebugPrinter.print(logger, "new bigraph::")
       result.add((nb, r))
