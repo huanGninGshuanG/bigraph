@@ -60,7 +60,7 @@ class SharedBigraph(signature: Signature) extends Bigraph {
     val iter = matcher.`match`(this, redex).iterator()
     val result = new util.HashSet[(Bigraph, ReactionRule)]()
     while (iter.hasNext) {
-
+      iter.next()
     }
     result
   }
@@ -71,7 +71,7 @@ class SharedBigraph(signature: Signature) extends Bigraph {
     var s = ancestors.get(child)
     if (s == null) {
       val parents = child.getParents
-      s= new util.HashSet[SharedParent]()
+      s = new util.HashSet[SharedParent]()
       for (parent <- parents) {
         if (parent.isNode) {
           s.add(parent)

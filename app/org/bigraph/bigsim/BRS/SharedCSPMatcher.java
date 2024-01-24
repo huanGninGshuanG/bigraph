@@ -168,7 +168,7 @@ public class SharedCSPMatcher {
                     for (SharedNode rn : redex_nodes) {
                         int kj = 0;
                         int k = 0;
-                        IntVar[] vars = new IntVar[ans];
+                        IntVar[] vars = new IntVar[ans + ass];
                         Map<PlaceEntity, IntVar> row = new HashMap<>(ars + ans + ass);
                         for (SharedRoot ar : agent_roots) {
                             IntVar var = model.boolVar("L_" + ki + "_" + kj++);
@@ -185,6 +185,7 @@ public class SharedCSPMatcher {
                             IntVar var = model.boolVar("L_" + ki + "_" + kj++);
                             // sat-constrain(3) agent的site不能和redex node匹配
                             model.arithm(var, "=", 0).post();
+                            vars[k++] = var;
                             row.put(as, var);
                         }
                         // sub-graph iso clause(1)(2)
@@ -195,8 +196,6 @@ public class SharedCSPMatcher {
 
                     for (SharedSite rs : redex_sites) {
                         int kj = 0;
-                        int k = 0;
-                        IntVar[] vars = new IntVar[ans + ass];
                         Map<PlaceEntity, IntVar> row = new HashMap<>(ars + ans + ass);
                         for (SharedRoot ar : agent_roots) {
                             IntVar var = model.boolVar("L_" + ki + "_" + kj++);
@@ -206,16 +205,12 @@ public class SharedCSPMatcher {
                         }
                         for (SharedNode an : agent_nodes) {
                             IntVar var = model.boolVar("L_" + ki + "_" + kj++);
-                            vars[k++] = var;
                             row.put(an, var);
                         }
                         for (SharedSite as : agent_sites) {
                             IntVar var = model.boolVar("L_" + ki + "_" + kj++);
-                            vars[k++] = var;
                             row.put(as, var);
                         }
-                        // sub-graph iso clause(1)(2)
-                        model.sum(vars, "=", 1).post();
                         l_vars.put(rs, row);
                         ki++;
                     }
@@ -223,7 +218,7 @@ public class SharedCSPMatcher {
 
                 /// Place graph constraints
                 {
-                    // sub-graph iso clause(3)
+//                    // sub-graph iso clause(3)
                     for (SharedRoot ar : agent_roots) {
                         int k = 0;
                         IntVar[] vars = new IntVar[rrs];
@@ -256,23 +251,37 @@ public class SharedCSPMatcher {
                     }
 
                     // sub-graph iso clause(4)
-//                    for (SharedNode an : agent_nodes) {
-//                        Collection<? extends SharedParent> aps = an.getParents();
-//                        for (SharedNode rn : redex_nodes) {
-//                            IntVar var = l_vars.get(rn).get(an);
-//                            Collection<? extends SharedParent> rps = rn.getParents();
-//                            IntVar[] pVars = new IntVar[rps.size() * aps.size()];
-//                            int k = 0;
-//                            for (SharedParent rp : rps) {
-//                                Map<PlaceEntity, IntVar> row = l_vars.get(rp);
-//                                for (SharedParent ap : aps) {
-//                                    pVars[k++] = row.get(ap);
-//                                }
-//                            }
-//                            // 父元素存在匹配，当前元素才能匹配
-//                            model.sum(pVars, ">=", var).post();
-//                        }
-//                    }
+                    for (SharedNode an : agent_nodes) {
+                        Collection<? extends SharedParent> aps = an.getParents();
+                        for (SharedNode rn : redex_nodes) {
+                            IntVar var = l_vars.get(rn).get(an);
+                            Collection<? extends SharedParent> rps = rn.getParents();
+                            IntVar[] pVars = new IntVar[rps.size() * aps.size()];
+                            int k = 0;
+                            for (SharedParent rp : rps) {
+                                Map<PlaceEntity, IntVar> row = l_vars.get(rp);
+                                for (SharedParent ap : aps) {
+                                    pVars[k++] = row.get(ap);
+                                }
+                            }
+                            // 父元素存在匹配，当前元素才能匹配
+                            model.sum(pVars, ">=", var).post();
+                        }
+                        for (SharedChild rs : redex_sites) {
+                            IntVar var = l_vars.get(rs).get(an);
+                            Collection<? extends SharedParent> rps = rs.getParents();
+                            IntVar[] pVars = new IntVar[rps.size() * aps.size()];
+                            int k = 0;
+                            for (SharedParent rp : rps) {
+                                Map<PlaceEntity, IntVar> row = l_vars.get(rp);
+                                for (SharedParent ap : aps) {
+                                    pVars[k++] = row.get(ap);
+                                }
+                            }
+                            // nodes-sites部分 父元素存在匹配，当前元素才能匹配
+                            model.sum(pVars, ">=", var).post();
+                        }
+                    }
 
                     // degree match
                     for (SharedNode rn : redex_nodes) {
@@ -388,7 +397,16 @@ public class SharedCSPMatcher {
                                 sum = sum.add(v).intVar();
                             }
                             for (SharedRoot j : redex_roots) {
-                                model.arithm(sum.add(l_vars.get(j).get(i)).intVar(), "<=", 1).post();
+                                IntVar[] matchVars = new IntVar[2];
+                                matchVars[0] = sum;
+                                matchVars[1] = l_vars.get(j).get(i);
+                                model.min(model.intVar(0), matchVars).post();
+                            }
+                            for (SharedNode rn : redex_nodes) {
+                                IntVar[] matchVars = new IntVar[2];
+                                matchVars[0] = sum;
+                                matchVars[1] = l_vars.get(rn).get(i);
+                                model.min(model.intVar(0), matchVars).post();
                             }
                         }
                     }
@@ -708,93 +726,124 @@ public class SharedCSPMatcher {
             }
 
             private void fetchSolution() {
-                firstRun = false;
-                boolean hasSolution = solver.solve();
-                DebugPrinter.print(logger, "hasSolution: " + hasSolution);
-                if (!hasSolution) {
-                    noMoreSolution();
-                    return;
+//                firstRun = false;
+//                boolean hasSolution = solver.solve();
+//                DebugPrinter.print(logger, "hasSolution: " + hasSolution);
+//                if (!hasSolution) {
+//                    noMoreSolution();
+//                    return;
+//                }
+//                printCSPSolution();
+                int cnt = 0;
+                while (solver.solve()) {
+                    printCSPSolution();
+                    cnt++;
                 }
-                printCSPSolution();
+                DebugPrinter.print(logger, "Solution count: " + cnt);
             }
 
             private void printCSPSolution() {
+                printPlaceAns();
+//                printLinkAns();
+            }
+
+            private void printPlaceAns() {
                 DebugPrinter.print(logger, "Solution: #" + solver.getSolutionCount());
                 int p_cell_width[] = new int[1 + ars + ans + ass];
                 p_cell_width[0] = 6;
                 for (SharedNode n : redex_nodes) {
                     p_cell_width[0] = Math.max(p_cell_width[0], n.toString().length());
                 }
-                System.out.printf("%-" + p_cell_width[0] + "s|", "P_VARS");
+                StringBuilder line = new StringBuilder(String.format("\n%-" + p_cell_width[0] + "s|", "P_VARS"));
+//                System.out.printf("%-" + p_cell_width[0] + "s|", "P_VARS");
                 int c = 1;
                 for (int k = 0; k < ars; k++, c++) {
                     String s = "R_" + k;
                     p_cell_width[c] = s.length();
-                    System.out.printf("%-" + p_cell_width[c] + "s|", s);
+                    line.append(String.format("%-" + p_cell_width[c] + "s|", s));
+//                    System.out.printf("%-" + p_cell_width[c] + "s|", s);
                 }
                 for (SharedNode n : agent_nodes) {
                     String s = n.toString();
                     p_cell_width[c] = s.length();
-                    System.out.printf("%-" + p_cell_width[c++] + "s|", s);
+                    line.append(String.format("%-" + p_cell_width[c++] + "s|", s));
+//                    System.out.printf("%-" + p_cell_width[c++] + "s|", s);
                 }
                 for (int k = 0; k < ass; k++, c++) {
                     String s = "S_" + k;
                     p_cell_width[c] = s.length();
-                    System.out.printf("%-" + p_cell_width[c] + "s|", s);
+                    line.append(String.format("%-" + p_cell_width[c] + "s|", s));
+//                    System.out.printf("%-" + p_cell_width[c] + "s|", s);
                 }
                 for (int i = 0; i < rrs; i++) {
-                    System.out.printf("\nR_%-" + (p_cell_width[0] - 2) + "d|", i);
+                    line.append(String.format("\nR_%-" + (p_cell_width[0] - 2) + "d|", i));
+//                    System.out.printf("\nR_%-" + (p_cell_width[0] - 2) + "d|", i);
                     c = 1;
                     SharedRoot ri = redex_roots.get(i);
                     Map<PlaceEntity, IntVar> row = l_vars.get(ri);
                     for (int j = 0; j < ars; j++) {
                         SharedRoot rj = agent_roots.get(j);
                         IntVar v = findVariable(row.get(rj).getName(), model.getVars()).asIntVar();
-                        System.out.printf("%" + p_cell_width[c++] + "d|", v.getValue());
+                        line.append(String.format("%" + p_cell_width[c++] + "d|", v.getValue()));
+//                        System.out.printf("%" + p_cell_width[c++] + "d|", v.getValue());
                     }
                     for (SharedNode nj : agent_nodes) {
                         IntVar v = findVariable(row.get(nj).getName(), model.getVars()).asIntVar();
-                        System.out.printf("%" + p_cell_width[c++] + "d|", v.getValue());
+                        line.append(String.format("%" + p_cell_width[c++] + "d|", v.getValue()));
+//                        System.out.printf("%" + p_cell_width[c++] + "d|", v.getValue());
                     }
                     for (int j = 0; j < ass; j++) {
-                        System.out.printf("%" + p_cell_width[c++] + "c|", ' ');
+                        line.append(String.format("%" + p_cell_width[c++] + "c|", ' '));
+//                        System.out.printf("%" + p_cell_width[c++] + "c|", ' ');
                     }
                 }
                 for (SharedNode ni : redex_nodes) {
-                    System.out.printf("\n%-" + p_cell_width[0] + "s|", ni);
+                    line.append(String.format("\n%-" + p_cell_width[0] + "s|", ni));
+//                    System.out.printf("\n%-" + p_cell_width[0] + "s|", ni);
                     c = 1;
                     Map<PlaceEntity, IntVar> row = l_vars.get(ni);
                     for (int j = 0; j < ars; j++) {
-                        System.out.printf("%" + p_cell_width[c++] + "c|", ' ');
+                        line.append(String.format("%" + p_cell_width[c++] + "c|", ' '));
+//                        System.out.printf("%" + p_cell_width[c++] + "c|", ' ');
                     }
                     for (SharedNode nj : agent_nodes) {
                         IntVar v = findVariable(row.get(nj).getName(), model.getVars()).asIntVar();
-                        System.out.printf("%" + p_cell_width[c++] + "d|", v.getValue());
+                        line.append(String.format("%" + p_cell_width[c++] + "d|", v.getValue()));
+//                        System.out.printf("%" + p_cell_width[c++] + "d|", v.getValue());
                     }
                     for (int j = 0; j < ass; j++) {
-                        System.out.printf("%" + p_cell_width[c++] + "c|", ' ');
+                        line.append(String.format("%" + p_cell_width[c++] + "c|", ' '));
+//                        System.out.printf("%" + p_cell_width[c++] + "c|", ' ');
                     }
                 }
                 for (int i = 0; i < rss; i++) {
-                    System.out.printf("\nS_%-" + (p_cell_width[0] - 2) + "d|", i);
+                    line.append(String.format("\nS_%-" + (p_cell_width[0] - 2) + "d|", i));
+//                    System.out.printf("\nS_%-" + (p_cell_width[0] - 2) + "d|", i);
                     c = 1;
                     SharedSite ri = redex_sites.get(i);
                     Map<PlaceEntity, IntVar> row = l_vars.get(ri);
                     for (int j = 0; j < ars; j++) {
-                        System.out.printf("%" + p_cell_width[c++] + "c|", ' ');
+                        line.append(String.format("%" + p_cell_width[c++] + "c|", ' '));
+//                        System.out.printf("%" + p_cell_width[c++] + "c|", ' ');
                     }
                     for (SharedNode nj : agent_nodes) {
                         IntVar v = findVariable(row.get(nj).getName(), model.getVars()).asIntVar();
-                        System.out.printf("%" + p_cell_width[c++] + "d|", v.getValue());
+                        line.append(String.format("%" + p_cell_width[c++] + "d|", v.getValue()));
+//                        System.out.printf("%" + p_cell_width[c++] + "d|", v.getValue());
                     }
                     for (int j = 0; j < ass; j++) {
                         SharedSite sj = agent_sites.get(j);
                         IntVar v = findVariable(row.get(sj).getName(), model.getVars()).asIntVar();
-                        System.out.printf("%" + p_cell_width[c++] + "d|", v.getValue());
+                        line.append(String.format("%" + p_cell_width[c++] + "d|", v.getValue()));
+//                        System.out.printf("%" + p_cell_width[c++] + "d|", v.getValue());
                     }
                 }
-                System.out.println('\n');
+                DebugPrinter.print(logger, line.toString());
+//                System.out.println('\n');
+            }
 
+            private void printLinkAns() {
+                int c = 1;
                 int f_cell_width[] = new int[1 + ahs];
                 int e_cell_width[] = new int[1 + rps + ahs];
                 f_cell_width[0] = 6;
@@ -808,7 +857,6 @@ public class SharedCSPMatcher {
                             .toString().length());
                 }
                 System.out.printf("%-" + e_cell_width[0] + "s|", "E_VARS");
-                c = 1;
                 for (Point p : redex_points) {
                     String s = p.toString();
                     e_cell_width[c] = s.length();

@@ -735,14 +735,16 @@ object testBGMParser {
         |%check;
         |""".stripMargin
 
-    var shareStr =
+    var shareStr = // rule包括三个测试用例
       """
         |# Controls
         |%active A : 0;
         |%active B : 0;
         |
         |# Rules
-        |%rule r_0 v0:A.(v1:B.v2:A.$1|$0) -> v0:A.(v1:B.v2:A.$1|$0){};
+        |# %rule r_0 v0:A.(v1:B.v2:A.$1|$0) -> v0:A.(v1:B.v2:A.$1|$0){};
+        |%rule r_1 v0:A.v1:B.$0 -> v0:A.v1:B.$0{};
+        |# %rule r_0 v0:A.(v1:B.v2:A.v3:B.$1|$0) -> v0:A.(v1:B.v2:A.v3:B.$1|$0){};
         |
         |# prop
         |%prop p  a:CriticalSection[a:edge].(b:Process[a:edge] | $0){};
