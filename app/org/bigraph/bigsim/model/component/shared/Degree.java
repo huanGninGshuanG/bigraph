@@ -14,11 +14,19 @@ public class Degree {
         this.outDeg = out;
     }
 
+    public Pair<Integer, Integer> getIn() {
+        return inDeg;
+    }
+
+    public Pair<Integer, Integer> getOut() {
+        return outDeg;
+    }
+
     public static boolean match(Degree a, Degree b) {
         return matchDeg(a.inDeg, b.inDeg) && matchDeg(a.outDeg, b.outDeg);
     }
 
-    private static boolean matchDeg(Pair<Integer, Integer> x, Pair<Integer, Integer> y) {
+    public static boolean matchDeg(Pair<Integer, Integer> x, Pair<Integer, Integer> y) {
         if (x.getValue() == 0) {
             return y.getValue() == 0 && x.getKey().equals(y.getKey());
         }

@@ -735,7 +735,7 @@ object testBGMParser {
         |%check;
         |""".stripMargin
 
-    var shareStr = // rule包括三个测试用例
+    var shareTest0 = // rule包括三个测试用例
       """
         |# Controls
         |%active A : 0;
@@ -743,7 +743,7 @@ object testBGMParser {
         |
         |# Rules
         |# %rule r_0 v0:A.(v1:B.v2:A.$1|$0) -> v0:A.(v1:B.v2:A.$1|$0){};
-        |%rule r_1 v0:A.v1:B.$0 -> v0:A.v1:B.$0{};
+        |# %rule r_0 v0:A.v1:B.$0 -> v0:A.v1:B.$0{};
         |# %rule r_0 v0:A.(v1:B.v2:A.v3:B.$1|$0) -> v0:A.(v1:B.v2:A.v3:B.$1|$0){};
         |
         |# prop
@@ -764,7 +764,147 @@ object testBGMParser {
         |# Go!
         |%check;
         |""".stripMargin
-    val p: List[BGMTerm] = BGMParser.parseFromString(shareStr);
+
+    var shareTest1 =
+      """
+        |# Controls
+        |%active A : 0;
+        |%active B : 0;
+        |
+        |# Rules
+        |%rule r_0 v0:A.(v1:B.$0|v2:B.$0) -> v0:A.(v1:B.$0|v2:B.$0){};
+        |
+        |# prop
+        |%prop p  a:CriticalSection[a:edge].(b:Process[a:edge] | $0){};
+        |
+        |
+        |# Model
+        |%agent  u0:A.(u1:B.(u3:A|u4:A)|u2:B.(u4:A|u5:B)){};
+        |
+        |%mode ShareMode
+        |
+        |# LTL_Formula
+        |%ltlSpec G!(p);
+        |
+        |#SortingLogic
+        |
+        |
+        |# Go!
+        |%check;
+        |""".stripMargin
+
+    var shareTest2 =
+      """
+        |# Controls
+        |%active A : 0;
+        |%active B : 0;
+        |
+        |# Rules
+        |%rule r_0 v0:A.(v1:B.$0|v2:B.$0) -> v0:A.(v1:B.$0|v2:B.$0){};
+        |
+        |# prop
+        |%prop p  a:CriticalSection[a:edge].(b:Process[a:edge] | $0){};
+        |
+        |
+        |# Model
+        |%agent  u0:A.(u1:B.(u3:A|u4:A)|u2:B.(u4:A|u5:B))|u6:B.u3:A|u7:B.u5:B{};
+        |
+        |%mode ShareMode
+        |
+        |# LTL_Formula
+        |%ltlSpec G!(p);
+        |
+        |#SortingLogic
+        |
+        |
+        |# Go!
+        |%check;
+        |""".stripMargin
+
+    var shareTest3 =
+      """
+        |# Controls
+        |%active A : 0;
+        |%active B : 0;
+        |
+        |# Rules
+        |%rule r_0 v0:A.(v1:B.v2:A.$1|$0) -> v0:A.(v1:B.v2:A.$1|$0){};
+        |
+        |# prop
+        |%prop p  a:CriticalSection[a:edge].(b:Process[a:edge] | $0){};
+        |
+        |
+        |# Model
+        |%agent  u0:A.(u1:B.u2:A.u3:A|u3:A){};
+        |
+        |%mode ShareMode
+        |
+        |# LTL_Formula
+        |%ltlSpec G!(p);
+        |
+        |#SortingLogic
+        |
+        |
+        |# Go!
+        |%check;
+        |""".stripMargin
+
+    var shareTest4 =
+      """
+        |# Controls
+        |%active A : 0;
+        |%active B : 0;
+        |
+        |# Rules
+        |%rule r_0 v0:A.(v1:B.v2:A.$1|$0) -> v0:A.(v1:B.v2:A.$1|$0){};
+        |
+        |# prop
+        |%prop p  a:CriticalSection[a:edge].(b:Process[a:edge] | $0){};
+        |
+        |
+        |# Model
+        |%agent  u0:A.(u1:B.u2:A.u3:A|u4:B.u3:A){};
+        |
+        |%mode ShareMode
+        |
+        |# LTL_Formula
+        |%ltlSpec G!(p);
+        |
+        |#SortingLogic
+        |
+        |
+        |# Go!
+        |%check;
+        |""".stripMargin
+
+    var shareTest5 =
+      """
+        |# Controls
+        |%active A : 0;
+        |%active B : 0;
+        |
+        |# Rules
+        |%rule r_0 v0:A.$0 -> v0:A.$0{};
+        |
+        |# prop
+        |%prop p  a:CriticalSection[a:edge].(b:Process[a:edge] | $0){};
+        |
+        |
+        |# Model
+        |%agent  u0:A.(u1:B.u2:A|u2:A){};
+        |
+        |%mode ShareMode
+        |
+        |# LTL_Formula
+        |%ltlSpec G!(p);
+        |
+        |#SortingLogic
+        |
+        |
+        |# Go!
+        |%check;
+        |""".stripMargin
+    val p: List[BGMTerm] = BGMParser.parseFromString(shareTest5)
     println(p)
 
     def logger = LoggerFactory.getLogger(this.getClass)

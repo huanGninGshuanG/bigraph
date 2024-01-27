@@ -52,6 +52,7 @@ public class SharedNode implements SharedParent, SharedChild {
         }
     }
 
+    @Override
     public Degree computeDegree() {
         int pNode = 0, pRoot = 0, cNode = 0, cSite = 0;
         for (SharedParent p : parents) {
