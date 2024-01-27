@@ -19,6 +19,8 @@ public interface SharedChild extends PlaceEntity, Replicable {
 
     void removeParent(SharedParent p);
 
+    Degree computeDegree();
+
     @Override
     SharedChild replicate();
 }

@@ -1,5 +1,6 @@
 package org.bigraph.bigsim.model.component.shared;
 
+import javafx.util.Pair;
 import org.bigraph.bigsim.model.component.BigraphHandler;
 import org.bigraph.bigsim.model.component.Parent;
 import org.bigraph.bigsim.model.component.Site;
@@ -37,7 +38,7 @@ public class SharedSite implements SharedChild {
 
     @Override
     public String toString() {
-        return this.name + "-> [" + parents + "]";
+        return this.name;
     }
 
     @Override
@@ -50,6 +51,16 @@ public class SharedSite implements SharedChild {
         if (p == null || parents.contains(p)) return;
         parents.add(p);
         p.addChild(this);
+    }
+
+    @Override
+    public Degree computeDegree() {
+        int pNode = 0, pRoot = 0, cNode = -1, cSite = -1;
+        for (SharedParent p : parents) {
+            if (p.isNode()) pNode++;
+            else if (p.isRoot()) pRoot++;
+        }
+        return new Degree(new Pair<>(pNode, pRoot), new Pair<>(cNode, cSite));
     }
 
     @Override
