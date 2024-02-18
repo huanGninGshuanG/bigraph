@@ -1,11 +1,13 @@
 package org.bigraph.bigsim.model
 
 import java.util
-import java.util.Optional
+import java.util.{Collections, Optional}
 
 import org.bigraph.bigsim.BRS.{CSPMatch, CSPMatcher, InstantiationMap, Rewrite, SharedCSPMatcher}
+import org.bigraph.bigsim.exceptions.{IncompatibleInterfaceException, IncompatibleSignatureException}
 import org.bigraph.bigsim.model.component.shared._
 import org.bigraph.bigsim.model.component.{BigraphHandler, Edge, Handle, InnerName, OuterName, Point, Root, Signature, Site}
+import org.bigraph.bigsim.parser.{BGMParser, BGMTerm}
 import org.bigraph.bigsim.utils.{CachingProxy, DebugPrinter}
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -15,6 +17,54 @@ import scala.collection.JavaConversions._
  * @author huangningshuang
  * @date 2024/1/20
  */
+
+object SharedBigraph {
+  def logger: Logger = LoggerFactory.getLogger(this.getClass)
+
+  def makeEmpty(signature: Signature): SharedBigraph = {
+    val bigraph = new SharedBigraph(signature)
+    bigraph
+  }
+
+  def juxtapose(lhs: SharedBigraph, rhs: SharedBigraph): SharedBigraph = {
+    if (lhs == rhs)
+      throw new IllegalArgumentException("A bigraph can not juxtapose with itself.")
+    if (!(lhs.bigSignature == rhs.bigSignature)) throw new IncompatibleSignatureException(lhs.bigSignature, rhs.bigSignature)
+    if (!Collections.disjoint(lhs.bigInner.keySet, rhs.bigInner.keySet))
+      throw new IncompatibleInterfaceException(new UnsupportedOperationException("joint name juxtapose: " + lhs.bigInner.keySet() + " and " + rhs.bigInner.keySet()))
+    if (!Collections.disjoint(lhs.bigOuter.keySet, rhs.bigOuter.keySet))
+      throw new IncompatibleInterfaceException(new UnsupportedOperationException("joint name juxtapose: " + lhs.bigOuter.keySet() + " and " + rhs.bigOuter.keySet()))
+    val l: SharedBigraph = lhs.clone()
+    val r: SharedBigraph = rhs.clone()
+    val edges = r.getEdges
+    l.onEdgeAdded(edges)
+    l.onNodeAdded(r.getNodes)
+    r.onEdgeSetChanged()
+    r.onNodeSetChanged()
+    l.bigRoots.addAll(r.bigRoots)
+    l.bigSites.addAll(r.bigSites)
+    l.bigOuter.putAll(r.bigOuter)
+    l.bigInner.putAll(r.bigInner)
+    if (!l.isConsistent) {
+      throw new RuntimeException("Inconsistent bigraph")
+    }
+    l
+  }
+
+  def makeId(signature: Signature, width: Integer, names: util.ArrayList[String]): SharedBigraph = {
+    val bigraph = new SharedBigraph(signature)
+    val builder: BigraphBuilder = new BigraphBuilder(signature)
+    builder.setBigraph(bigraph)
+    for (_ <- 0 until width) {
+      builder.addSharedSite(builder.addSharedRoot())
+    }
+    for (name <- names) {
+      builder.addInnerName(name, builder.addOuterName(name))
+    }
+    builder.makeBigraph(true).asInstanceOf[SharedBigraph]
+  }
+}
+
 class SharedBigraph(signature: Signature) extends Bigraph {
 
   super.setSignature(signature)
@@ -250,6 +300,8 @@ class SharedBigraph(signature: Signature) extends Bigraph {
   override def clone(): SharedBigraph = {
     var big: SharedBigraph = new SharedBigraph(this.bigSignature)
     val hndDict: util.Map[Handle, Handle] = new util.HashMap[Handle, Handle]()
+    val nodeDict: util.Map[SharedNode, SharedNode] = new util.HashMap[SharedNode, SharedNode]()
+    val siteDict: util.Map[SharedSite, SharedSite] = new util.HashMap[SharedSite, SharedSite]()
     for ((k, ori) <- bigOuter) {
       val copy = ori.replicate()
       big.bigOuter.put(k, copy)
@@ -282,26 +334,34 @@ class SharedBigraph(signature: Signature) extends Bigraph {
       val t = q.poll()
       if (t._2.isNode) {
         val n1: SharedNode = t._2.asInstanceOf[SharedNode]
-        val n2: SharedNode = n1.replicate
-        n2.addParent(t._1)
-        // node每个端口的拷贝
-        for (i <- 0 until n1.getPorts.size()) {
-          val p1 = n1.getPort(i)
-          val h1 = p1.getHandle
-          var h2 = hndDict.get(h1)
-          if (h2 == null) {
-            h2 = h1.replicate()
-            hndDict.put(h1, h2)
+        var n2: SharedNode = nodeDict.get(n1)
+        if (n2 == null) {
+          n2 = n1.replicate
+          nodeDict.put(n1, n2)
+          // node每个端口的拷贝
+          for (i <- 0 until n1.getPorts.size()) {
+            val p1 = n1.getPort(i)
+            val h1 = p1.getHandle
+            var h2 = hndDict.get(h1)
+            if (h2 == null) {
+              h2 = h1.replicate()
+              hndDict.put(h1, h2)
+            }
+            n2.getPort(i).setHandle(h2)
           }
-          n2.getPort(i).setHandle(h2)
+          // node每个孩子节点入队
+          for (c <- n1.getChildren) {
+            q.add((n2, c))
+          }
         }
-        // node每个孩子节点入队
-        for (c <- n1.getChildren) {
-          q.add((n2, c))
-        }
+        n2.addParent(t._1)
       } else {
         val s1: SharedSite = t._2.asInstanceOf[SharedSite]
-        val s2: SharedSite = s1.replicate()
+        var s2: SharedSite = siteDict.get(s1)
+        if (s2 == null) {
+          s2 = s1.replicate()
+          siteDict.put(s1, s2)
+        }
         s2.addParent(t._1)
         sites.set(this.sharedSites.indexOf(s1), s2)
       }
@@ -333,5 +393,53 @@ class SharedBigraph(signature: Signature) extends Bigraph {
 
   def getSharedSites: util.List[_ <: SharedSite] = {
     sharedroSites
+  }
+}
+
+object testSharedBigraph {
+  def main(args: Array[String]): Unit = {
+    var shareTest5 =
+      """
+        |# Controls
+        |%active A : 0;
+        |%active B : 1;
+        |
+        |# Rules
+        |%rule r_0 $0|u1:A.($1|u3:B[a:outername]) -> $0|u1:A.($1|u3:B[a:outername]){};
+        |
+        |# prop
+        |%prop p  a:CriticalSection[a:edge].(b:Process[a:edge] | $0){};
+        |
+        |
+        |# Model
+        |%agent  u0:A.(u2:B[a:edge])|u1:A.(u2:B[a:edge]|u3:B[a:edge]){};
+        |
+        |%mode ShareMode
+        |
+        |# LTL_Formula
+        |%ltlSpec G!(p);
+        |
+        |#SortingLogic
+        |
+        |
+        |# Go!
+        |%check;
+        |""".stripMargin
+    val p: List[BGMTerm] = BGMParser.parseFromString(shareTest5)
+
+    def logger = LoggerFactory.getLogger(this.getClass)
+
+    val b = BGMTerm.toBigraph(p);
+    b.print()
+    //    b.rules.foreach(x => {
+    //      DebugPrinter.print(logger, "rule: " + x)
+    //      b.matchRule(x)
+    //    })
+    DebugPrinter.print(logger, "test::::::")
+    val copy = b.clone()
+    copy.print()
+    b.rules.foreach(x => {
+      b.matchRule(x)
+    })
   }
 }

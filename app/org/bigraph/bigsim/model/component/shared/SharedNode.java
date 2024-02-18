@@ -68,7 +68,7 @@ public class SharedNode implements SharedParent, SharedChild {
 
     @Override
     public String toString() {
-        return this.name + ':' + this.control.getName();
+        return this.name + ':' + this.control.getName() + ":[" + ports + "]" + "->" + parents;
     }
 
     @Override

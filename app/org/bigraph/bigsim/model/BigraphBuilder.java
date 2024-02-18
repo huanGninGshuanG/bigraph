@@ -11,6 +11,7 @@ import org.bigraph.bigsim.model.component.shared.SharedRoot;
 import org.bigraph.bigsim.model.component.shared.SharedSite;
 import org.bigraph.bigsim.utils.DebugPrinter;
 import org.bigraph.bigsim.utils.GlobalCfg;
+import org.bigraph.bigsim.utils.NameGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -244,6 +245,13 @@ public class BigraphBuilder implements BigraphHandler {
         this.bigraph.bigSites().add(s);
         assertConsistency();
         return s;
+    }
+
+    public SharedSite addSharedSite(SharedParent parent) {
+        if (parent == null)
+            throw new IllegalArgumentException("Argument can not be null.");
+        assertOpen();
+        return addSharedSite(NameGenerator.DEFAULT.generate(), parent);
     }
 
     public SharedSite addSharedSite(String name, SharedParent parent) {

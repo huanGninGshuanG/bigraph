@@ -5,6 +5,7 @@ import org.bigraph.bigsim.model.Bigraph;
 import org.bigraph.bigsim.model.SharedBigraph;
 import org.bigraph.bigsim.model.component.*;
 import org.bigraph.bigsim.model.component.shared.*;
+import org.bigraph.bigsim.utils.BidMap;
 import org.bigraph.bigsim.utils.DebugPrinter;
 import org.bigraph.bigsim.utils.GlobalCfg;
 import org.chocosolver.solver.Model;
@@ -110,7 +111,6 @@ public class SharedCSPMatcher {
         private class MatchIterator implements Iterator<SharedCSPMatch> {
 
             private boolean mayHaveNext = true;
-            private boolean firstRun = true;
             private SharedCSPMatch nextMatch = null;
             final private Model model;
             final private Solver solver;
@@ -716,16 +716,8 @@ public class SharedCSPMatcher {
             }
 
             private void fetchSolution() {
-//                firstRun = false;
-//                boolean hasSolution = solver.solve();
-//                DebugPrinter.print(logger, "hasSolution: " + hasSolution);
-//                if (!hasSolution) {
-//                    noMoreSolution();
-//                    return;
-//                }
-//                printCSPSolution();
-                int cnt = 0;
-                while (solver.solve()) {
+                boolean hasSolution = true;
+                while (hasSolution = solver.solve()) {
                     boolean match = true;
                     for (SharedNode an : agent_nodes) {
                         boolean matchedToSite = false;
@@ -763,10 +755,404 @@ public class SharedCSPMatcher {
                             match = false;
                     }
                     if (!match) continue;
-                    printCSPSolution();
-                    cnt++;
+                    break;
                 }
-                DebugPrinter.print(logger, "Solution count: " + cnt);
+                if(!hasSolution) {
+                    noMoreSolution();
+                    return;
+                }
+                printCSPSolution();
+
+                // context
+                SharedBigraph ctx = new SharedBigraph(agent.bigSignature());
+                // redex
+                SharedBigraph rdx = new SharedBigraph(agent.bigSignature());
+                // parameters
+                SharedBigraph prm = new SharedBigraph(agent.bigSignature());
+                // linking medianting between parameters and redex+ID
+                SharedBigraph lmb = SharedBigraph.makeId(redex.getSignature(), rss, new ArrayList<>());
+                SharedBigraph id = SharedBigraph.makeEmpty(redex.getSignature());
+                // an injective map from redex's nodes to rdx's ones
+                BidMap<SharedNode, SharedNode> nEmb = new BidMap<>(rns);
+
+                // replicated sites
+                SharedSite ctx_sites_dic[] = new SharedSite[rrs];
+                SharedSite rdx_sites_dic[] = new SharedSite[rss];
+                SharedRoot rdx_roots_dic[] = new SharedRoot[rrs];
+                SharedRoot prm_roots_dic[] = new SharedRoot[rss];
+
+                // replicated handles lookup tables
+                Map<Handle, Handle> ctx_hnd_dic = new IdentityHashMap<>();
+                Map<Handle, Handle> rdx_hnd_dic = new IdentityHashMap<>();
+                Map<Handle, Handle> lmb_hnd_dic = new IdentityHashMap<>();
+                Map<Handle, Handle> prm_hnd_dic = new IdentityHashMap<>();
+
+                // replicated nodes lookup tables
+                Map<SharedParent, SharedParent> ctx_parent_dict = new IdentityHashMap<>();
+                Map<SharedNode, SharedNode> rdx_node_dict = new IdentityHashMap<>();
+                Map<SharedNode, SharedNode> lmb_node_dict = new IdentityHashMap<>();
+                Map<SharedNode, SharedNode> prm_node_dict = new IdentityHashMap<>();
+
+                // replicated sites lookup tables
+                Map<SharedSite, SharedSite> ctx_site_dict = new IdentityHashMap<>();
+                Map<SharedSite, SharedSite> rdx_site_dict = new IdentityHashMap<>();
+                Map<SharedSite, SharedSite> lmb_site_dict = new IdentityHashMap<>();
+                Map<Bigraph, Map<SharedSite, SharedSite>> prms_site_dict = new IdentityHashMap<>();
+
+                Map<Handle, Handle> handle_img = new IdentityHashMap<>(rhs);
+
+                class VState {
+                    final PlaceEntity c; // the agent root/node to be visited
+                    final PlaceEntity i; // if present, is the image of c in the redex
+                    final SharedParent p; // the replicated parent
+                    final Bigraph b;
+
+                    VState(Bigraph b, SharedParent p, PlaceEntity c) {
+                        this(b, p, c, null);
+                    }
+
+                    VState(Bigraph b, SharedParent p, PlaceEntity c, PlaceEntity i) {
+                        this.i = i;
+                        this.c = c;
+                        this.p = p;
+                        this.b = b;
+                    }
+                }
+                Deque<VState> q = new ArrayDeque<>();
+
+                for (OuterName o1 : agent.bigOuter().values()) {
+                    OuterName o2 = o1.replicate();
+                    ctx.bigOuter().put(o2.getName(), o2);
+                    ctx_hnd_dic.put(o1, o2);
+                }
+                for (OuterName o0 : redex.bigOuter().values()) {
+                    // 反应物拷贝redex的外部名
+                    String name = o0.getName();
+                    OuterName o2 = new OuterName(name);
+                    rdx.bigOuter().put(name, o2);
+                    rdx_hnd_dic.put(o0, o2);
+                    // 上下文ctx的内部名
+                    InnerName i1 = new InnerName(name);
+                    ctx.bigInner().put(name, i1);
+                    // 找到i1的柄
+                    Handle h1 = handle_img.get(o0);
+                    if (h1 == null) {
+                        // cache miss
+                        Map<Handle, IntVar> f_row = f_vars.get(o0);
+                        for (Handle h : agent_handles) {
+                            IntVar v = findVariable(f_row.get(h).getName(), model.getVars()).asIntVar();
+                            if (v.getValue() == 1) {
+                                h1 = h;
+                                break;
+                            }
+                        }
+                        if (h1 == null) {
+                            h1 = new Edge();
+                        }
+                        handle_img.put(o0, h1);
+                    }
+                    Handle h2 = ctx_hnd_dic.get(h1);
+                    if (h2 == null) {
+                        h2 = h1.replicate();
+                        ctx_hnd_dic.put(h1, h2);
+                    }
+                    i1.setHandle(h2);
+                }
+                for (InnerName i0 : redex.bigInner().values()) {
+                    String name = i0.getName();
+                    InnerName i2 = new InnerName(name);
+                    // 找到i2的handle
+                    Handle h0 = i0.getHandle();
+                    Handle h2 = rdx_hnd_dic.get(h0);
+                    if (h2 == null) {
+                        Handle h1 = handle_img.get(h0);
+                        if (h1 == null) {
+                            // cache miss
+                            Map<Handle, IntVar> f_row = f_vars.get(h0);
+                            for (Handle h : agent_handles) {
+                                IntVar v = findVariable(f_row.get(h).getName(), model.getVars()).asIntVar();
+                                if (v.getValue() == 1) {
+                                    h1 = h;
+                                    break;
+                                }
+                            }
+                            if (h1 == null) {
+                                h1 = new Edge();
+                            }
+                            handle_img.put(h0, h1);
+                        }
+                        h2 = h1.replicate();
+                        rdx_hnd_dic.put(h0, h2);
+                    }
+                    i2.setHandle(h2);
+                    rdx.bigInner().put(name, i2);
+
+                    OuterName o2 = new OuterName(name);
+                    lmb.bigOuter().put(name, o2);
+                }
+                for (SharedRoot r0 : agent.sharedRoots()) {
+                    q.add(new VState(ctx, null, r0));
+                }
+                Collection<SharedRoot> unseen_rdx_roots = new LinkedList<>(redex_roots);
+                while (!q.isEmpty()) {
+                    VState v = q.poll();
+                    if (v.b == ctx) {
+                        // 元素属于上下文ctx
+                        SharedParent p1 = (SharedParent) v.c;
+                        SharedParent p2 = ctx_parent_dict.get(p1);
+                        if (p2 == null) {
+                            p2 = p1.replicate();
+                            ctx_parent_dict.put(p1, p2);
+                        }
+                        if (p1.isRoot()) {
+                            SharedRoot r2 = (SharedRoot) p2;
+                            ctx.sharedRoots().add(r2);
+                        } else { // isNode()
+                            SharedNode n1 = (SharedNode) p1;
+                            SharedNode n2 = (SharedNode) p2;
+                            n2.addParent(v.p);
+                            // 拷贝端口的每个handle
+                            for (int i = n1.getControl().getArity() - 1; -1 < i; i--) {
+                                SharedNode.Port o = n1.getPort(i);
+                                Handle h1 = o.getHandle();
+                                // looks for an existing replica
+                                Handle h2 = ctx_hnd_dic.get(h1);
+                                if (h2 == null) {
+                                    h2 = h1.replicate();
+                                    ctx_hnd_dic.put(h1, h2);
+                                }
+                                n2.getPort(i).setHandle(h2);
+                            }
+                        }
+                        // enqueue children
+                        Collection<SharedChild> rcs = new HashSet<>(p1.getChildren());
+                        Iterator<SharedRoot> ir = unseen_rdx_roots.iterator();
+                        while (ir.hasNext()) {
+                            SharedRoot r0 = ir.next();
+                            IntVar var = findVariable(l_vars.get(r0).get(p1).getName(), model.getVars()).asIntVar();
+                            // make a site for each root whose image is p1
+                            if (var.getValue() == 1) {
+                                ir.remove();
+                                int k = redex_roots.indexOf(r0);
+                                SharedSite s = new SharedSite();
+                                s.addParent(p2);
+                                ctx_sites_dic[k] = s;
+                                SharedRoot r2 = new SharedRoot();
+                                rdx_roots_dic[k] = r2;
+                                for (SharedChild c0 : r0.getChildren()) {
+                                    Iterator<SharedChild> ic = rcs.iterator();
+                                    boolean notMatched = true;
+                                    while (ic.hasNext()) {
+                                        SharedChild c1 = ic.next();
+                                        DebugPrinter.print(logger, "test: " + c0 + " : " + c1);
+                                        var = findVariable(l_vars.get(c0).get(c1).getName(), model.getVars()).asIntVar();
+                                        if (var.getValue() == 1) {
+                                            notMatched = false;
+                                            q.add(new VState(rdx, r2, c1, c0));
+                                            ic.remove();
+                                        }
+                                    }
+                                    if (notMatched && c0.isSite()) {
+                                        // closed site
+                                        q.add(new VState(rdx, r2, null, c0));
+                                    }
+                                }
+                            }
+                        }
+                        for (SharedChild c1 : rcs) {
+                            q.add(new VState(ctx, p2, c1));
+                        }
+                    } else if (v.b == rdx) {
+                        // 放入上下文拷贝rdx中
+                        if (v.i.isNode()) {
+                            SharedNode n0 = (SharedNode) v.i;
+                            SharedNode n1 = (SharedNode) v.c;
+                            SharedNode n2 = rdx_node_dict.get(n1);
+                            if (n2 == null) {
+                                n2 = n1.replicate();
+                                rdx_node_dict.put(n1, n2);
+                            }
+                            nEmb.put(n0, n1);
+                            n2.addParent(v.p);
+                            // replicate links from node ports
+                            for (int i = n0.getControl().getArity() - 1; -1 < i; i--) {
+                                SharedNode.Port o0 = n0.getPort(i);
+                                Handle h0 = o0.getHandle();
+                                // looks for an existing replica
+                                Handle h2 = rdx_hnd_dic.get(h0);
+                                if (h2 == null) {
+                                    h2 = n1.getPort(i).getHandle().replicate();
+                                    rdx_hnd_dic.put(h0, h2);
+                                }
+                                n2.getPort(i).setHandle(h2);
+                            }
+                            Collection<SharedChild> cs1 = new HashSet<>(n1.getChildren());
+                            for (SharedChild c0 : n0.getChildren()) {
+                                Iterator<SharedChild> ic = cs1.iterator();
+                                boolean notMatched = true;
+                                while (ic.hasNext()) {
+                                    SharedChild c1 = ic.next();
+                                    IntVar var = findVariable(l_vars.get(c0).get(c1).getName(), model.getVars()).asIntVar();
+                                    if (var.getValue() == 1) {
+                                        notMatched = false;
+                                        q.add(new VState(rdx, n2, c1, c0));
+                                        ic.remove();
+                                    }
+                                }
+                                if (notMatched && c0.isSite()) {
+                                    // closed site
+                                    q.add(new VState(rdx, n2, null, c0));
+                                }
+                            }
+                        } else {
+                            SharedSite s0 = (SharedSite) v.i;
+                            int k = redex_sites.indexOf(s0);
+                            if (rdx_sites_dic[k] == null) {
+                                SharedSite s2 = new SharedSite();
+                                s2.addParent(v.p);
+                                rdx_sites_dic[k] = s2;
+                            }
+                            prm_roots_dic[k] = new SharedRoot();
+                            if (v.c != null)
+                                q.add(new VState(prm, prm_roots_dic[k], v.c));
+                        }
+                    } else {
+                        // the entity (node) visited belongs to some parameter
+                        SharedNode n1 = (SharedNode) v.c;
+                        SharedNode n2 = prm_node_dict.get(n1);
+                        if (n2 == null) {
+                            n2 = n1.replicate();
+                            prm_node_dict.put(n1, n2);
+                        }
+                        n2.addParent(v.p);
+                        for (int i = n1.getControl().getArity() - 1; -1 < i; i--) {
+                            /*
+                             * every handle with a point in the param is
+                             * translated into an outer and the necessary wiring
+                             * is delegated to the bigraph lambda.
+                             */
+                            SharedNode.Port p1 = n1.getPort(i);
+                            SharedNode.Port p2 = n2.getPort(i);
+
+                            Handle h2 = null;
+                            Map<LinkEntity, IntVar> row = e_vars.get(p1);
+                            Handle h1 = p1.getHandle();
+
+                            IntVar var_tmp = findVariable(row.get(h1).getName(), model.getVars()).asIntVar();
+                            if (var_tmp.getValue() == 1) {
+                                /*
+                                 * this port bypasses the redex. Checks if the
+                                 * handle already has an image in this parameter
+                                 * otherwise creates a suitable name in the
+                                 * parameter and in the wiring lambda. This may
+                                 * require some additional step if the handle
+                                 * already has an image in the context.
+                                 */
+                                h2 = prm_hnd_dic.get(h1);
+                                if (h2 == null) {
+                                    Handle h3 = lmb_hnd_dic.get(h1);
+                                    if (h3 == null) {
+                                        Handle h4 = ctx_hnd_dic.get(h1);
+                                        if (h4 != null) {
+                                            /*
+                                             * h1 has an image in the context,
+                                             * add an inner to it and link it
+                                             * down to the parameter passing
+                                             * through id e lmb.
+                                             */
+                                            InnerName i4 = new InnerName();
+                                            i4.setHandle(h4);
+                                            String name = i4.getName();
+                                            ctx.bigInner().put(name, i4);
+                                            // add it also to id
+                                            OuterName o5 = new OuterName(name);
+                                            id.bigOuter().put(name, o5);
+                                            InnerName i5 = new InnerName(name);
+                                            i5.setHandle(o5);
+                                            id.bigInner().put(name, i5);
+                                            // and finally to lambda
+                                            OuterName o3 = new OuterName(name);
+                                            lmb.bigOuter().put(name, o3);
+                                            h3 = o3;
+                                        } else {
+                                            /*
+                                             * 上下文中没有对应的映射，lmb要完成闭包closure操作
+                                             */
+                                            h3 = new Edge();
+                                        }
+                                        lmb_hnd_dic.put(h1, h3);
+                                    }
+                                    InnerName i3 = new InnerName(h3);
+                                    String name = i3.getName();
+                                    lmb.bigInner().put(name, i3);
+                                    OuterName o2 = new OuterName(name);
+                                    v.b.bigOuter().put(name, o2);
+                                    h2 = o2;
+                                    prm_hnd_dic.put(h1, h2);
+                                }
+                            } else {
+                                for (InnerName i0 : redex.bigInner().values()) {
+                                    IntVar var = findVariable(row.get(i0).getName(), model.getVars()).asIntVar();
+                                    if (var.getValue() == 1) {
+                                        Handle h3 = lmb.bigOuter().get(i0.getName());
+                                        h2 = prm_hnd_dic.get(h3);
+                                        if (h2 == null) {
+                                            InnerName i3 = new InnerName();
+                                            String name = i3.getName();
+                                            i3.setHandle(h3);
+                                            lmb.bigInner().put(name, i3);
+                                            OuterName o2 = new OuterName(name);
+                                            v.b.bigOuter().put(name, o2);
+                                            h2 = o2;
+                                            prm_hnd_dic.put(h3, o2);
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
+                            p2.setHandle(h2);
+                        }
+                        for (SharedChild c1 : n1.getChildren()) {
+                            q.add(new VState(v.b, n2, c1));
+                        }
+                    }
+                }
+                ctx.sharedSites().addAll(Arrays.asList(ctx_sites_dic));
+                rdx.sharedSites().addAll(Arrays.asList(rdx_sites_dic));
+                rdx.sharedRoots().addAll(Arrays.asList(rdx_roots_dic));
+                prm.sharedRoots().addAll(Arrays.asList(prm_roots_dic));
+
+                if (!ctx.isConsistent()) {
+                    throw new RuntimeException("Inconsistent bigraph (ctx)");
+                }
+                if (!rdx.isConsistent()) {
+                    throw new RuntimeException("Inconsistent bigraph (rdx)");
+                }
+                if (!lmb.isConsistent()) {
+                    throw new RuntimeException("Inconsistent bigraph (lmb)");
+                }
+                if (!id.isConsistent()) {
+                    throw new RuntimeException("Inconsistent bigraph (id)");
+                }
+                if (!prm.isConsistent()) {
+                    throw new RuntimeException("Inconsistent bigraph (prm)");
+                }
+                DebugPrinter.print(logger, "ctx info:");
+                ctx.print();
+
+                DebugPrinter.print(logger, "rdx info:");
+                rdx.print();
+
+                DebugPrinter.print(logger, "id info:");
+                id.print();
+
+                DebugPrinter.print(logger, "lmb info:");
+                lmb.print();
+
+                DebugPrinter.print(logger, "prm info:");
+                prm.print();
+
+                this.nextMatch = new SharedCSPMatch(ctx, rdx, id, lmb, prm);
             }
 
             private void printCSPSolution() {

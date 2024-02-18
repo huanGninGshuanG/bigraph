@@ -213,7 +213,7 @@ object testLTLSimulator {
       |%outername a;
       |
       |# Rules
-      |%rule r_0 a:CriticalSection[a:outername].$0 | b:Process[a:outername] -> a:CriticalSection[a:outername].($0 | b:Process[a:outername]){0->0};
+      |%rule r_0 a:CriticalSection[a:outername].$0 | b:Process[a:outername] -> a:CriticalSection[a:outername].($0 | b:Process[a:outername]){};
       |
       |%rule r_1 a:CriticalSection[a:outername].(b:Process[a:outername] | $0) -> a:CriticalSection[a:outername].$0 | b:Process[idle]{};
       |
@@ -226,11 +226,11 @@ object testLTLSimulator {
       |%rule r_5 a:CriticalSection[a:outername].$0 | c:Process[idle] -> a:CriticalSection[a:outername].$0 | c:Process[a:outername]{};
       |
       |# prop
-      |%prop p  a:CriticalSection[a:edge].(b:Process[a:edge] | $0){};
+      |%prop p  a:CriticalSection[a:edge].(b:Process[a:edge] | c:Process[a:edge]){};
       |
       |
       |# Model
-      |%agent  a:CriticalSection[idle].nil|b:Process[idle].nil|c:Process[idle].nil{};
+      |%agent  a:CriticalSection[idle] | b:Process[idle] | c:Process[idle]{};
       |
       |# %mode ShareMode
       |

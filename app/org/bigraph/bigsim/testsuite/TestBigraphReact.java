@@ -103,12 +103,12 @@ public class TestBigraphReact {
         long finish = System.currentTimeMillis();
         long timeElapsed = finish - start;
         DebugPrinter.printInfo(logger, "time spent: " + (double) timeElapsed / 1000);
-//        try {
-//            BufferedWriter out = new BufferedWriter(new FileWriter("str.txt"));
-//            out.write(str);
-//            out.close();
-//            DebugPrinter.print(logger, "写入成功");
-//        } catch (IOException e) {
-//        }
+        try {
+            BufferedWriter out = new BufferedWriter(new FileWriter("str.txt"));
+            out.write(str);
+            out.close();
+            DebugPrinter.print(logger, "写入成功");
+        } catch (IOException e) {
+        }
     }
 }
