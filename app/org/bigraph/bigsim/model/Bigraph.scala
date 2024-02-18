@@ -334,7 +334,7 @@ object Bigraph {
 
   def makeId(signature: Signature, width: Integer, names: util.ArrayList[String]): Bigraph = {
     val builder: BigraphBuilder = new BigraphBuilder(signature)
-    for (_ <- 1 until width) {
+    for (_ <- 0 until width) {
       builder.addSite(builder.addRoot());
     }
     for (name <- names) {

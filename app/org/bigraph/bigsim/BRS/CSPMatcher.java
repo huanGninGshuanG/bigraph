@@ -1036,12 +1036,6 @@ public class CSPMatcher {
                                 for (InnerName i0 : redex.bigInner().values()) {
                                     IntVar var = findVariable(row.get(i0).getName(), model.getVars()).asIntVar();
                                     if (var.getValue() == 1) {
-                                        /*
-                                         * this port is attached to the redex
-                                         * inner i0. Add a fresh name to lambda
-                                         * and this param and link it to i0 e p2
-                                         * resp.
-                                         */
                                         Handle h3 = lmb.bigOuter().get(i0.getName());
                                         h2 = hnd_dic.get(h3);
                                         if (h2 == null) {
