@@ -793,12 +793,6 @@ public class SharedCSPMatcher {
                 Map<SharedNode, SharedNode> lmb_node_dict = new IdentityHashMap<>();
                 Map<SharedNode, SharedNode> prm_node_dict = new IdentityHashMap<>();
 
-                // replicated sites lookup tables
-                Map<SharedSite, SharedSite> ctx_site_dict = new IdentityHashMap<>();
-                Map<SharedSite, SharedSite> rdx_site_dict = new IdentityHashMap<>();
-                Map<SharedSite, SharedSite> lmb_site_dict = new IdentityHashMap<>();
-                Map<Bigraph, Map<SharedSite, SharedSite>> prms_site_dict = new IdentityHashMap<>();
-
                 Map<Handle, Handle> handle_img = new IdentityHashMap<>(rhs);
 
                 class VState {
