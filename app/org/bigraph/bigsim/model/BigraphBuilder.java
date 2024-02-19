@@ -5,10 +5,7 @@ import org.bigraph.bigsim.exceptions.IncompatibleSignatureException;
 import org.bigraph.bigsim.model.component.Control;
 import org.bigraph.bigsim.model.component.Node;
 import org.bigraph.bigsim.model.component.*;
-import org.bigraph.bigsim.model.component.shared.SharedNode;
-import org.bigraph.bigsim.model.component.shared.SharedParent;
-import org.bigraph.bigsim.model.component.shared.SharedRoot;
-import org.bigraph.bigsim.model.component.shared.SharedSite;
+import org.bigraph.bigsim.model.component.shared.*;
 import org.bigraph.bigsim.utils.DebugPrinter;
 import org.bigraph.bigsim.utils.GlobalCfg;
 import org.bigraph.bigsim.utils.NameGenerator;
@@ -80,6 +77,69 @@ public class BigraphBuilder implements BigraphHandler {
         right.bigOuter().putAll(left.bigOuter());
         right.bigInner().putAll(left.bigInner());
 
+        assertConsistency();
+    }
+
+    // 共享偶图的组合操作 graph /compose this.bigraph
+    public void sharedCompose(SharedBigraph graph) {
+        assertOpen();
+        SharedBigraph in = (SharedBigraph) this.bigraph, out = graph;
+        if (in == out)
+            throw new IllegalArgumentException("a bigraph can not compose with itself.");
+        if (!out.bigSignature().equals(in.bigSignature())) {
+            throw new IncompatibleSignatureException(out.bigSignature(), in.bigSignature());
+        }
+        Set<String> uniqueIn = new HashSet<>(in.bigOuter().keySet());
+        Set<String> uniqueOut = new HashSet<>(out.bigInner().keySet());
+        Set<String> tmp = new HashSet<>(uniqueOut);
+        for (String name : uniqueOut) {
+            if (!uniqueIn.contains(name)) {
+                tmp.remove(name);
+            }
+        }
+        uniqueIn.removeAll(tmp);
+        uniqueOut.removeAll(tmp);
+        if (!uniqueIn.isEmpty() || !uniqueOut.isEmpty() || in.bigRoots().size() != out.bigSites().size()) {
+            throw new IncompatibleInterfaceException("The interface must match");
+        }
+
+        SharedBigraph a = out.clone(), b = in;
+        // b的roots依次对应a的sites
+        List<SharedRoot> inRoots = b.sharedRoots();
+        List<SharedSite> outSites = a.sharedSites();
+        for (int i = 0; i < inRoots.size(); i++) {
+            SharedRoot r = inRoots.get(i);
+            SharedSite s = outSites.get(i);
+            s.getParents().forEach(outPrnt->{
+                outPrnt.removeChild(s);
+                for (SharedChild c : new HashSet<>(r.getChildren())) {
+                    c.removeParent(r);
+                    c.addParent(outPrnt);
+                }
+            });
+        }
+        // b的outerName对应a的InnerName
+        Map<String, Handle> aHandle = new HashMap<>(a.bigInner().size());
+        for (InnerName i : a.bigInner().values()) {
+            Handle handle = i.getHandle();
+            aHandle.put(i.getName(), handle);
+            i.setHandle(null); // handle删掉对这个innerName的连接
+        }
+        for (OuterName o : b.bigOuter().values()) {
+            Handle handle = aHandle.get(o.getName());
+            for (Point p : new HashSet<>(o.getPoints())) {
+                p.setHandle(handle);
+            }
+        }
+        // b重置所有外部接口为a的
+        b.bigOuter().clear();
+        b.sharedRoots().clear();
+        b.bigOuter().putAll(a.bigOuter());
+        b.sharedRoots().addAll(a.sharedRoots());
+
+        b.onSharedNodeSetChanged();
+        b.onSharedNodeAdded(a.getSharedNodes());
+        b.onEdgeAdded(a.getEdges());
         assertConsistency();
     }
 
@@ -174,6 +234,11 @@ public class BigraphBuilder implements BigraphHandler {
     public List<? extends Root> getRoots() {
         assertOpen();
         return this.bigraph.getRoots();
+    }
+
+    public List<SharedRoot> getSharedRoots() {
+        assertOpen();
+        return ((SharedBigraph)this.bigraph).sharedRoots();
     }
 
     @Override

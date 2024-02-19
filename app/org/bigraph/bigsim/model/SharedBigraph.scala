@@ -3,7 +3,7 @@ package org.bigraph.bigsim.model
 import java.util
 import java.util.{Collections, Optional}
 
-import org.bigraph.bigsim.BRS.{CSPMatch, CSPMatcher, InstantiationMap, Rewrite, SharedCSPMatcher}
+import org.bigraph.bigsim.BRS.{CSPMatch, CSPMatcher, InstantiationMap, Rewrite, SharedCSPMatcher, SharedRewrite}
 import org.bigraph.bigsim.exceptions.{IncompatibleInterfaceException, IncompatibleSignatureException}
 import org.bigraph.bigsim.model.component.shared._
 import org.bigraph.bigsim.model.component.{BigraphHandler, Edge, Handle, InnerName, OuterName, Point, Root, Signature, Site}
@@ -38,7 +38,7 @@ object SharedBigraph {
     val r: SharedBigraph = rhs.clone()
     val edges = r.getEdges
     l.onEdgeAdded(edges)
-    l.onNodeAdded(r.getNodes)
+    l.onSharedNodeAdded(r.getSharedNodes)
     r.onEdgeSetChanged()
     r.onNodeSetChanged()
     l.bigRoots.addAll(r.bigRoots)
@@ -104,13 +104,16 @@ class SharedBigraph(signature: Signature) extends Bigraph {
     DebugPrinter.print(logger, "shared bigraph match")
     val redex: SharedBigraph = r.redexBig.asInstanceOf[SharedBigraph]
     val reactum: SharedBigraph = r.reactumBig.asInstanceOf[SharedBigraph]
-    val eta: InstantiationMap = r.eta
+    val eta: InstantiationMap = r.eta // 共享偶图衍化目前不支持参数化反应规则
     DebugPrinter.print(logger, "- REACTUM -----------------------------")
     val matcher: SharedCSPMatcher = new SharedCSPMatcher()
     val iter = matcher.`match`(this, redex).iterator()
     val result = new util.HashSet[(Bigraph, ReactionRule)]()
     while (iter.hasNext) {
-      iter.next()
+      val pMatch = iter.next()
+      val nb = SharedRewrite.rewrite(pMatch, redex, reactum)
+      nb.rules = rules
+      result.add((nb, r))
     }
     result
   }
@@ -208,9 +211,9 @@ class SharedBigraph(signature: Signature) extends Bigraph {
     DebugPrinter.print(logger, "Shared bigraph Info:")
     for (inner <- bigInner) DebugPrinter.print(logger, "Inner: " + inner)
     for (outer <- bigOuter) DebugPrinter.print(logger, "Outer: " + outer)
-    for (site <- sharedSites) DebugPrinter.print(logger, "Site: " + site)
+    for (site <- sharedSites) DebugPrinter.print(logger, "SharedSite: " + site)
     for (root <- sharedRoots) DebugPrinter.print(logger, "Root: " + root)
-    for (node <- sharedNodesProxy.get()) DebugPrinter.print(logger, "Node: " + node)
+    for (node <- sharedNodesProxy.get()) DebugPrinter.print(logger, "SharedNode: " + node)
     for (edge <- edgesProxy.get()) DebugPrinter.print(logger, "Edge: " + edge)
   }
 
@@ -372,6 +375,9 @@ class SharedBigraph(signature: Signature) extends Bigraph {
 
   override def findAllMatchByCSP(): util.Set[(Bigraph, ReactionRule)] = {
     val result = new util.HashSet[(Bigraph, ReactionRule)]()
+    for (r <- rules) {
+      result.addAll(this.matchRule(r))
+    }
     result
   }
 
@@ -405,7 +411,7 @@ object testSharedBigraph {
         |%active B : 1;
         |
         |# Rules
-        |%rule r_0 $0|u1:A.($1|u3:B[a:outername]) -> $0|u1:A.($1|u3:B[a:outername]){};
+        |%rule r_0 $0|u1:A.($1|u3:B[a:outername]) -> $0|u1:A.($1|u3:B[a:outername]|u4:B[a:outername]){};
         |
         |# prop
         |%prop p  a:CriticalSection[a:edge].(b:Process[a:edge] | $0){};
