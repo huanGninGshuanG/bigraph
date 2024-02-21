@@ -1,13 +1,14 @@
 package org.bigraph.bigsim.model
 
 import java.util
-import java.util.{Collections, Optional}
+import java.util.{Collections, Comparator, Optional}
 
 import org.bigraph.bigsim.BRS.{CSPMatch, CSPMatcher, InstantiationMap, Rewrite, SharedCSPMatcher, SharedRewrite}
 import org.bigraph.bigsim.exceptions.{IncompatibleInterfaceException, IncompatibleSignatureException}
 import org.bigraph.bigsim.model.component.shared._
 import org.bigraph.bigsim.model.component.{BigraphHandler, Edge, Handle, InnerName, OuterName, Point, Root, Signature, Site}
 import org.bigraph.bigsim.parser.{BGMParser, BGMTerm}
+import org.bigraph.bigsim.simulator.{BuildKripkeStructure, TransitionSystem}
 import org.bigraph.bigsim.utils.{CachingProxy, DebugPrinter}
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -89,10 +90,10 @@ class SharedBigraph(signature: Signature) extends Bigraph {
     Optional.ofNullable(res)
   }
 
-  def findSharedNode(name: String): Optional[SharedNode] = {
+  def findSharedNode(name: String, ctrlName: String): Optional[SharedNode] = {
     var res: SharedNode = null
     for (s <- sharedNodesProxy.get()) {
-      if (s.getName.equals(name)) {
+      if (s.getName.equals(name) && s.getControl.getName.equals(ctrlName)) {
         if (res != null) throw new RuntimeException("two nodes with the same name: " + name)
         res = s
       }
@@ -105,7 +106,15 @@ class SharedBigraph(signature: Signature) extends Bigraph {
     val redex: SharedBigraph = r.redexBig.asInstanceOf[SharedBigraph]
     val reactum: SharedBigraph = r.reactumBig.asInstanceOf[SharedBigraph]
     val eta: InstantiationMap = r.eta // 共享偶图衍化目前不支持参数化反应规则
+    // redex和reactum会乱序，这里按照$0重排序
+    Collections.sort(redex.sharedSites, (o1: SharedSite, o2: SharedSite) => {
+      o1.getName.compareTo(o2.getName)
+    })
+    Collections.sort(reactum.sharedSites, (o1: SharedSite, o2: SharedSite) => {
+      o1.getName.compareTo(o2.getName)
+    })
     DebugPrinter.print(logger, "- REACTUM -----------------------------")
+    reactum.print()
     val matcher: SharedCSPMatcher = new SharedCSPMatcher()
     val iter = matcher.`match`(this, redex).iterator()
     val result = new util.HashSet[(Bigraph, ReactionRule)]()
@@ -404,7 +413,7 @@ class SharedBigraph(signature: Signature) extends Bigraph {
 
 object testSharedBigraph {
   def main(args: Array[String]): Unit = {
-    var shareTest5 =
+    var shareTest =
       """
         |# Controls
         |%active A : 0;
@@ -431,21 +440,66 @@ object testSharedBigraph {
         |# Go!
         |%check;
         |""".stripMargin
-    val p: List[BGMTerm] = BGMParser.parseFromString(shareTest5)
+    var beyondCorp =
+      """
+        |# Controls
+        |%active Device : 1;
+        |%active Data : 0;
+        |%active ACE : 1;
+        |%active UserDB : 0;
+        |%active DeviceDB : 0;
+        |%active Did : 0;
+        |%active Uid : 0;
+        |%active UserInfo : 0;
+        |%active DeviceInfo : 0;
+        |%active AP : 3;
+        |%active Business : 1;
+        |%active Staging : 0;
+        |%active Active : 0;
+        |%active Request : 0;
+        |%active Connection : 0;
+        |%active DataTag : 0;
+        |
+        |# Names
+        |
+        |# Rules
+        |%rule r_0 D1:Device[a:outername].(u1:UserInfo|d1:DeviceInfo) | ap:AP[a:outername, b:outername, c:outername].(sta:Staging.$0|$1) -> D1:Device[a:outername] | ap:AP[a:outername, b:outername, c:outername].(sta:Staging.($0|reqD1:Request.(u1:UserInfo|d1:DeviceInfo|data1:DataTag))|$1){};
+        |%rule r_1 ap:AP[a:outername, b:edge, c:outername].(sta:Staging.($0|reqD1:Request.(u1:UserInfo|d1:DeviceInfo|data1:DataTag))|act:Active.$1) | ace:ACE[b:edge].(udb:UserDB.(u1:Uid|$2) | ddb:DeviceDB.(d1:Did|$3)) | ba:Business[c:outername].(u1:Uid|data1:Data|$4) -> ap:AP[a:outername, b:edge, c:outername].(sta:Staging.$0|act:Active.($1|connD1:Connection.(u1:UserInfo|d1:DeviceInfo|data1:DataTag))) | ace:ACE[b:edge].(udb:UserDB.(u1:Uid|$2) | ddb:DeviceDB.(d1:Did|$3)) | ba:Business[c:outername].(u1:Uid|data1:Data|$4){};
+        |%rule r_2 D1:Device[a:outername] | ap:AP[a:outername, b:edge, c:outername].(sta:Staging.$0|act:Active.($1|connD1:Connection.(u1:UserInfo|d1:DeviceInfo|data1:DataTag))) | ace:ACE[b:edge].(udb:UserDB.(u1:Uid|$2) | ddb:DeviceDB.(d1:Did|$3)) | ba:Business[c:outername].(u1:Uid|data1:Data|$4) -> D1:Device[a:outername].(u1:UserInfo|d1:DeviceInfo) | ap:AP[a:outername, b:edge, c:outername].(sta:Staging.$0|act:Active.$1) | ace:ACE[b:edge].(udb:UserDB.(u1:Uid|$2) | ddb:DeviceDB.(d1:Did|$3)) | ba:Business[c:outername].(u1:Uid|data1:Data|$4){};
+        |
+        |# prop
+        |
+        |# Model
+        |%agent D1:Device[a:edge].(u1:UserInfo|d1:DeviceInfo) | ap:AP[a:edge, b:edge, c:edge].(sta:Staging|act:Active) | ace:ACE[b:edge].(udb:UserDB.(u1:Uid|u2:Uid) | ddb:DeviceDB.d1:Did) | ba:Business[c:edge].(u1:Uid|u2:Uid|data1:Data){};
+        |# %agent D1:Device[a:edge] | ap:AP[a:edge, b:edge, c:edge].(sta:Staging|act:Active.connD1:Connection.(u1:UserInfo|d1:DeviceInfo|data1:DataTag)) | ace:ACE[b:edge].(udb:UserDB.(u1:Uid|u2:Uid) | ddb:DeviceDB.(d1:Did)) | ba:Business[c:edge].(u1:Uid|u2:Uid|data1:Data){};
+        |
+        |%mode ShareMode
+        |
+        |# CTL_Formula
+        |
+        |#SortingLogic
+        |
+        |
+        |# Go!
+        |%check;
+        |""".stripMargin
+    val t = BGMParser.parseFromString(beyondCorp)
+    val b = BGMTerm.toBigraph(t)
+    val transition = new TransitionSystem(b)
+    println("=-=-=-=-=-==-=-=-=-=-=-==-=-=-=-=-=-==-=-=-=- now to build KripStructure-=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-")
+    val buildKripke = new BuildKripkeStructure(transition)
+    val kripke = buildKripke.buildKripke(b.bigSignature)
 
-    def logger = LoggerFactory.getLogger(this.getClass)
 
-    val b = BGMTerm.toBigraph(p);
-    b.print()
-    //    b.rules.foreach(x => {
-    //      DebugPrinter.print(logger, "rule: " + x)
-    //      b.matchRule(x)
-    //    })
-    DebugPrinter.print(logger, "test::::::")
-    val copy = b.clone()
-    copy.print()
-    b.rules.foreach(x => {
-      b.matchRule(x)
-    })
+//    val p: List[BGMTerm] = BGMParser.parseFromString(beyondCorp)
+//
+//    def logger = LoggerFactory.getLogger(this.getClass)
+//
+//    val b = BGMTerm.toBigraph(p);
+//    b.print()
+//    b.rules.foreach(x => {
+//      DebugPrinter.print(logger, "rule: " + x)
+//      b.matchRule(x)
+//    })
   }
 }

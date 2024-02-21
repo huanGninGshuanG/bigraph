@@ -8,6 +8,7 @@ import org.bigraph.bigsim.BRS._
 import org.bigraph.bigsim.data.DataModel
 import org.bigraph.bigsim.exceptions.{IncompatibleInterfaceException, IncompatibleSignatureException}
 import org.bigraph.bigsim.model.component._
+import org.bigraph.bigsim.model.component.shared.SharedSite
 import org.bigraph.bigsim.parser.{BGMParser, BGMTerm}
 import org.bigraph.bigsim.simulator.Simulator
 import org.bigraph.bigsim.utils.{BigraphToTerm, CachingProxy, DebugPrinter, GlobalCfg}
@@ -1150,7 +1151,13 @@ class Bigraph(roots: Int = 1) extends BigraphHandler {
     val redex: Bigraph = r.redexBig
     val reactum: Bigraph = r.reactumBig
     val eta: InstantiationMap = r.eta
-    DebugPrinter.print(logger, "- REACTUM -----------------------------")
+    // redex和reactum会乱序，这里按照$0重排序
+    Collections.sort(redex.bigSites, (o1: Site, o2: Site) => {
+      o1.getName.compareTo(o2.getName)
+    })
+    Collections.sort(reactum.bigSites, (o1: Site, o2: Site) => {
+      o1.getName.compareTo(o2.getName)
+    })
     val matcher: CSPMatcher = new CSPMatcher()
     val iter = matcher.`match`(this, redex).iterator()
     val result = new util.HashSet[(Bigraph, ReactionRule)]()
