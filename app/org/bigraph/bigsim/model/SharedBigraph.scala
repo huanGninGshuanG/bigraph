@@ -463,15 +463,17 @@ object testSharedBigraph {
         |# Names
         |
         |# Rules
-        |%rule r_0 D1:Device[a:outername].(u1:UserInfo|d1:DeviceInfo) | ap:AP[a:outername, b:outername, c:outername].(sta:Staging.$0|$1) -> D1:Device[a:outername] | ap:AP[a:outername, b:outername, c:outername].(sta:Staging.($0|reqD1:Request.(u1:UserInfo|d1:DeviceInfo|data1:DataTag))|$1){};
+        |# %rule r_0 D1:Device[a:outername].(u1:UserInfo|d1:DeviceInfo) | ap:AP[a:outername, b:outername, c:outername].(sta:Staging.$0|$1) -> D1:Device[a:outername] | ap:AP[a:outername, b:outername, c:outername].(sta:Staging.($0|reqD1:Request.(u1:UserInfo|d1:DeviceInfo|data1:DataTag))|$1){};
         |%rule r_1 ap:AP[a:outername, b:edge, c:outername].(sta:Staging.($0|reqD1:Request.(u1:UserInfo|d1:DeviceInfo|data1:DataTag))|act:Active.$1) | ace:ACE[b:edge].(udb:UserDB.(u1:Uid|$2) | ddb:DeviceDB.(d1:Did|$3)) | ba:Business[c:outername].(u1:Uid|data1:Data|$4) -> ap:AP[a:outername, b:edge, c:outername].(sta:Staging.$0|act:Active.($1|connD1:Connection.(u1:UserInfo|d1:DeviceInfo|data1:DataTag))) | ace:ACE[b:edge].(udb:UserDB.(u1:Uid|$2) | ddb:DeviceDB.(d1:Did|$3)) | ba:Business[c:outername].(u1:Uid|data1:Data|$4){};
-        |%rule r_2 D1:Device[a:outername] | ap:AP[a:outername, b:edge, c:outername].(sta:Staging.$0|act:Active.($1|connD1:Connection.(u1:UserInfo|d1:DeviceInfo|data1:DataTag))) | ace:ACE[b:edge].(udb:UserDB.(u1:Uid|$2) | ddb:DeviceDB.(d1:Did|$3)) | ba:Business[c:outername].(u1:Uid|data1:Data|$4) -> D1:Device[a:outername].(u1:UserInfo|d1:DeviceInfo) | ap:AP[a:outername, b:edge, c:outername].(sta:Staging.$0|act:Active.$1) | ace:ACE[b:edge].(udb:UserDB.(u1:Uid|$2) | ddb:DeviceDB.(d1:Did|$3)) | ba:Business[c:outername].(u1:Uid|data1:Data|$4){};
+        |# %rule r_2 ap:AP[a:outername, b:edge, c:outername].(sta:Staging.$0|act:Active.($1|connD1:Connection.(u1:UserInfo|d1:DeviceInfo|data1:DataTag))) | ace:ACE[b:edge].(udb:UserDB.(u1:Uid|$2) | ddb:DeviceDB.(d1:Did|$3)) | ba:Business[c:outername].(u1:Uid|data1:Data|$4) -> ap:AP[a:outername, b:edge, c:outername].(sta:Staging.$0|act:Active.($1|connD1:Connection.(u1:UserInfo|d1:DeviceInfo|data1:DataTag))) | ace:ACE[b:edge].(udb:UserDB.(u1:Uid|$2) | ddb:DeviceDB.(d1:Did|$3)) | ba:Business[c:outername].(u1:Uid|data1:Data|$4){};
+        |%rule r_2 D1:Device[a:outername] | ap:AP[a:outername, b:outername, c:outername].(sta:Staging.$0|act:Active.(connD1:Connection.($1|u1:UserInfo|d1:DeviceInfo|data1:DataTag))) -> D1:Device[a:outername].(u1:UserInfo|d1:DeviceInfo) | ap:AP[a:outername, b:outername, c:outername].(sta:Staging.$0|act:Active.$1){};
         |
         |# prop
         |
         |# Model
-        |%agent D1:Device[a:edge].(u1:UserInfo|d1:DeviceInfo) | ap:AP[a:edge, b:edge, c:edge].(sta:Staging|act:Active) | ace:ACE[b:edge].(udb:UserDB.(u1:Uid|u2:Uid) | ddb:DeviceDB.d1:Did) | ba:Business[c:edge].(u1:Uid|u2:Uid|data1:Data){};
+        |# %agent D1:Device[a:edge].(u1:UserInfo|d1:DeviceInfo) | ap:AP[a:edge, b:edge, c:edge].(sta:Staging|act:Active) | ace:ACE[b:edge].(udb:UserDB.(u1:Uid|u2:Uid) | ddb:DeviceDB.d1:Did) | ba:Business[c:edge].(u1:Uid|u2:Uid|data1:Data){};
         |# %agent D1:Device[a:edge] | ap:AP[a:edge, b:edge, c:edge].(sta:Staging|act:Active.connD1:Connection.(u1:UserInfo|d1:DeviceInfo|data1:DataTag)) | ace:ACE[b:edge].(udb:UserDB.(u1:Uid|u2:Uid) | ddb:DeviceDB.(d1:Did)) | ba:Business[c:edge].(u1:Uid|u2:Uid|data1:Data){};
+        |%agent D1:Device[a:edge] | ap:AP[a:edge, b:edge, c:edge].(sta:Staging.reqD1:Request.(u1:UserInfo|d1:DeviceInfo|data1:DataTag)|act:Active) | ace:ACE[b:edge].(udb:UserDB.(u1:Uid|u2:Uid) | ddb:DeviceDB.(d1:Did)) | ba:Business[c:edge].(u1:Uid|u2:Uid|data1:Data){};
         |
         |%mode ShareMode
         |
