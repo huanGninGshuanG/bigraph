@@ -270,6 +270,9 @@ public class SharedCSPMatcher {
                                     pVars[k++] = row.get(ap);
                                 }
                             }
+                            if (!GlobalCfg.anonymousNode() && !an.getName().equals(rn.getName())) {
+                                model.arithm(var, "=", 0).post();
+                            }
                             // sub-graph iso clause(4) agent节点父元素全部被匹配，当前元素才能匹配
                             model.sum(pVars, ">=", var.mul(aps.size()).intVar()).post();
                         }
@@ -716,7 +719,7 @@ public class SharedCSPMatcher {
             }
 
             private void fetchSolution() {
-                boolean hasSolution = true;
+                boolean hasSolution;
                 while (hasSolution = solver.solve()) {
                     boolean match = true;
                     for (SharedNode an : agent_nodes) {
@@ -761,6 +764,7 @@ public class SharedCSPMatcher {
                     noMoreSolution();
                     return;
                 }
+                DebugPrinter.print(logger, "Find a solution");
                 printCSPSolution();
 
                 // context

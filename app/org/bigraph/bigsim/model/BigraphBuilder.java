@@ -360,7 +360,7 @@ public class BigraphBuilder implements BigraphHandler {
         assertOpen();
         Control c = this.bigraph.bigSignature().getByName(ctrlName);
         if (c == null)
-            throw new IllegalArgumentException("Control should be in the signature.");
+            throw new IllegalArgumentException("Control should be in the signature. " + ctrlName);
         int ar = c.getArity();
         List<Handle> hs = new ArrayList<>(ar);
         Iterator<Handle> hi = (handles == null) ? null : handles.iterator();
@@ -407,7 +407,7 @@ public class BigraphBuilder implements BigraphHandler {
             hs.add(h);
         }
         SharedBigraph sBigraph = (SharedBigraph) this.bigraph;
-        Optional<SharedNode> op = sBigraph.findSharedNode(name);
+        Optional<SharedNode> op = sBigraph.findSharedNode(name, ctrlName);
         SharedNode n = null;
         if (op.isPresent()) {
             n = op.get();
