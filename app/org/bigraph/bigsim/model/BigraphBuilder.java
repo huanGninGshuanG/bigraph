@@ -558,6 +558,10 @@ public class BigraphBuilder implements BigraphHandler {
 
     private void solveNormalTerm(Term term) {
         Term p = term.next();
+        if (p == null) {
+            DebugPrinter.print(logger, "null term: " + term + " " + term.remaining().size());
+            throw new RuntimeException("term.next is null");
+        }
         if (p.termType() == TermType.TREGION()) {
             ((Regions) p).getChildren().foreach(child -> {
                 Parent parent = addRoot();
@@ -619,6 +623,10 @@ public class BigraphBuilder implements BigraphHandler {
 
     private void solveShareTerm(Term term) {
         Term p = term.next();
+        if (p == null) {
+            DebugPrinter.print(logger, "null term: " + term + " " + term.remaining().size());
+            throw new RuntimeException("term.next is null");
+        }
         if (p.termType() == TermType.TREGION()) {
             ((Regions) p).getChildren().foreach(child -> {
                 SharedRoot parent = addSharedRoot();
@@ -634,11 +642,6 @@ public class BigraphBuilder implements BigraphHandler {
 
     public void parseTerm(Term term) {
         if (term == null || term.termType() == TermType.TNIL()) return;
-        Term p = term.next();
-        if (p == null) {
-            DebugPrinter.print(logger, "null term: " + term + " " + term.remaining().size());
-            throw new RuntimeException("term.next is null");
-        }
         DebugPrinter.print(logger, "shared: " + GlobalCfg.sharedMode() + " : " + term);
         if (!GlobalCfg.sharedMode()) solveNormalTerm(term);
         else solveShareTerm(term);

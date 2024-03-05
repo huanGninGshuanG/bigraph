@@ -8,7 +8,7 @@ import org.bigraph.bigsim.BRS._
 import org.bigraph.bigsim.data.DataModel
 import org.bigraph.bigsim.exceptions.{IncompatibleInterfaceException, IncompatibleSignatureException}
 import org.bigraph.bigsim.model.component._
-import org.bigraph.bigsim.model.component.shared.SharedSite
+import org.bigraph.bigsim.model.component.shared.{SharedNode, SharedSite}
 import org.bigraph.bigsim.parser.{BGMParser, BGMTerm}
 import org.bigraph.bigsim.simulator.Simulator
 import org.bigraph.bigsim.utils.{BigraphToTerm, CachingProxy, DebugPrinter, GlobalCfg}
@@ -29,6 +29,29 @@ object Node {
 
   /// dirty code todo: 删去对Node的依赖
   def nodeAdapter(p: component.Node): Node = {
+    val ctrl = new Control(p.getControl.getName, p.getControl.getArity)
+    val ports = p.getPorts
+    var ss: List[Name] = List()
+    for (port <- ports) {
+      val handle = port.getHandle
+      var nameType = ""
+      var handleName = ""
+      var innerNames: List[String] = List()
+      if (handle == null) nameType = "idle"
+      else {
+        handleName = handle.getName
+        for (point <- handle.getPoints) {
+          if (point.isInnerName) innerNames = innerNames :+ point.asInstanceOf[InnerName].getName
+        }
+        if (handle.isOuterName) nameType = "outername"
+        else if (handle.isEdge) nameType = "edge"
+      }
+      ss = ss :+ (new Name(handleName, nameType, innerNames))
+    }
+    new Node(p.getName, p.getControl.isActive, ss, ctrl)
+  }
+
+  def sharedNodeAdapter(p :SharedNode): Node = {
     val ctrl = new Control(p.getControl.getName, p.getControl.getArity)
     val ports = p.getPorts
     var ss: List[Name] = List()
@@ -859,6 +882,7 @@ class Bigraph(roots: Int = 1) extends BigraphHandler {
       val ports = n.getPorts
       for (port <- ports) {
         val handle = port.getHandle
+        DebugPrinter.print(logger, "edge test: " + port + " : " + handle)
         if (handle != null && handle.isEdge) s.add(handle.asInstanceOf[Edge])
       }
     }
@@ -1134,8 +1158,8 @@ class Bigraph(roots: Int = 1) extends BigraphHandler {
     big
   }
 
-  def structToTerm(): Term = {
-    if (root == null || root.toString.contains("idle")) root = BigraphToTerm.toTerm(this)
+  def structToTerm(force: Boolean = false): Term = {
+    if (force || root == null || root.toString.contains("idle")) root = BigraphToTerm.toTerm(this)
     root
   }
 
