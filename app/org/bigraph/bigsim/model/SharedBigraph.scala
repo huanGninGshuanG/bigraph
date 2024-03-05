@@ -9,7 +9,7 @@ import org.bigraph.bigsim.model.component.shared._
 import org.bigraph.bigsim.model.component.{BigraphHandler, Edge, Handle, InnerName, OuterName, Point, Root, Signature, Site}
 import org.bigraph.bigsim.parser.{BGMParser, BGMTerm}
 import org.bigraph.bigsim.simulator.{BuildKripkeStructure, TransitionSystem}
-import org.bigraph.bigsim.utils.{CachingProxy, DebugPrinter}
+import org.bigraph.bigsim.utils.{BigraphToTerm, CachingProxy, DebugPrinter}
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.collection.JavaConversions._
@@ -102,7 +102,7 @@ class SharedBigraph(signature: Signature) extends Bigraph {
   }
 
   override def matchRule(r: ReactionRule): util.Set[(Bigraph, ReactionRule)] = {
-    DebugPrinter.print(logger, "shared bigraph match")
+    DebugPrinter.print(logger, "shared bigraph match" + r.redex)
     val redex: SharedBigraph = r.redexBig.asInstanceOf[SharedBigraph]
     val reactum: SharedBigraph = r.reactumBig.asInstanceOf[SharedBigraph]
     val eta: InstantiationMap = r.eta // 共享偶图衍化目前不支持参数化反应规则
@@ -309,6 +309,35 @@ class SharedBigraph(signature: Signature) extends Bigraph {
   }
 
   @Override
+  override def structToTerm(force: Boolean = true): Term = {
+    if (force || root == null || root.toString.contains("idle")) root = BigraphToTerm.toTerm(this)
+    root
+  }
+
+  /// 按照名字排序所有内部名，外部名，节点，最后重命名所有边。主要用于hash计算，比较两个偶图是否相等
+  @Override
+  override def trimBigraph(): Unit = {
+    val nodes = new util.ArrayList[SharedNode](sharedNodesProxy.get())
+    Collections.sort(nodes, nodeComparator)
+    val edges = new util.HashSet[Handle]()
+    var i: Integer = 0
+    for (node <- nodes) {
+      for (port <- node.getPorts) {
+        val handle = port.getHandle
+        if (handle != null && handle.isEdge && !edges.contains(handle)) {
+          edges.add(handle)
+          handle.asInstanceOf[Edge].setName("E_" + i)
+          i = i + 1
+        }
+      }
+    }
+  }
+
+  private val nodeComparator = new Comparator[SharedNode] {
+    override def compare(o1: SharedNode, o2: SharedNode): Int = o1.getName.compareTo(o2.getName)
+  }
+
+  @Override
   override def clone(): SharedBigraph = {
     var big: SharedBigraph = new SharedBigraph(this.bigSignature)
     val hndDict: util.Map[Handle, Handle] = new util.HashMap[Handle, Handle]()
@@ -463,17 +492,16 @@ object testSharedBigraph {
         |# Names
         |
         |# Rules
-        |# %rule r_0 D1:Device[a:outername].(u1:UserInfo|d1:DeviceInfo) | ap:AP[a:outername, b:outername, c:outername].(sta:Staging.$0|$1) -> D1:Device[a:outername] | ap:AP[a:outername, b:outername, c:outername].(sta:Staging.($0|reqD1:Request.(u1:UserInfo|d1:DeviceInfo|data1:DataTag))|$1){};
+        |%rule r_0 D1:Device[a:outername].(u1:UserInfo|d1:DeviceInfo) | ap:AP[a:outername, b:outername, c:outername].(sta:Staging.$0|$1) -> D1:Device[a:outername] | ap:AP[a:outername, b:outername, c:outername].(sta:Staging.($0|reqD1:Request.(u1:UserInfo|d1:DeviceInfo|data1:DataTag))|$1){};
         |%rule r_1 ap:AP[a:outername, b:edge, c:outername].(sta:Staging.($0|reqD1:Request.(u1:UserInfo|d1:DeviceInfo|data1:DataTag))|act:Active.$1) | ace:ACE[b:edge].(udb:UserDB.(u1:Uid|$2) | ddb:DeviceDB.(d1:Did|$3)) | ba:Business[c:outername].(u1:Uid|data1:Data|$4) -> ap:AP[a:outername, b:edge, c:outername].(sta:Staging.$0|act:Active.($1|connD1:Connection.(u1:UserInfo|d1:DeviceInfo|data1:DataTag))) | ace:ACE[b:edge].(udb:UserDB.(u1:Uid|$2) | ddb:DeviceDB.(d1:Did|$3)) | ba:Business[c:outername].(u1:Uid|data1:Data|$4){};
-        |# %rule r_2 ap:AP[a:outername, b:edge, c:outername].(sta:Staging.$0|act:Active.($1|connD1:Connection.(u1:UserInfo|d1:DeviceInfo|data1:DataTag))) | ace:ACE[b:edge].(udb:UserDB.(u1:Uid|$2) | ddb:DeviceDB.(d1:Did|$3)) | ba:Business[c:outername].(u1:Uid|data1:Data|$4) -> ap:AP[a:outername, b:edge, c:outername].(sta:Staging.$0|act:Active.($1|connD1:Connection.(u1:UserInfo|d1:DeviceInfo|data1:DataTag))) | ace:ACE[b:edge].(udb:UserDB.(u1:Uid|$2) | ddb:DeviceDB.(d1:Did|$3)) | ba:Business[c:outername].(u1:Uid|data1:Data|$4){};
-        |%rule r_2 D1:Device[a:outername] | ap:AP[a:outername, b:outername, c:outername].(sta:Staging.$0|act:Active.(connD1:Connection.($1|u1:UserInfo|d1:DeviceInfo|data1:DataTag))) -> D1:Device[a:outername].(u1:UserInfo|d1:DeviceInfo) | ap:AP[a:outername, b:outername, c:outername].(sta:Staging.$0|act:Active.$1){};
+        |%rule r_2 D1:Device[a:outername] | ap:AP[a:outername, b:outername, c:outername].($0|act:Active.($1|connD1:Connection.(u1:UserInfo|d1:DeviceInfo|data1:DataTag))) -> D1:Device[a:outername].(u1:UserInfo|d1:DeviceInfo) | ap:AP[a:outername, b:outername, c:outername].($0|act:Active.$1){};
         |
         |# prop
         |
         |# Model
-        |# %agent D1:Device[a:edge].(u1:UserInfo|d1:DeviceInfo) | ap:AP[a:edge, b:edge, c:edge].(sta:Staging|act:Active) | ace:ACE[b:edge].(udb:UserDB.(u1:Uid|u2:Uid) | ddb:DeviceDB.d1:Did) | ba:Business[c:edge].(u1:Uid|u2:Uid|data1:Data){};
+        |%agent D1:Device[a:edge].(u1:UserInfo|d1:DeviceInfo) | ap:AP[a:edge, b:edge, c:edge].(sta:Staging|act:Active) | ace:ACE[b:edge].(udb:UserDB.(u1:Uid|u2:Uid) | ddb:DeviceDB.d1:Did) | ba:Business[c:edge].(u1:Uid|u2:Uid|data1:Data){};
         |# %agent D1:Device[a:edge] | ap:AP[a:edge, b:edge, c:edge].(sta:Staging|act:Active.connD1:Connection.(u1:UserInfo|d1:DeviceInfo|data1:DataTag)) | ace:ACE[b:edge].(udb:UserDB.(u1:Uid|u2:Uid) | ddb:DeviceDB.(d1:Did)) | ba:Business[c:edge].(u1:Uid|u2:Uid|data1:Data){};
-        |%agent D1:Device[a:edge] | ap:AP[a:edge, b:edge, c:edge].(sta:Staging.reqD1:Request.(u1:UserInfo|d1:DeviceInfo|data1:DataTag)|act:Active) | ace:ACE[b:edge].(udb:UserDB.(u1:Uid|u2:Uid) | ddb:DeviceDB.(d1:Did)) | ba:Business[c:edge].(u1:Uid|u2:Uid|data1:Data){};
+        |# %agent D1:Device[a:edge] | ap:AP[a:edge, b:edge, c:edge].(sta:Staging.reqD1:Request.(u1:UserInfo|d1:DeviceInfo|data1:DataTag)|act:Active) | ace:ACE[b:edge].(udb:UserDB.(u1:Uid|u2:Uid) | ddb:DeviceDB.(d1:Did)) | ba:Business[c:edge].(u1:Uid|u2:Uid|data1:Data){};
         |
         |%mode ShareMode
         |
@@ -493,15 +521,15 @@ object testSharedBigraph {
     val kripke = buildKripke.buildKripke(b.bigSignature)
 
 
-//    val p: List[BGMTerm] = BGMParser.parseFromString(beyondCorp)
-//
-//    def logger = LoggerFactory.getLogger(this.getClass)
-//
-//    val b = BGMTerm.toBigraph(p);
-//    b.print()
-//    b.rules.foreach(x => {
-//      DebugPrinter.print(logger, "rule: " + x)
-//      b.matchRule(x)
-//    })
+    //    val p: List[BGMTerm] = BGMParser.parseFromString(beyondCorp)
+    //
+    //    def logger = LoggerFactory.getLogger(this.getClass)
+    //
+    //    val b = BGMTerm.toBigraph(p);
+    //    b.print()
+    //    b.rules.foreach(x => {
+    //      DebugPrinter.print(logger, "rule: " + x)
+    //      b.matchRule(x)
+    //    })
   }
 }

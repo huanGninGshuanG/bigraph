@@ -942,7 +942,6 @@ public class SharedCSPMatcher {
                                     boolean notMatched = true;
                                     while (ic.hasNext()) {
                                         SharedChild c1 = ic.next();
-                                        DebugPrinter.print(logger, "test: " + c0 + " : " + c1);
                                         var = findVariable(l_vars.get(c0).get(c1).getName(), model.getVars()).asIntVar();
                                         if (var.getValue() == 1) {
                                             notMatched = false;

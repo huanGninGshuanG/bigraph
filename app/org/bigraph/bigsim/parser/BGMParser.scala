@@ -491,6 +491,7 @@ object BGMTerm {
     builder.setBigraph(b)
     builder.parseTerm(b.root)
     val res = builder.makeBigraph(true)
+    res.root = res.structToTerm(true)
     res.print()
     res
   }
@@ -542,7 +543,7 @@ object BGMParser extends RegexParsers {
           BGMRule(i, bdrr(1), bdrr(0), k)
         } else { //非回朔规则就认为是正常规则
           var eta: InstantiationMap = null
-          if(k.length()>0) {
+          if (k.length() > 0) {
             // 解析eta e.g. {0->1, 1->0}
             val arr = k.split(",", 0)
             val map: mutable.Map[Int, Int] = new mutable.HashMap[Int, Int]()
@@ -904,12 +905,35 @@ object testBGMParser {
         |# Go!
         |%check;
         |""".stripMargin
-    val p: List[BGMTerm] = BGMParser.parseFromString(shareTest5)
-    println(p)
+    var test =
+      """
+        |# Controls
+        |%active Process : 1;
+        |%active CriticalPart : 2;
+        |%active Semaphore : 1;
+        |%active Value : 1;
+        |
+        |# Rules
+        |%rule r_apply_idle p0:Process[idle] | p1:Process[idle] | cp:CriticalPart[idle,idle] | sp:Semaphore[a:edge].false:Value[a:edge] | true:Value[idle] -> p1:Process[idle] | sp:Semaphore[a:edge].false:Value[a:edge] | cp:CriticalPart[idle,idle].p0:Process[idle] | true:Value[idle]{};
+        |
+        |# prop
+        |%prop p  cp:CriticalPart[b:edge,c:edge].(p0:Process[c:edge] | p1:Process[b:edge]) | sp:Semaphore[a:edge].true:Value[a:edge] | false:Value[idle]{};
+        |
+        |# Model
+        |%agent  p0:Process[idle] | p1:Process[idle] | cp:CriticalPart[idle,idle] | sp:Semaphore[a:edge].false:Value[a:edge] | true:Value[idle]{};
+        |
+        |# CTL_Formula
+        |%ctlSpec AG!p;
+        |
+        |# Go!
+        |%check;
+        |""".stripMargin
+    val p: List[BGMTerm] = BGMParser.parseFromString(test)
 
     def logger = LoggerFactory.getLogger(this.getClass)
 
     val b = BGMTerm.toBigraph(p);
+    DebugPrinter.print(logger, "test111:")
     b.print()
     b.rules.foreach(x => {
       DebugPrinter.print(logger, "rule: " + x)
