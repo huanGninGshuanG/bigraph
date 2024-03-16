@@ -21,6 +21,10 @@ public class Site implements Child {
         this(NameGenerator.DEFAULT.generate(), parent, owner);
     }
 
+    public String getName() {
+        return this.name;
+    }
+
     public Site(Parent parent) {
         this(NameGenerator.DEFAULT.generate(), parent, null);
     }

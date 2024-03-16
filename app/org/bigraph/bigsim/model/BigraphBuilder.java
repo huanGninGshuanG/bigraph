@@ -360,7 +360,7 @@ public class BigraphBuilder implements BigraphHandler {
         assertOpen();
         Control c = this.bigraph.bigSignature().getByName(ctrlName);
         if (c == null)
-            throw new IllegalArgumentException("Control should be in the signature.");
+            throw new IllegalArgumentException("Control should be in the signature. " + ctrlName);
         int ar = c.getArity();
         List<Handle> hs = new ArrayList<>(ar);
         Iterator<Handle> hi = (handles == null) ? null : handles.iterator();
@@ -407,7 +407,7 @@ public class BigraphBuilder implements BigraphHandler {
             hs.add(h);
         }
         SharedBigraph sBigraph = (SharedBigraph) this.bigraph;
-        Optional<SharedNode> op = sBigraph.findSharedNode(name);
+        Optional<SharedNode> op = sBigraph.findSharedNode(name, ctrlName);
         SharedNode n = null;
         if (op.isPresent()) {
             n = op.get();
@@ -558,6 +558,10 @@ public class BigraphBuilder implements BigraphHandler {
 
     private void solveNormalTerm(Term term) {
         Term p = term.next();
+        if (p == null) {
+            DebugPrinter.print(logger, "null term: " + term + " " + term.remaining().size());
+            throw new RuntimeException("term.next is null");
+        }
         if (p.termType() == TermType.TREGION()) {
             ((Regions) p).getChildren().foreach(child -> {
                 Parent parent = addRoot();
@@ -619,6 +623,10 @@ public class BigraphBuilder implements BigraphHandler {
 
     private void solveShareTerm(Term term) {
         Term p = term.next();
+        if (p == null) {
+            DebugPrinter.print(logger, "null term: " + term + " " + term.remaining().size());
+            throw new RuntimeException("term.next is null");
+        }
         if (p.termType() == TermType.TREGION()) {
             ((Regions) p).getChildren().foreach(child -> {
                 SharedRoot parent = addSharedRoot();
@@ -634,11 +642,6 @@ public class BigraphBuilder implements BigraphHandler {
 
     public void parseTerm(Term term) {
         if (term == null || term.termType() == TermType.TNIL()) return;
-        Term p = term.next();
-        if (p == null) {
-            DebugPrinter.print(logger, "null term: " + term + " " + term.remaining().size());
-            throw new RuntimeException("term.next is null");
-        }
         DebugPrinter.print(logger, "shared: " + GlobalCfg.sharedMode() + " : " + term);
         if (!GlobalCfg.sharedMode()) solveNormalTerm(term);
         else solveShareTerm(term);
