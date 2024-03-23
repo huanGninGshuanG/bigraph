@@ -1,0 +1,42 @@
+# Controls
+%active CriticalSection : 1;
+%active Process : 1;
+
+# Names
+%outername a;
+
+# Rules
+%rule r_0 a:CriticalSection[a:outername].$0 | b:Process[a:outername] -> a:CriticalSection[a:outername].($0 | b:Process[a:outername]){};
+
+%rule r_1 a:CriticalSection[a:outername].(b:Process[a:outername] | $0) -> a:CriticalSection[a:outername].$0 | b:Process[idle]{};
+
+%rule r_2 a:CriticalSection[a:outername].$0 | b:Process[idle] -> a:CriticalSection[a:outername].$0 | b:Process[a:outername]{};
+
+%rule r_3 a:CriticalSection[a:outername].$0 | c:Process[a:outername] -> a:CriticalSection[a:outername].($0 | c:Process[a:outername]){};
+
+%rule r_4 a:CriticalSection[a:outername].(c:Process[a:outername] | $0) -> a:CriticalSection[a:outername].$0 | c:Process[idle]{};
+
+%rule r_5 a:CriticalSection[a:outername].$0 | c:Process[idle] -> a:CriticalSection[a:outername].$0 | c:Process[a:outername]{};
+
+
+
+# prop
+%prop p  a:CriticalSection[a:edge].(b:Process[a:edge] | c:Process[a:edge]);
+
+
+# Model
+%agent  a:CriticalSection[idle] | b:Process[idle] | c:Process[idle];
+
+
+
+# LTL_Formula
+%ltlSpec G!p
+
+
+
+
+#SortingLogic
+
+
+# Go!
+%check;
