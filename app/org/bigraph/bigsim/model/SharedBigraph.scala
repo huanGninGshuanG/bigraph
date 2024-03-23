@@ -8,7 +8,7 @@ import org.bigraph.bigsim.exceptions.{IncompatibleInterfaceException, Incompatib
 import org.bigraph.bigsim.model.component.shared._
 import org.bigraph.bigsim.model.component.{BigraphHandler, Edge, Handle, InnerName, OuterName, Point, Root, Signature, Site}
 import org.bigraph.bigsim.parser.{BGMParser, BGMTerm}
-import org.bigraph.bigsim.simulator.{BuildKripkeStructure, TransitionSystem}
+import org.bigraph.bigsim.simulator.{BuildKripkeStructure, LTLSimulator, TransitionSystem}
 import org.bigraph.bigsim.utils.{BigraphToTerm, CachingProxy, DebugPrinter}
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -441,6 +441,7 @@ class SharedBigraph(signature: Signature) extends Bigraph {
 }
 
 object testSharedBigraph {
+  def logger: Logger = LoggerFactory.getLogger(this.getClass)
   def main(args: Array[String]): Unit = {
     var shareTest =
       """
@@ -515,10 +516,15 @@ object testSharedBigraph {
         |""".stripMargin
     val t = BGMParser.parseFromString(beyondCorp)
     val b = BGMTerm.toBigraph(t)
-    val transition = new TransitionSystem(b)
-    println("=-=-=-=-=-==-=-=-=-=-=-==-=-=-=-=-=-==-=-=-=- now to build KripStructure-=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-")
-    val buildKripke = new BuildKripkeStructure(transition)
-    val kripke = buildKripke.buildKripke(b.bigSignature)
+    DebugPrinter.print(logger, "dot file is:")
+    val simulator = new LTLSimulator(b)
+    simulator.simulate
+    val str = simulator.dumpDotForward("")
+    DebugPrinter.print(logger, "dot file is:" + str)
+//    val transition = new TransitionSystem(b)
+//    println("=-=-=-=-=-==-=-=-=-=-=-==-=-=-=-=-=-==-=-=-=- now to build KripStructure-=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-")
+//    val buildKripke = new BuildKripkeStructure(transition)
+//    val kripke = buildKripke.buildKripke(b.bigSignature)
 
 
     //    val p: List[BGMTerm] = BGMParser.parseFromString(beyondCorp)
